@@ -32,7 +32,7 @@ namespace net
 		void datagram::post(boost::asio::ip::udp::socket& socket, boost::asio::ip::udp::endpoint& endpoint)
 		{
 			auto shared = shared_from_this();
-			std::cout << m_payload;
+			//std::cout << m_payload;
 			socket.async_send_to(boost::asio::buffer(m_payload), endpoint, [this, shared](boost::system::error_code ec, size_t)
 			{
 				m_socket.done(shared_from_this());

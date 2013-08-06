@@ -24,6 +24,7 @@
 
 #include "pch.h"
 #include <http_connection.hpp>
+#include <types.hpp>
 
 namespace net
 {
@@ -63,6 +64,7 @@ namespace net
 			{
 				if (!ec)
 				{
+					std::cout << "Remote: " << net::to_string(m_socket.remote_endpoint().address()) << ":" << m_socket.remote_endpoint().port() << "\r\n";
 					bool _continue = true;
 
 					auto data = m_buffer.data();
