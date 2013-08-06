@@ -52,7 +52,7 @@ namespace net
 			if (nts == ALIVE)
 			{
 				req.append("location")->out() << "http://" << net::to_string(m_local) << ":" << m_port << "/description/fetch";
-				req.append("cache-control", "max-age=1800");
+				req.append("cache-control")->out() << "max-age=" << m_interval;
 				req.append("server")->out() << http::get_server_version();
 			}
 

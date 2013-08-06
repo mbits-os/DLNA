@@ -30,7 +30,7 @@
 #include <ssdp.hpp>
 
 namespace net { namespace http {
-	module_version get_server_module_version() { return {"yrRadio", 0, 1}; }
+	module_version get_server_module_version() { return {"lanRadio", 0, 1}; }
 }}
 
 int main(int argc, char* argv [])
@@ -42,7 +42,7 @@ int main(int argc, char* argv [])
 		boost::asio::signal_set signals(service);
 
 		net::http::server http{ service, 6001 };
-		net::ssdp::notifier notifier{ service, usn, 6001 };
+		net::ssdp::notifier notifier{ service, 1800, usn, 6001 };
 
 		signals.add(SIGINT);
 		signals.add(SIGTERM);

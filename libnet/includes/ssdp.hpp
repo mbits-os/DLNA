@@ -55,8 +55,10 @@ namespace net
 
 		struct notifier : udp::datagram_socket
 		{
-			notifier(boost::asio::io_service& io_service, const std::string& usn, net::ushort port)
+			notifier(boost::asio::io_service& io_service, long seconds, const std::string& usn, net::ushort port)
 				: udp::datagram_socket(io_service, ipv4_multicast(), PORT)
+				, m_timer(io_service, boost::posix_time::seconds(1))
+				, m_interval(seconds)
 				, m_local(net::iface::get_default_interface())
 				, m_usn(usn)
 				, m_port(port)
@@ -73,12 +75,26 @@ namespace net
 			}
 			bool is_valid() const { return !m_local.is_unspecified(); }
 
-			void start() { notify(ALIVE); }
-			void stop() { if (is_valid()) notify(BYEBYE); }
+			void start()
+			{
+				m_timer.async_wait([this](boost::system::error_code ec)
+				{
+					if (!ec)
+						stillAlive();
+				});
+			}
+			void stop()
+			{
+				m_timer.cancel();
+				if (is_valid())
+					notify(BYEBYE);
+			}
 		private:
-			boost::asio::ip::address  m_local;
-			std::string               m_usn;
-			net::ushort               m_port;
+			boost::asio::deadline_timer m_timer;
+			long                        m_interval;
+			boost::asio::ip::address    m_local;
+			std::string                 m_usn;
+			net::ushort                 m_port;
 
 			std::string build_msg(const std::string& nt, notification_type nts) const;
 
@@ -86,6 +102,17 @@ namespace net
 			{
 				auto message = build_msg(nt, nts);
 				post(std::move(message));
+			}
+
+			void stillAlive()
+			{
+				notify(ALIVE);
+				m_timer.expires_at(m_timer.expires_at() + boost::posix_time::seconds(m_interval));
+				m_timer.async_wait([this](boost::system::error_code ec)
+				{
+					if (!ec)
+						stillAlive();
+				});
 			}
 		};
 	}
