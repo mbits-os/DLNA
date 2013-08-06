@@ -26,6 +26,7 @@
 
 #include <iostream>
 #include <http.hpp>
+#include <http_server.hpp>
 #include <udp.hpp>
 #include <interface.hpp>
 
@@ -40,6 +41,7 @@ namespace net
 		};
 
 		static const net::ushort PORT = 1900;
+		static const long INTERVAL = 1800;
 
 		inline std::ostream& operator << (std::ostream& o, notification_type type)
 		{
@@ -73,6 +75,7 @@ namespace net
 				notify("urn:schemas-upnp-org:device:MediaServer:1", nts);
 				notify("urn:schemas-upnp-org:service:ContentDirectory:1", nts);
 			}
+
 			bool is_valid() const { return !m_local.is_unspecified(); }
 
 			void start()
@@ -114,6 +117,34 @@ namespace net
 						stillAlive();
 				});
 			}
+		};
+
+		struct server
+		{
+			server(boost::asio::io_service& service, net::ushort port)
+				: m_usn(net::create_uuid())
+				, m_http(service, port)
+				, m_notifier(service, INTERVAL, m_usn, port)
+			{
+			}
+
+			bool is_valid() const { return m_notifier.is_valid(); }
+
+			void start()
+			{
+				m_http.start();
+				m_notifier.start();
+			}
+
+			void stop()
+			{
+				m_notifier.stop();
+				m_http.stop();
+			}
+		private:
+			std::string m_usn;
+			net::http::server m_http;
+			net::ssdp::notifier m_notifier;
 		};
 	}
 }

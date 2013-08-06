@@ -29,7 +29,10 @@
 #include <http_server.hpp>
 #include <ssdp.hpp>
 
-namespace net { namespace http {
+static const net::ushort PORT = 6001;
+
+namespace net {
+	namespace http {
 	module_version get_server_module_version() { return {"lanRadio", 0, 1}; }
 }}
 
@@ -37,12 +40,10 @@ int main(int argc, char* argv [])
 {
 	try
 	{
-		auto usn = net::create_uuid();
 		boost::asio::io_service service;
 		boost::asio::signal_set signals(service);
 
-		net::http::server http{ service, 6001 };
-		net::ssdp::notifier notifier{ service, 1800, usn, 6001 };
+		net::ssdp::server upnp{ service, PORT };
 
 		signals.add(SIGINT);
 		signals.add(SIGTERM);
@@ -51,14 +52,12 @@ int main(int argc, char* argv [])
 #endif // defined(SIGQUIT)
 
 		signals.async_wait([&](boost::system::error_code, int) {
-			notifier.stop();
-			http.stop();
+			upnp.stop();
 		});
 
-		if (notifier.is_valid())
+		if (upnp.is_valid())
 		{
-			http.start();
-			notifier.start();
+			upnp.start();
 		}
 
 		service.run();
