@@ -29,38 +29,50 @@
 #include <http_server.hpp>
 #include <ssdp.hpp>
 
-static const net::ushort PORT = 6001;
-
-namespace net {
-	namespace http {
+namespace net { namespace http {
 	module_version get_server_module_version() { return {"lanRadio", 0, 1}; }
 }}
 
+namespace lan
+{
+	static const net::ushort PORT = 6001;
+
+	struct radio
+	{
+		radio()
+			: m_service()
+			, m_signals(m_service)
+			, m_upnp(m_service, PORT)
+		{
+			m_signals.add(SIGINT);
+			m_signals.add(SIGTERM);
+#if defined(SIGQUIT)
+			m_signals.add(SIGQUIT);
+#endif // defined(SIGQUIT)
+
+			m_signals.async_wait([&](boost::system::error_code, int) {
+				m_upnp.stop();
+			});
+
+			if (m_upnp.is_valid())
+				m_upnp.start();
+		}
+
+		void run() { m_service.run(); }
+
+	private:
+		boost::asio::io_service m_service;
+		boost::asio::signal_set m_signals;
+		net::ssdp::server       m_upnp;
+	};
+}
 int main(int argc, char* argv [])
 {
 	try
 	{
-		boost::asio::io_service service;
-		boost::asio::signal_set signals(service);
+		lan::radio lanRadio;
 
-		net::ssdp::server upnp{ service, PORT };
-
-		signals.add(SIGINT);
-		signals.add(SIGTERM);
-#if defined(SIGQUIT)
-		m_signals.add(SIGQUIT);
-#endif // defined(SIGQUIT)
-
-		signals.async_wait([&](boost::system::error_code, int) {
-			upnp.stop();
-		});
-
-		if (upnp.is_valid())
-		{
-			upnp.start();
-		}
-
-		service.run();
+		lanRadio.run();
 	}
 	catch (std::exception& e)
 	{
