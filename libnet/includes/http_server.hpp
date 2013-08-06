@@ -21,51 +21,36 @@
  * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-#ifdef _WIN32
-#include <sdkddkver.h>
-#endif
+
+#ifndef __HTTP_SERVER_HPP__
+#define __HTTP_SERVER_HPP__
 
 #include <http.hpp>
-#include <http_server.hpp>
-#include <ssdp.hpp>
+#include <http_connection.hpp>
+#include <memory>
 
-namespace net { namespace http {
-	module_version get_server_module_version() { return {"yrRadio", 0, 1}; }
-}}
-
-int main(int argc, char* argv [])
+namespace net
 {
-	try
+	namespace http
 	{
-		auto usn = net::create_uuid();
-		boost::asio::io_service service;
-		boost::asio::signal_set signals(service);
-
-		net::http::server http{ service, 6001 };
-		net::ssdp::notifier notifier{ service, usn, 6001 };
-
-		signals.add(SIGINT);
-		signals.add(SIGTERM);
-#if defined(SIGQUIT)
-		m_signals.add(SIGQUIT);
-#endif // defined(SIGQUIT)
-
-		signals.async_wait([&](boost::system::error_code, int) {
-			notifier.stop();
-			http.stop();
-		});
-
-		if (notifier.is_valid())
+		struct server
 		{
-			http.start();
-			notifier.start();
-		}
+			server(boost::asio::io_service& service, net::ushort port);
 
-		service.run();
+			void start() { do_accept(); }
+			void stop();
+
+		private:
+			boost::asio::io_service& m_io_service;
+			boost::asio::ip::tcp::acceptor m_acceptor;
+			net::ushort m_port;
+
+			boost::asio::ip::tcp::socket m_socket;
+			http::connection_manager m_manager;
+
+			void do_accept();
+		};
 	}
-	catch (std::exception& e)
-	{
-		std::cerr << "Exception: " << e.what() << "\n";
-	}
-	return 0;
 }
+
+#endif // __HTTP_SERVER_HPP__

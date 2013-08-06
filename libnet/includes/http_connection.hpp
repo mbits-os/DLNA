@@ -21,51 +21,54 @@
  * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-#ifdef _WIN32
-#include <sdkddkver.h>
-#endif
 
-#include <http.hpp>
-#include <http_server.hpp>
-#include <ssdp.hpp>
+#ifndef __HTTP_CONNECTION_HPP__
+#define __HTTP_CONNECTION_HPP__
 
-namespace net { namespace http {
-	module_version get_server_module_version() { return {"yrRadio", 0, 1}; }
-}}
+#include <memory>
+#include <set>
+#include <boost/asio.hpp>
 
-int main(int argc, char* argv [])
+namespace net
 {
-	try
+	namespace http
 	{
-		auto usn = net::create_uuid();
-		boost::asio::io_service service;
-		boost::asio::signal_set signals(service);
+		struct connection;
+		typedef std::shared_ptr<connection> connection_ptr;
 
-		net::http::server http{ service, 6001 };
-		net::ssdp::notifier notifier{ service, usn, 6001 };
-
-		signals.add(SIGINT);
-		signals.add(SIGTERM);
-#if defined(SIGQUIT)
-		m_signals.add(SIGQUIT);
-#endif // defined(SIGQUIT)
-
-		signals.async_wait([&](boost::system::error_code, int) {
-			notifier.stop();
-			http.stop();
-		});
-
-		if (notifier.is_valid())
+		class connection_manager : private boost::noncopyable
 		{
-			http.start();
-			notifier.start();
-		}
+		public:
+			/// Add the specified connection to the manager and start it.
+			void start(connection_ptr c);
 
-		service.run();
+			/// Stop the specified connection.
+			void stop(connection_ptr c);
+
+			/// Stop all connections.
+			void stop_all();
+
+		private:
+			/// The managed connections.
+			std::set<connection_ptr> m_connections;
+		};
+
+		struct connection : private boost::noncopyable, public std::enable_shared_from_this<connection>
+		{
+			explicit connection(boost::asio::ip::tcp::socket && socket, connection_manager& manager);
+
+			void start() { read_some_more(); }
+			void stop() { m_socket.close(); }
+		private:
+			void read_some_more();
+
+			std::array<char, 8192> m_buffer;
+			boost::asio::ip::tcp::socket m_socket;
+			connection_manager& m_manager;
+			int m_pos;
+		};
+
 	}
-	catch (std::exception& e)
-	{
-		std::cerr << "Exception: " << e.what() << "\n";
-	}
-	return 0;
 }
+
+#endif // __HTTP_CONNECTION_HPP__

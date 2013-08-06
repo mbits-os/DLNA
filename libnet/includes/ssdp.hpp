@@ -55,51 +55,36 @@ namespace net
 
 		struct notifier : udp::datagram_socket
 		{
-			notifier(boost::asio::io_service& io_service, net::ushort port)
+			notifier(boost::asio::io_service& io_service, const std::string& usn, net::ushort port)
 				: udp::datagram_socket(io_service, ipv4_multicast(), PORT)
 				, m_local(net::iface::get_default_interface())
+				, m_usn(usn)
 				, m_port(port)
 			{}
 
-			void notify(const std::string& usn, notification_type nts)
+			void notify(notification_type nts)
 			{
 				printf("Sending %s...\n", nts == ALIVE ? "ALIVE" : "BYEBYE");
 
-				notify(usn, "upnp:rootdevice", nts);
-				notify(usn, usn, nts);
-				notify(usn, "urn:schemas-upnp-org:device:MediaServer:1", nts);
-				notify(usn, "urn:schemas-upnp-org:service:ContentDirectory:1", nts);
+				notify("upnp:rootdevice", nts);
+				notify(m_usn, nts);
+				notify("urn:schemas-upnp-org:device:MediaServer:1", nts);
+				notify("urn:schemas-upnp-org:service:ContentDirectory:1", nts);
 			}
-			bool isValid() const { return !m_local.is_unspecified(); }
+			bool is_valid() const { return !m_local.is_unspecified(); }
+
+			void start() { notify(ALIVE); }
+			void stop() { if (is_valid()) notify(BYEBYE); }
 		private:
-			boost::asio::ip::address       m_local;
-			net::ushort                    m_port;
+			boost::asio::ip::address  m_local;
+			std::string               m_usn;
+			net::ushort               m_port;
 
-			std::string buildNotifyMsg(const std::string& usn, const std::string& nt, notification_type nts) const
+			std::string build_msg(const std::string& nt, notification_type nts) const;
+
+			void notify(const std::string& nt, notification_type nts)
 			{
-				http::http_request req { "NOTIFY", "*" };
-				req.append("host")->out() << net::to_string(ipv4_multicast()) << ":" << PORT;
-				req.append("nt", nt);
-				req.append("nts")->out() << nts;
-				if (nt == usn)
-					req.append("usn", usn);
-				else
-					req.append("usn")->out() << usn << "::" << nt;
-				if (nts == ALIVE)
-				{
-					req.append("location")->out() << "http://" << net::to_string(m_local) << ":" << m_port << "/description/fetch";
-					req.append("cache-control", "max-age=1800");
-					req.append("server")->out() << http::get_server_version();
-				}
-
-				std::ostringstream os;
-				os << req;
-				return os.str();
-			}
-
-			void notify(const std::string& usn, const std::string& nt, notification_type nts)
-			{
-				auto message = buildNotifyMsg(usn, nt, nts);
+				auto message = build_msg(nt, nts);
 				post(std::move(message));
 			}
 		};

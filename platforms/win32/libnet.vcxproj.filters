@@ -28,6 +28,12 @@
     <ClCompile Include="..\..\libnet\src\net_win32.cpp">
       <Filter>src</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\libnet\src\http_connection.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\libnet\src\http_server.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\libnet\pch.h" />
@@ -47,6 +53,12 @@
       <Filter>includes</Filter>
     </ClInclude>
     <ClInclude Include="..\..\libnet\includes\interface.hpp">
+      <Filter>includes</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\libnet\includes\http_connection.hpp">
+      <Filter>includes</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\libnet\includes\http_server.hpp">
       <Filter>includes</Filter>
     </ClInclude>
   </ItemGroup>

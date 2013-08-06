@@ -38,5 +38,27 @@ namespace net
 			static address multicast_address { address_v4 { 0xEFFFFFFA } };
 			return multicast_address;
 		}
+
+		std::string notifier::build_msg(const std::string& nt, notification_type nts) const
+		{
+			http::http_request req { "NOTIFY", "*" };
+			req.append("host")->out() << net::to_string(ipv4_multicast()) << ":" << PORT;
+			req.append("nt", nt);
+			req.append("nts")->out() << nts;
+			if (nt == m_usn)
+				req.append("usn", m_usn);
+			else
+				req.append("usn")->out() << m_usn << "::" << nt;
+			if (nts == ALIVE)
+			{
+				req.append("location")->out() << "http://" << net::to_string(m_local) << ":" << m_port << "/description/fetch";
+				req.append("cache-control", "max-age=1800");
+				req.append("server")->out() << http::get_server_version();
+			}
+
+			std::ostringstream os;
+			os << req;
+			return os.str();
+		}
 	}
 }
