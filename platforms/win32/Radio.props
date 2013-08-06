@@ -1,0 +1,14 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ImportGroup Label="PropertySheets">
+    <Import Project="$(SolutionDir)\Boost-1.45.props" Condition="exists('$(SolutionDir)\Boost-1.45.props')" />
+  </ImportGroup>
+  <PropertyGroup>
+    <_PropertySheetDisplayName>Radio Base Property Sheet</_PropertySheetDisplayName>
+    <OutDir>$(SolutionDir)..\..\bin\$(PlatformName)\$(Configuration)\</OutDir>
+    <IntDir>$(SolutionDir)..\..\int\$(PlatformName)\$(Configuration)\$(TargetName)$(TargetExt)\</IntDir>
+	<LibraryPath>$(SolutionDir)..\..\bin\$(PlatformName)\$(Configuration)\;$(LibraryPath)</LibraryPath>
+  </PropertyGroup>
+  <PropertyGroup Label="UserMacros" />
+  <ItemGroup />
+</Project>

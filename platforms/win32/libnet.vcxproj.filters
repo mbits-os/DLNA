@@ -1,0 +1,53 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="src">
+      <UniqueIdentifier>{739383a5-d331-41ee-80ee-0f2c6a6ccfe4}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="includes">
+      <UniqueIdentifier>{123037d5-267f-4caa-9c8e-0493afb2eb3f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="inc">
+      <UniqueIdentifier>{cc766c8d-5e8b-4159-b61c-9758e61b5586}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\libnet\pch.cpp" />
+    <ClCompile Include="..\..\libnet\src\udp.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\libnet\src\http_win32.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\libnet\src\interface_win32.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\libnet\src\ssdp.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\libnet\src\net_win32.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\libnet\pch.h" />
+    <ClInclude Include="..\..\libnet\includes\ssdp.hpp">
+      <Filter>includes</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\libnet\includes\mime.hpp">
+      <Filter>includes</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\libnet\includes\http.hpp">
+      <Filter>includes</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\libnet\includes\udp.hpp">
+      <Filter>includes</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\libnet\includes\types.hpp">
+      <Filter>includes</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\libnet\includes\interface.hpp">
+      <Filter>includes</Filter>
+    </ClInclude>
+  </ItemGroup>
+</Project>
