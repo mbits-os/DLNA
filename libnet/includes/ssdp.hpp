@@ -64,7 +64,7 @@ namespace net
 
 			void notify(notification_type nts)
 			{
-				printf("Sending %s...\n", nts == ALIVE ? "ALIVE" : "BYEBYE");
+				printf("Sending %s...\n", nts == ALIVE ? "ALIVE" : "BYEBYE"); fflush(stdout);
 
 				notify("upnp:rootdevice", nts);
 				notify(m_usn, nts);

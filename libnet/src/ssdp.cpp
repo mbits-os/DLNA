@@ -25,6 +25,8 @@
 #include "pch.h"
 #include <ssdp.hpp>
 #include <thread>
+#include <http.hpp>
+#include <http_parser.hpp>
 
 namespace net
 {
@@ -72,7 +74,7 @@ namespace net
 				req.append("usn")->out() << m_usn << "::" << nt;
 			if (nts == ALIVE)
 			{
-				req.append("location")->out() << "http://" << net::to_string(m_local) << ":" << m_port << "/description/fetch";
+				req.append("location")->out() << "http://" << net::to_string(m_local) << ":" << m_port << "/config/device.xml";
 				req.append("cache-control")->out() << "max-age=" << m_interval;
 				req.append("server")->out() << http::get_server_version();
 			}
@@ -105,17 +107,14 @@ namespace net
 			{
 				if (!ec)
 				{
-					try
-					{
-						std::cout << "[M-SEARCH] Remote: " << to_string(m_remote_endpoint.address()) << ":" << m_remote_endpoint.port() << "\r\n";
-					}
-					catch (...)
-					{
-						std::cout << "<error while fetching remote>\r\n";
-					}
+					net::http::header_parser<net::http::http_request> parser;
 
-					std::cout.write(m_buffer.data(), bytes_recvd);
-					std::cout << std::endl;
+					const char* data = m_buffer.data();
+					
+					if (parser.parse(data, data + bytes_recvd) == net::http::parser::finished)
+					{
+						std::cout << "[Listener] Remote: " << to_string(m_remote_endpoint.address()) << ":" << m_remote_endpoint.port() << "\r\nREQUEST\r\n" << parser.header();
+					}
 
 					do_accept();
 				}
