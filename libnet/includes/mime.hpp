@@ -163,6 +163,11 @@ namespace net
 
 				return it;
 			}
+
+			void clear()
+			{
+				m_headers.clear();
+			}
 		private:
 			cont_t m_headers;
 		};

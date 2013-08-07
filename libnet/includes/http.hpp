@@ -114,6 +114,14 @@ namespace net
 			http_response(int status = 200, protocol proto = http_1_1)
 				: http_response_line(status, proto)
 			{}
+
+			void clear()
+			{
+				m_protocol = http_1_1;
+				m_status = 200;
+				mime::headers::clear();
+				append("server")->out() << http::get_server_module_version() << " (" << http::get_os_module_version() << ")";
+			}
 		};
 
 		inline std::ostream& operator << (std::ostream& o, const http_response& resp)
