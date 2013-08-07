@@ -22,37 +22,33 @@
  * SOFTWARE.
  */
 
-#ifndef __HTTP_SERVER_HPP__
-#define __HTTP_SERVER_HPP__
-
-#include <http.hpp>
-#include <http_connection.hpp>
-#include <memory>
+#include "pch.h"
 #include <request_handler.hpp>
+#include <response.hpp>
 
 namespace net
 {
 	namespace http
 	{
-		struct server
+		void request_handler::handle(const http_request& req, response& resp)
 		{
-			server(boost::asio::io_service& service, net::ushort port);
+#if 0
+			auto & header = resp.header();
+			header.clear();
+			header.append("content-type", "text/html");
+			resp.content(content::from_string(""));
+#else
+			make_404(resp);
+#endif
+		}
 
-			void start() { do_accept(); }
-			void stop();
-
-		private:
-			request_handler m_handler;
-			boost::asio::io_service& m_io_service;
-			boost::asio::ip::tcp::acceptor m_acceptor;
-			net::ushort m_port;
-
-			boost::asio::ip::tcp::socket m_socket;
-			http::connection_manager m_manager;
-
-			void do_accept();
-		};
+		void request_handler::make_404(response& resp)
+		{
+			auto & header = resp.header();
+			header.clear();
+			header.m_status = 404;
+			header.append("content-type", "text/plain");
+			resp.content(content::from_string("File not found...\n"));
+		}
 	}
 }
-
-#endif // __HTTP_SERVER_HPP__

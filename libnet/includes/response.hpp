@@ -22,37 +22,57 @@
  * SOFTWARE.
  */
 
-#ifndef __HTTP_SERVER_HPP__
-#define __HTTP_SERVER_HPP__
+#ifndef __RESPONSE_HPP__
+#define __RESPONSE_HPP__
 
 #include <http.hpp>
-#include <http_connection.hpp>
-#include <memory>
-#include <request_handler.hpp>
+#include <boost/utility.hpp>
 
 namespace net
 {
 	namespace http
 	{
-		struct server
+		class content;
+		typedef std::shared_ptr<content> content_ptr;
+
+		class content : boost::noncopyable
 		{
-			server(boost::asio::io_service& service, net::ushort port);
+		public:
+			virtual ~content() {}
 
-			void start() { do_accept(); }
-			void stop();
+			virtual bool size_known() = 0;
+			virtual std::size_t get_size() = 0;
+			virtual const char* data() = 0;
 
-		private:
-			request_handler m_handler;
-			boost::asio::io_service& m_io_service;
-			boost::asio::ip::tcp::acceptor m_acceptor;
-			net::ushort m_port;
+			inline static content_ptr from_string(const std::string& text);
+		};
 
-			boost::asio::ip::tcp::socket m_socket;
-			http::connection_manager m_manager;
+		class string_content : public content
+		{
+			std::string m_text;
+		public:
+			string_content(const std::string& text): m_text(text) {}
+			bool size_known() override { return true; }
+			std::size_t get_size() override { return m_text.size(); }
+			const char* data() override { return m_text.c_str(); }
+		};
 
-			void do_accept();
+		inline content_ptr content::from_string(const std::string& text)
+		{
+			return std::make_shared<string_content>(text);
+		}
+
+		class response : boost::noncopyable
+		{
+			http_response m_response;
+			content_ptr m_content;
+		public:
+			http_response& header() { return m_response; }
+			content_ptr content() { return m_content; }
+			void content(content_ptr c) { m_content = c; }
+			std::vector<char> get_data();
 		};
 	}
 }
 
-#endif // __HTTP_SERVER_HPP__
+#endif // __RESPONSE_HPP__

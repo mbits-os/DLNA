@@ -57,6 +57,8 @@
     <ClCompile Include="..\..\libnet\src\http_win32.cpp" />
     <ClCompile Include="..\..\libnet\src\interface_win32.cpp" />
     <ClCompile Include="..\..\libnet\src\net_win32.cpp" />
+    <ClCompile Include="..\..\libnet\src\request_handler.cpp" />
+    <ClCompile Include="..\..\libnet\src\response.cpp" />
     <ClCompile Include="..\..\libnet\src\ssdp.cpp" />
     <ClCompile Include="..\..\libnet\src\udp.cpp" />
   </ItemGroup>
@@ -67,6 +69,8 @@
     <ClInclude Include="..\..\libnet\includes\http_server.hpp" />
     <ClInclude Include="..\..\libnet\includes\interface.hpp" />
     <ClInclude Include="..\..\libnet\includes\mime.hpp" />
+    <ClInclude Include="..\..\libnet\includes\request_handler.hpp" />
+    <ClInclude Include="..\..\libnet\includes\response.hpp" />
     <ClInclude Include="..\..\libnet\includes\ssdp.hpp" />
     <ClInclude Include="..\..\libnet\includes\types.hpp" />
     <ClInclude Include="..\..\libnet\includes\udp.hpp" />

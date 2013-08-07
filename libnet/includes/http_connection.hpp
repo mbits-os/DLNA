@@ -30,6 +30,8 @@
 #include <boost/asio.hpp>
 #include <http_parser.hpp>
 #include <http.hpp>
+#include <request_handler.hpp>
+#include <response.hpp>
 
 namespace net
 {
@@ -57,7 +59,7 @@ namespace net
 
 		struct connection : private boost::noncopyable, public std::enable_shared_from_this<connection>
 		{
-			explicit connection(boost::asio::ip::tcp::socket && socket, connection_manager& manager);
+			explicit connection(boost::asio::ip::tcp::socket && socket, connection_manager& manager, request_handler& handler);
 
 			void start() { read_some_more(); }
 			void stop() { m_socket.close(); }
@@ -69,6 +71,9 @@ namespace net
 			boost::asio::ip::tcp::socket m_socket;
 			http::header_parser<http::http_request> m_parser;
 			connection_manager& m_manager;
+			request_handler& m_handler;
+			response m_response;
+			std::vector<char> m_reply;
 			int m_pos;
 		};
 

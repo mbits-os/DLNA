@@ -50,9 +50,10 @@ namespace net
 			m_connections.clear();
 		}
 
-		connection::connection(boost::asio::ip::tcp::socket && socket, connection_manager& manager)
+		connection::connection(boost::asio::ip::tcp::socket && socket, connection_manager& manager, request_handler& handler)
 			: m_socket(std::move(socket))
 			, m_manager(manager)
+			, m_handler(handler)
 			, m_pos(0)
 		{
 		}
@@ -66,19 +67,19 @@ namespace net
 				if (!ec)
 				{
 					const char* data = m_buffer.data();
-					auto ret = m_parser.parse(data, data + bytes_transferred);
+					auto end = data + bytes_transferred;
+					auto ret = m_parser.parse(data, end);
 
 					if (ret == parser::finished)
 					{
-						// handle the request
 						auto header = m_parser.header();
-						std::cout << "[HTTP] Remote: " << net::to_string(m_socket.remote_endpoint().address()) << ":" << m_socket.remote_endpoint().port() << "\r\nREQUEST: " << header;
+						std::cout << header;
+						m_handler.handle(header, m_response);
 						send_reply();
 					}
 					else if (ret == parser::error)
 					{
-						std::cout << "[HTTP] Remote: " << net::to_string(m_socket.remote_endpoint().address()) << ":" << m_socket.remote_endpoint().port() << "\r\nERROR!\r\n";
-						//generate a 404 reply
+						m_handler.make_404(m_response);
 						send_reply();
 					}
 					else
@@ -95,9 +96,11 @@ namespace net
 		{
 			std::vector<char> v;
 			auto self(shared_from_this());
-			boost::asio::async_write(m_socket, boost::asio::buffer(v), //m_reply.to_buffers(),
+			m_reply = std::move(m_response.get_data());
+			boost::asio::async_write(m_socket, boost::asio::buffer(m_reply),
 				[this, self](boost::system::error_code ec, std::size_t)
 			{
+				std::cout.write(m_reply.data(), m_reply.size());
 				if (!ec)
 				{
 					// Initiate graceful connection closure.

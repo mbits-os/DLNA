@@ -37,6 +37,12 @@
     <ClCompile Include="..\..\libnet\src\http_parser.cpp">
       <Filter>src</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\libnet\src\request_handler.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\libnet\src\response.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\libnet\pch.h" />
@@ -65,6 +71,12 @@
       <Filter>includes</Filter>
     </ClInclude>
     <ClInclude Include="..\..\libnet\includes\http_parser.hpp">
+      <Filter>includes</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\libnet\includes\request_handler.hpp">
+      <Filter>includes</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\libnet\includes\response.hpp">
       <Filter>includes</Filter>
     </ClInclude>
   </ItemGroup>

@@ -22,37 +22,34 @@
  * SOFTWARE.
  */
 
-#ifndef __HTTP_SERVER_HPP__
-#define __HTTP_SERVER_HPP__
-
-#include <http.hpp>
-#include <http_connection.hpp>
-#include <memory>
-#include <request_handler.hpp>
+#include "pch.h"
+#include <response.hpp>
 
 namespace net
 {
 	namespace http
 	{
-		struct server
+		std::vector<char> response::get_data()
 		{
-			server(boost::asio::io_service& service, net::ushort port);
+			if (m_content)
+			{
+				if (m_content->size_known())
+					m_response.append("content-size")->out() << m_content->get_size();
+			}
+			std::ostringstream o;
+			o << m_response;
+			if (m_content)
+			{
+				if (m_content->size_known())
+					o.write(m_content->data(), m_content->get_size());
+			}
 
-			void start() { do_accept(); }
-			void stop();
-
-		private:
-			request_handler m_handler;
-			boost::asio::io_service& m_io_service;
-			boost::asio::ip::tcp::acceptor m_acceptor;
-			net::ushort m_port;
-
-			boost::asio::ip::tcp::socket m_socket;
-			http::connection_manager m_manager;
-
-			void do_accept();
-		};
+			auto str = o.str();
+			std::vector<char> out;
+			out.reserve(str.length());
+			for (auto && c : str)
+				out.push_back(c);
+			return out;
+		}
 	}
 }
-
-#endif // __HTTP_SERVER_HPP__

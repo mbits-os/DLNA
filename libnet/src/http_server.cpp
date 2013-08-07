@@ -67,7 +67,7 @@ namespace net
 
 				if (!ec)
 				{
-					m_manager.start(std::make_shared<http::connection>(std::move(m_socket), m_manager));
+					m_manager.start(std::make_shared<http::connection>(std::move(m_socket), m_manager, m_handler));
 				}
 
 				do_accept();

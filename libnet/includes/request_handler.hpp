@@ -22,37 +22,25 @@
  * SOFTWARE.
  */
 
-#ifndef __HTTP_SERVER_HPP__
-#define __HTTP_SERVER_HPP__
+#ifndef __REQUEST_HANDLER_HPP__
+#define __REQUEST_HANDLER_HPP__
 
 #include <http.hpp>
-#include <http_connection.hpp>
-#include <memory>
-#include <request_handler.hpp>
+#include <boost/utility.hpp>
 
 namespace net
 {
 	namespace http
 	{
-		struct server
+		class response;
+
+		class request_handler: boost::noncopyable
 		{
-			server(boost::asio::io_service& service, net::ushort port);
-
-			void start() { do_accept(); }
-			void stop();
-
-		private:
-			request_handler m_handler;
-			boost::asio::io_service& m_io_service;
-			boost::asio::ip::tcp::acceptor m_acceptor;
-			net::ushort m_port;
-
-			boost::asio::ip::tcp::socket m_socket;
-			http::connection_manager m_manager;
-
-			void do_accept();
+		public:
+			void handle(const http_request& req, response& resp);
+			void make_404(response& resp);
 		};
 	}
 }
 
-#endif // __HTTP_SERVER_HPP__
+#endif // __REQUEST_HANDLER_HPP__
