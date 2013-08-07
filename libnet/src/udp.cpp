@@ -40,7 +40,8 @@ namespace net
 		}
 
 		datagram_socket::datagram_socket(boost::asio::io_service& io_service, const boost::asio::ip::address& address, net::ushort port)
-			: m_io_service(io_service)
+			: m_async_close(false)
+			, m_io_service(io_service)
 			, m_endpoint(address, port)
 			, m_socket(m_io_service, m_endpoint.protocol())
 			, m_address(address)
@@ -62,6 +63,20 @@ namespace net
 		void datagram_socket::done(datagram_ptr d)
 		{
 			m_datagrams.erase(d);
+			if (m_async_close && m_datagrams.empty())
+			{
+				m_async_close = false;
+				m_socket.close();
+			}
+		}
+
+		void datagram_socket::async_close()
+		{
+			m_async_close = false;
+			if (m_datagrams.empty())
+				m_socket.close();
+			else
+				m_async_close = true;
 		}
 	}
 }

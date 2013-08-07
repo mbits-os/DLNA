@@ -57,15 +57,7 @@ namespace net
 
 		struct notifier : udp::datagram_socket
 		{
-			notifier(boost::asio::io_service& io_service, long seconds, const std::string& usn, net::ushort port)
-				: udp::datagram_socket(io_service, ipv4_multicast(), PORT)
-				, m_timer(io_service, boost::posix_time::seconds(1))
-				, m_interval(seconds)
-				, m_local(net::iface::get_default_interface())
-				, m_usn(usn)
-				, m_port(port)
-			{
-			}
+			notifier(boost::asio::io_service& io_service, long seconds, const std::string& usn, net::ushort port);
 
 			void join_group();
 			void leave_group();
@@ -95,6 +87,7 @@ namespace net
 				m_timer.cancel();
 				if (is_valid())
 					notify(BYEBYE);
+				async_close();
 			}
 
 			template <typename Buffer, typename ListenHandler>
@@ -145,7 +138,7 @@ namespace net
 		struct server
 		{
 			server(boost::asio::io_service& service, net::ushort port)
-				: m_usn(net::create_uuid())
+				: m_usn("uuid:" + net::create_uuid())
 				, m_http(service, port)
 				, m_notifier(service, INTERVAL, m_usn, port)
 				, m_listener(m_notifier)
@@ -157,14 +150,14 @@ namespace net
 			void start()
 			{
 				m_http.start();
-				m_listener.start();
 				m_notifier.start();
+				m_listener.start();
 			}
 
 			void stop()
 			{
-				m_notifier.stop();
 				m_listener.stop();
+				m_notifier.stop();
 				m_http.stop();
 			}
 

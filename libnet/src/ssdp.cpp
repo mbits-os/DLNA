@@ -40,6 +40,15 @@ namespace net
 			return multicast_address;
 		}
 
+		notifier::notifier(boost::asio::io_service& io_service, long seconds, const std::string& usn, net::ushort port)
+			: udp::datagram_socket(io_service, ipv4_multicast(), PORT)
+			, m_timer(io_service, boost::posix_time::seconds(1))
+			, m_interval(seconds)
+			, m_local(net::iface::get_default_interface())
+			, m_usn(usn)
+			, m_port(port)
+		{
+		}
 		void notifier::join_group()
 		{
 			m_socket.set_option(boost::asio::ip::udp::socket::reuse_address(true));
@@ -49,7 +58,6 @@ namespace net
 		void notifier::leave_group()
 		{
 			m_socket.set_option(boost::asio::ip::multicast::leave_group(m_endpoint.address()));
-			m_socket.cancel();
 		}
 
 		std::string notifier::build_msg(const std::string& nt, notification_type nts) const

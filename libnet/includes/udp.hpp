@@ -40,6 +40,7 @@ namespace net
 		class datagram_socket
 		{
 		protected:
+			bool                           m_async_close;
 			boost::asio::io_service&       m_io_service;
 			boost::asio::ip::udp::endpoint m_endpoint;
 			boost::asio::ip::udp::socket   m_socket;
@@ -51,6 +52,7 @@ namespace net
 			void post(datagram_ptr d);
 			void post(std::string payload);
 			void done(datagram_ptr d);
+			void async_close();
 
 			boost::asio::io_service& service() { return m_io_service; }
 		};
