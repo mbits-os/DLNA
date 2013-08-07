@@ -3,9 +3,9 @@
   <ImportGroup Label="PropertySheets" />
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup>
-    <_PropertySheetDisplayName>Boost 1.45 includes/libraries</_PropertySheetDisplayName>
-    <LibraryPath>f:\code\boost-trunk\stage\lib;$(LibraryPath)</LibraryPath>
-    <IncludePath>F:\code\boost-trunk;$(IncludePath)</IncludePath>
+    <_PropertySheetDisplayName>Boost includes/libraries</_PropertySheetDisplayName>
+    <LibraryPath>$(BOOST_HOME)\stage\lib;$(LibraryPath)</LibraryPath>
+    <IncludePath>$(BOOST_HOME);$(IncludePath)</IncludePath>
   </PropertyGroup>
   <ItemDefinitionGroup>
     <ClCompile />
