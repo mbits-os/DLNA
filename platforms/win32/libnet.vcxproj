@@ -52,6 +52,7 @@
       <PrecompiledHeader>Create</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="..\..\libnet\src\http_connection.cpp" />
+    <ClCompile Include="..\..\libnet\src\http_parser.cpp" />
     <ClCompile Include="..\..\libnet\src\http_server.cpp" />
     <ClCompile Include="..\..\libnet\src\http_win32.cpp" />
     <ClCompile Include="..\..\libnet\src\interface_win32.cpp" />
@@ -62,6 +63,7 @@
   <ItemGroup>
     <ClInclude Include="..\..\libnet\includes\http.hpp" />
     <ClInclude Include="..\..\libnet\includes\http_connection.hpp" />
+    <ClInclude Include="..\..\libnet\includes\http_parser.hpp" />
     <ClInclude Include="..\..\libnet\includes\http_server.hpp" />
     <ClInclude Include="..\..\libnet\includes\interface.hpp" />
     <ClInclude Include="..\..\libnet\includes\mime.hpp" />

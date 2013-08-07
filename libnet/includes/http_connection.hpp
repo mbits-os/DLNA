@@ -28,6 +28,8 @@
 #include <memory>
 #include <set>
 #include <boost/asio.hpp>
+#include <http_parser.hpp>
+#include <http.hpp>
 
 namespace net
 {
@@ -61,9 +63,11 @@ namespace net
 			void stop() { m_socket.close(); }
 		private:
 			void read_some_more();
+			void send_reply();
 
 			std::array<char, 8192> m_buffer;
 			boost::asio::ip::tcp::socket m_socket;
+			http::header_parser<http::http_request> m_parser;
 			connection_manager& m_manager;
 			int m_pos;
 		};

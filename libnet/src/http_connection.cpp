@@ -25,6 +25,7 @@
 #include "pch.h"
 #include <http_connection.hpp>
 #include <types.hpp>
+#include <iostream>
 
 namespace net
 {
@@ -64,31 +65,47 @@ namespace net
 			{
 				if (!ec)
 				{
-					std::cout << "Remote: " << net::to_string(m_socket.remote_endpoint().address()) << ":" << m_socket.remote_endpoint().port() << "\r\n";
-					bool _continue = true;
+					const char* data = m_buffer.data();
+					auto ret = m_parser.parse(data, data + bytes_transferred);
 
-					auto data = m_buffer.data();
-					for (std::size_t i = 0; i < bytes_transferred; ++i)
+					if (ret == parser::finished)
 					{
-						::putchar((unsigned char) *data);
-						if (*data == '\r' || (m_pos && (*data == '\n')))
-							m_pos++;
-						else
-							m_pos = 0;
-						if (m_pos == 4)
-						{
-							boost::system::error_code ignored_ec;
-							m_socket.shutdown(boost::asio::ip::tcp::socket::shutdown_both, ignored_ec);
-							m_manager.stop(self);
-							_continue = false;
-						}
-						data++;
+						// handle the request
+						auto header = m_parser.header();
+						std::cout << "[HTTP] Remote: " << net::to_string(m_socket.remote_endpoint().address()) << ":" << m_socket.remote_endpoint().port() << "\r\nREQUEST: " << header;
+						send_reply();
 					}
-
-					if (_continue)
+					else if (ret == parser::error)
+					{
+						std::cout << "[HTTP] Remote: " << net::to_string(m_socket.remote_endpoint().address()) << ":" << m_socket.remote_endpoint().port() << "\r\nERROR!\r\n";
+						//generate a 404 reply
+						send_reply();
+					}
+					else
 						read_some_more();
 				}
 				else if (ec != boost::asio::error::operation_aborted)
+				{
+					m_manager.stop(shared_from_this());
+				}
+			});
+		}
+
+		void connection::send_reply()
+		{
+			std::vector<char> v;
+			auto self(shared_from_this());
+			boost::asio::async_write(m_socket, boost::asio::buffer(v), //m_reply.to_buffers(),
+				[this, self](boost::system::error_code ec, std::size_t)
+			{
+				if (!ec)
+				{
+					// Initiate graceful connection closure.
+					boost::system::error_code ignored_ec;
+					m_socket.shutdown(boost::asio::ip::tcp::socket::shutdown_both, ignored_ec);
+				}
+
+				if (ec != boost::asio::error::operation_aborted)
 				{
 					m_manager.stop(shared_from_this());
 				}
