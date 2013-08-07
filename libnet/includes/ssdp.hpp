@@ -64,7 +64,11 @@ namespace net
 				, m_local(net::iface::get_default_interface())
 				, m_usn(usn)
 				, m_port(port)
-			{}
+			{
+			}
+
+			void join_group();
+			void leave_group();
 
 			void notify(notification_type nts)
 			{
@@ -91,6 +95,12 @@ namespace net
 				m_timer.cancel();
 				if (is_valid())
 					notify(BYEBYE);
+			}
+
+			template <typename Buffer, typename ListenHandler>
+			void listen_from(Buffer& buffer, boost::asio::ip::udp::endpoint& endpoint, ListenHandler handler)
+			{
+				m_socket.async_receive_from(buffer, endpoint, handler);
 			}
 		private:
 			boost::asio::deadline_timer m_timer;
@@ -119,12 +129,26 @@ namespace net
 			}
 		};
 
+		struct listener
+		{
+			listener(notifier& socket);
+			void start();
+			void stop();
+		private:
+			notifier& m_notifier;
+			boost::asio::ip::udp::endpoint m_remote_endpoint;
+			std::array<char, 1024> m_buffer;
+
+			void do_accept();
+		};
+
 		struct server
 		{
 			server(boost::asio::io_service& service, net::ushort port)
 				: m_usn(net::create_uuid())
 				, m_http(service, port)
 				, m_notifier(service, INTERVAL, m_usn, port)
+				, m_listener(m_notifier)
 			{
 			}
 
@@ -133,18 +157,22 @@ namespace net
 			void start()
 			{
 				m_http.start();
+				m_listener.start();
 				m_notifier.start();
 			}
 
 			void stop()
 			{
 				m_notifier.stop();
+				m_listener.stop();
 				m_http.stop();
 			}
+
 		private:
-			std::string m_usn;
-			net::http::server m_http;
-			net::ssdp::notifier m_notifier;
+			std::string  m_usn;
+			http::server m_http;
+			notifier     m_notifier;
+			listener     m_listener;
 		};
 	}
 }

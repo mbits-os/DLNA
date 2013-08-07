@@ -24,6 +24,7 @@
 
 #include "pch.h"
 #include <ssdp.hpp>
+#include <thread>
 
 namespace net
 {
@@ -37,6 +38,18 @@ namespace net
 			// 239.255.255.250
 			static address multicast_address { address_v4 { 0xEFFFFFFA } };
 			return multicast_address;
+		}
+
+		void notifier::join_group()
+		{
+			m_socket.set_option(boost::asio::ip::udp::socket::reuse_address(true));
+			m_socket.bind(boost::asio::ip::udp::endpoint(net::iface::get_default_interface(), PORT));
+			m_socket.set_option(boost::asio::ip::multicast::join_group(m_endpoint.address()));
+		}
+		void notifier::leave_group()
+		{
+			m_socket.set_option(boost::asio::ip::multicast::leave_group(m_endpoint.address()));
+			m_socket.cancel();
 		}
 
 		std::string notifier::build_msg(const std::string& nt, notification_type nts) const
@@ -59,6 +72,46 @@ namespace net
 			std::ostringstream os;
 			os << req;
 			return os.str();
+		}
+
+		listener::listener(notifier& socket)
+			: m_notifier(socket)
+		{
+		}
+
+		void listener::start()
+		{
+			m_notifier.join_group();
+			do_accept();
+		}
+
+		void listener::stop()
+		{
+			m_notifier.leave_group();
+		}
+
+		void listener::do_accept()
+		{
+			m_notifier.listen_from(boost::asio::buffer(m_buffer), m_remote_endpoint,
+				[&](boost::system::error_code ec, size_t bytes_recvd)
+			{
+				if (!ec)
+				{
+					try
+					{
+						std::cout << "[M-SEARCH] Remote: " << to_string(m_remote_endpoint.address()) << ":" << m_remote_endpoint.port() << "\r\n";
+					}
+					catch (...)
+					{
+						std::cout << "<error while fetching remote>\r\n";
+					}
+
+					std::cout.write(m_buffer.data(), bytes_recvd);
+					std::cout << std::endl;
+
+					do_accept();
+				}
+			});
 		}
 	}
 }
