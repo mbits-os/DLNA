@@ -36,7 +36,7 @@ namespace net
 	{
 		struct server
 		{
-			server(boost::asio::io_service& service, net::ushort port);
+			server(boost::asio::io_service& service, const std::string& usn, net::ushort port);
 
 			void start() { do_accept(); }
 			void stop();

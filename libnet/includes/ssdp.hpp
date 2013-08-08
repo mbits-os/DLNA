@@ -139,7 +139,7 @@ namespace net
 		{
 			server(boost::asio::io_service& service, net::ushort port)
 				: m_usn("uuid:" + net::create_uuid())
-				, m_http(service, port)
+				, m_http(service, m_usn, port)
 				, m_notifier(service, INTERVAL, m_usn, port)
 				, m_listener(m_notifier)
 			{

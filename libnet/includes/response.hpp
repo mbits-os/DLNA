@@ -81,14 +81,14 @@ namespace net
 		public:
 			file_content(const fs::path& path)
 				: m_size(0)
-				, m_stream(path)
+				, m_stream(path, std::ios::binary | std::ios::in)
 			{
 				auto size = fs::file_size(path);
 
 				// clip instead of overflow
 				decltype(size) max = std::numeric_limits<std::size_t>::max();
 				if (size > max) size = max;
-				m_size = (std::size_t)max;
+				m_size = (std::size_t)size;
 			}
 			bool size_known() override { return true; }
 			std::size_t get_size() override { return m_size; }
@@ -121,7 +121,6 @@ namespace net
 			response& m_data;
 			bool m_chunked;
 			status m_status;
-			std::vector<char> m_current_buffer;
 
 			response_buffer& operator = (response_buffer && rhs);
 			response_buffer& operator = (const response_buffer & rhs);

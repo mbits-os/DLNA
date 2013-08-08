@@ -45,7 +45,7 @@ namespace net
 				std::ostringstream o;
 				o << m_data.header();
 				auto str = o.str();
-				m_current_buffer.assign(str.begin(), str.end());
+				out_buffer.assign(str.begin(), str.end());
 				m_status = chunks;
 				return true;
 			}

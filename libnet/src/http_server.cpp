@@ -29,8 +29,9 @@ namespace net
 {
 	namespace http
 	{
-		server::server(boost::asio::io_service& service, net::ushort port)
+		server::server(boost::asio::io_service& service, const std::string& usn, net::ushort port)
 			: m_port(port)
+			, m_handler(usn)
 			, m_io_service(service)
 			, m_acceptor(service)
 			, m_socket(service)

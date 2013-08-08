@@ -102,6 +102,11 @@ namespace net
 			http_request(const std::string& method, const std::string& resource, protocol proto = http_1_1)
 				: http_request_line(method, resource, proto)
 			{}
+			std::string resource() const
+			{
+				//TODO: decode and normalize
+				return m_resource;
+			}
 		};
 
 		inline std::ostream& operator << (std::ostream& o, const http_request& resp)

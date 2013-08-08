@@ -27,6 +27,9 @@
 
 #include <http.hpp>
 #include <boost/utility.hpp>
+#include <string>
+#include <vector>
+#include <boost/filesystem.hpp>
 
 namespace net
 {
@@ -34,9 +37,14 @@ namespace net
 	{
 		class response;
 
+		typedef std::vector<std::pair<std::string, std::string>> template_vars;
 		class request_handler: boost::noncopyable
 		{
+			template_vars m_vars;
+			void make_templated(const char* tmplt, const char* content_type, response& resp);
+			void make_file(const boost::filesystem::path& path, const char* content_type, response& resp);
 		public:
+			request_handler(const std::string& usn);
 			void handle(const http_request& req, response& resp);
 			void make_404(response& resp);
 		};
