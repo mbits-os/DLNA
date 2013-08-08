@@ -73,7 +73,31 @@ namespace net
 					if (ret == parser::finished)
 					{
 						auto header = m_parser.header();
-						std::cout << header;
+						auto ua = header.find("user-agent");
+						std::ostringstream o;
+						o << (http_request_line&) header;
+						if (ua != header.end())
+						{
+							o << "   [ " << ua->value();
+							auto pui = header.find("x-av-physical-unit-info");
+							auto ci = header.find("x-av-client-info");
+							if (pui != header.end() || ci != header.end())
+							{
+								o << " | ";
+								if (pui != header.end())
+								{
+									o << pui->value();
+									if (ci != header.end())
+										o << " | ";
+								}
+								if (ci != header.end())
+								{
+									o << ci->value();
+								}
+							}
+							o << " ]\n";
+						}
+						std::cout << o.str();
 						m_handler.handle(header, m_response);
 						send_reply();
 					}
