@@ -29,19 +29,33 @@ namespace net
 {
 	namespace http
 	{
+		static const char CRLF [] = "\r\n";
+
 		std::vector<char> response::get_data()
 		{
 			if (m_content)
 			{
 				if (m_content->size_known())
 					m_response.append("content-size")->out() << m_content->get_size();
+				else
+					m_response.append("transfer-encoding", "chunked");
 			}
 			std::ostringstream o;
 			o << m_response;
 			if (m_content)
 			{
-				if (m_content->size_known())
-					o.write(m_content->data(), m_content->get_size());
+				bool chunked = !m_content->size_known();
+				char buffer[8192];
+				size_t chunk_size;
+				do
+				{
+					chunk_size = m_content->read(buffer);
+					if (chunked)
+						o << std::hex << chunk_size << std::dec << CRLF;
+					o.write(buffer, chunk_size);
+					if (chunked)
+						o << CRLF;
+				} while (chunk_size > 0);
 			}
 
 			auto str = o.str();
