@@ -77,10 +77,18 @@ namespace net
 						{
 							auto ua = header.find("user-agent");
 							std::ostringstream o;
-							o << (http_request_line&) header;
+							o << header.m_method << " ";
+							if (header.m_resource != "*")
+							{
+								auto it = header.find("host");
+								if (it != header.end())
+									o << it->value();
+							}
+							o << header.m_resource << " " << header.m_protocol;
+							o << " [ " << to_string(m_socket.remote_endpoint().address()) << ":" << m_socket.remote_endpoint().port() << " ]";
 							if (ua != header.end())
 							{
-								o << "   [ " << ua->value();
+								o << " [ " << ua->value();
 								auto pui = header.find("x-av-physical-unit-info");
 								auto ci = header.find("x-av-client-info");
 								if (pui != header.end() || ci != header.end())
@@ -97,8 +105,9 @@ namespace net
 										o << ci->value();
 									}
 								}
-								o << " ]\n";
+								o << " ]";
 							}
+							o << "\n";
 							std::cout << o.str();
 						}
 						else
