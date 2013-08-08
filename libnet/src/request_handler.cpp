@@ -198,9 +198,77 @@ namespace net
 			m_vars.emplace_back("port", "6001");
 			m_vars.emplace_back("uuid", usn);
 		}
+
+		static void print_debug(const http_request& header, const std::string& SOAPAction)
+		{
+			std::ostringstream o;
+			o << header.m_method << " ";
+			if (header.m_resource != "*")
+			{
+				auto it = header.find("host");
+				if (it != header.end())
+					o << it->value();
+			}
+			o << header.m_resource << " " << header.m_protocol;
+			o << "\n  [ " << to_string(header.m_remote_address) << ":" << header.m_remote_port << " ]";
+
+			auto ua = header.find("user-agent");
+			if (ua != header.end())
+			{
+				o << " [ " << ua->value();
+				auto pui = header.find("x-av-physical-unit-info");
+				auto ci = header.find("x-av-client-info");
+				if (pui != header.end() || ci != header.end())
+				{
+					o << " | ";
+					if (pui != header.end())
+					{
+						o << pui->value();
+						if (ci != header.end())
+							o << " | ";
+					}
+					if (ci != header.end())
+					{
+						o << ci->value();
+					}
+				}
+				o << " ]";
+			}
+			o << "\n";
+
+			if (!SOAPAction.empty())
+				o << "  [ " << SOAPAction << " ]\n";
+
+			if (header.m_method == "POST")
+			{
+				auto data = header.request_data();
+				if (data && data->content_length())
+				{
+					o << "\n";
+					auto rest = data->content_length();
+					char buffer[1024];
+					while (rest)
+					{
+						auto chunk = sizeof(buffer);
+						if (chunk > rest)
+							chunk = rest;
+						rest -= chunk;
+						auto read = data->read(buffer, chunk);
+						o.write(buffer, read);
+					}
+					o << "\n\n";
+				}
+			}
+
+			std::cout << o.str();
+		}
+
 		void request_handler::handle(const http_request& req, response& resp)
 		{
+			auto SOAPAction = req.SOAPAction();
 			auto res = req.resource();
+
+			print_debug(req, SOAPAction);
 
 			// THIS should be mapping
 			if (res == "/config/device.xml")

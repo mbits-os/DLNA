@@ -102,8 +102,8 @@ namespace net
 				: m_name(tolower(name))
 				, m_value(value)
 			{}
-			bool operator == (const std::string& name) { return m_name == tolower(name); }
-			bool operator != (const std::string& name) { return !(*this == name); }
+			bool operator == (const std::string& name) const { return m_name == tolower(name); }
+			bool operator != (const std::string& name) const { return !(*this == name); }
 
 			const std::string& name() const { return m_name; }
 			const std::string& value() const { return m_value; }
@@ -132,7 +132,32 @@ namespace net
 			const_iterator begin() const { return m_headers.begin(); }
 			const_iterator end() const { return m_headers.end(); }
 
+			template <typename T>
+			T find_as(const std::string& name, const T& def_value = T()) const
+			{
+				auto it = find(name);
+				if (it == end())
+					return def_value;
+
+				T ret;
+				std::istringstream i(it->value());
+				i >> ret;
+				return ret;
+			}
+
 			iterator find(const std::string& name)
+			{
+				auto c = begin(), e = end();
+				while (c != e)
+				{
+					if (*c == name)
+						break;
+					++c;
+				}
+				return c;
+			}
+
+			const_iterator find(const std::string& name) const
 			{
 				auto c = begin(), e = end();
 				while (c != e)

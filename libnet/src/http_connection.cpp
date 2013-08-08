@@ -72,79 +72,14 @@ namespace net
 
 					if (ret == parser::finished)
 					{
-						auto header = m_parser.header();
-						if (header.m_method != "POST")
-						{
-							auto ua = header.find("user-agent");
-							std::ostringstream o;
-							o << header.m_method << " ";
-							if (header.m_resource != "*")
-							{
-								auto it = header.find("host");
-								if (it != header.end())
-									o << it->value();
-							}
-							o << header.m_resource << " " << header.m_protocol;
-							o << " [ " << to_string(m_socket.remote_endpoint().address()) << ":" << m_socket.remote_endpoint().port() << " ]";
-							if (ua != header.end())
-							{
-								o << " [ " << ua->value();
-								auto pui = header.find("x-av-physical-unit-info");
-								auto ci = header.find("x-av-client-info");
-								if (pui != header.end() || ci != header.end())
-								{
-									o << " | ";
-									if (pui != header.end())
-									{
-										o << pui->value();
-										if (ci != header.end())
-											o << " | ";
-									}
-									if (ci != header.end())
-									{
-										o << ci->value();
-									}
-								}
-								o << " ]";
-							}
-							o << "\n";
-							std::cout << o.str();
-						}
-						else
-						{
-							std::cout << header;
+						auto request = m_parser.header();
 
-							auto len_it = header.find("content-length");
-							if (len_it != header.end())
-							{
-								size_t len;
-								std::istringstream in(len_it->value());
-								in >> len;
+						auto content_length = request.find_as<size_t>("content-length");
 
-								auto seen = end - data;
-								auto rest = len - seen;
-								std::cout << len << " bytes, " << seen << " seen, " << rest << " to go\n";
-								std::cout.write(data, seen);
+						request.remote_endpoint(m_socket.remote_endpoint());
+						request.request_data(make_request_data(m_socket, content_length, data, end - data));
 
-								while (rest)
-								{
-									auto chunk = m_buffer.size();
-									if (chunk > rest)
-										chunk = rest;
-									rest -= chunk;
-									boost::system::error_code sub_ec;
-									auto read = m_socket.read_some(boost::asio::buffer(m_buffer, chunk), sub_ec);
-									if (sub_ec)
-									{
-										m_manager.stop(shared_from_this());
-										return;
-									}
-									std::cout.write(m_buffer.data(), read);
-								}
-								std::cout << "\n";
-							}
-						}
-						m_handler.handle(header, m_response);
+						m_handler.handle(request, m_response);
 						send_reply();
 					}
 					else if (ret == parser::error)

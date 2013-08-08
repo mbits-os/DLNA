@@ -96,22 +96,119 @@ namespace net
 			return o << first_line.m_method << " " << first_line.m_resource << " " << first_line.m_protocol << "\r\n";
 		}
 
+		struct request_data
+		{
+			virtual ~request_data() {}
+			virtual size_t content_length() const = 0;
+			virtual size_t read(void* dest, size_t size) = 0;
+		};
+
+		typedef std::shared_ptr<request_data> request_data_ptr;
+
 		struct http_request : http_request_line, mime::headers
 		{
-			http_request() {}
+			boost::asio::ip::address m_remote_address;
+			net::ushort m_remote_port;
+			request_data_ptr m_request_data;
+
+			http_request() : m_remote_port(0) {}
 			http_request(const std::string& method, const std::string& resource, protocol proto = http_1_1)
 				: http_request_line(method, resource, proto)
+				, m_remote_port(0)
 			{}
+
+			template <typename endpoint_type>
+			void remote_endpoint(const endpoint_type& endpoint)
+			{
+				m_remote_address = endpoint.address();
+				m_remote_port = endpoint.port();
+			}
+
+			void request_data(request_data_ptr ptr) { m_request_data = ptr; }
+			request_data_ptr request_data() const { return m_request_data; }
+
 			std::string resource() const
 			{
 				//TODO: decode and normalize
 				return m_resource;
+			}
+
+			std::string SOAPAction() const
+			{
+				auto it = find("soapaction");
+				if (it == end())
+					return std::string();
+				auto tmp = it->value();
+				if (!tmp.empty() && *tmp.begin() == '"' && *tmp.rbegin() == '"')
+					tmp = tmp.substr(1, tmp.length() - 2);
+				return tmp;
 			}
 		};
 
 		inline std::ostream& operator << (std::ostream& o, const http_request& resp)
 		{
 			return o << (const http_request_line&) resp << (const mime::headers&)resp << "\r\n";
+		}
+
+		template <typename socket_type>
+		struct request_data_impl : request_data
+		{
+			socket_type& m_socket;
+			size_t m_content_length;
+			struct Seen
+			{
+				const char* m_data;
+				size_t m_size;
+				Seen(const char* data, size_t size)
+					: m_data(data)
+					, m_size(size)
+				{}
+				operator bool () const { return m_data != nullptr; }
+				size_t read(void* dest, size_t size)
+				{
+					auto rest = m_size;
+					if (rest > size)
+						rest = size;
+
+					memcpy(dest, m_data, rest);
+					m_size -= rest;
+					m_data += rest;
+					if (!m_size)
+						m_data = nullptr;
+
+					return rest;
+				}
+			} m_first_chunk;
+
+			request_data_impl(socket_type& socket, size_t content_length, const char* data, size_t size)
+				: m_socket(socket)
+				, m_content_length(content_length)
+				, m_first_chunk(data, size)
+			{
+			}
+			size_t content_length() const override { return m_content_length; }
+			size_t read(void* dest, size_t size) override
+			{
+				size_t read = 0;
+				if (m_first_chunk)
+				{
+					read = m_first_chunk.read(dest, size);
+					(char*&) dest += read;
+					size -= read;
+				}
+				if (size)
+				{
+					boost::system::error_code ignore_ec;
+					read += m_socket.read_some(boost::asio::buffer(dest, size), ignore_ec);
+				}
+				return read;
+			}
+		};
+
+		template <typename socket_type>
+		request_data_ptr make_request_data(socket_type& socket, size_t content_length, const char* data, size_t size)
+		{
+			return std::make_shared<request_data_impl<socket_type>>(socket, content_length, size ? data : nullptr, size);
 		}
 
 		struct http_response_line
