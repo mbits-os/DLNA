@@ -205,6 +205,10 @@ namespace net
 			// THIS should be mapping
 			if (res == "/config/device.xml")
 				return make_templated(device::xml, "text/xml", resp);
+			if (res == "/config/directory.xml")
+				return make_file(boost::filesystem::path("data") / res, "text/xml", resp);
+			if (res == "/config/manager.xml")
+				return make_file(boost::filesystem::path("data") / res, "text/xml", resp);
 			if (res == "/images/icon-256.png")
 				return make_file(boost::filesystem::path("data") / res, "image/png", resp);
 			make_404(resp);
