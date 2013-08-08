@@ -116,6 +116,7 @@ namespace net
 						auto && header = parser.header();
 						if (header.m_method == "M-SEARCH")
 						{
+							bool printed = false;
 							auto st_it = header.find("st");
 							if (st_it != header.end())
 							{
@@ -126,7 +127,23 @@ namespace net
 									st == m_notifier.usn())
 								{
 									std::cout << "[Listener] Remote: " << to_string(m_remote_endpoint.address()) << ":" << m_remote_endpoint.port() << "\r\nREQUEST\r\n" << header;
+									printed = true;
 								}
+							}
+
+							if (!printed)
+							{
+								std::ostringstream o;
+								o << "[IGNORING] " << header.m_method << " ";
+								if (header.m_resource != "*")
+								{
+									auto it = header.find("host");
+									if (it != header.end())
+										o << it->value();
+								}
+								o << header.m_resource << " " << header.m_protocol;
+								o << " [ " << to_string(m_remote_endpoint.address()) << ":" << m_remote_endpoint.port() << " ]\n";
+								std::cout << o.str();
 							}
 						}
 					}
