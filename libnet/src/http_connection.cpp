@@ -92,27 +92,38 @@ namespace net
 			});
 		}
 
-		void connection::send_reply()
+		void connection::continue_sending(connection_ptr self, response_buffer buffer, boost::system::error_code ec, std::size_t)
 		{
-			std::vector<char> v;
-			auto self(shared_from_this());
-			m_reply = std::move(m_response.get_data());
-			boost::asio::async_write(m_socket, boost::asio::buffer(m_reply),
-				[this, self](boost::system::error_code ec, std::size_t)
+			if (!ec)
 			{
-				std::cout.write(m_reply.data(), m_reply.size());
-				if (!ec)
+				if (buffer.advance(self->m_response_chunk))
+				{
+					boost::asio::async_write(
+						self->m_socket, boost::asio::buffer(self->m_response_chunk),
+						[self, buffer](boost::system::error_code ec, std::size_t size)
+					{
+						continue_sending(self, buffer, ec, size);
+					});
+					return;
+				}
+				else
 				{
 					// Initiate graceful connection closure.
 					boost::system::error_code ignored_ec;
-					m_socket.shutdown(boost::asio::ip::tcp::socket::shutdown_both, ignored_ec);
+					self->m_socket.shutdown(boost::asio::ip::tcp::socket::shutdown_both, ignored_ec);
 				}
+			}
 
-				if (ec != boost::asio::error::operation_aborted)
-				{
-					m_manager.stop(shared_from_this());
-				}
-			});
+			if (ec != boost::asio::error::operation_aborted)
+			{
+				self->m_manager.stop(self->shared_from_this());
+			}
+		}
+
+		void connection::send_reply()
+		{
+			auto self(shared_from_this());
+			continue_sending(self, m_response.get_data(), boost::system::error_code(), 0);
 		}
 	}
 }

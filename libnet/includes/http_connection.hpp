@@ -66,6 +66,7 @@ namespace net
 		private:
 			void read_some_more();
 			void send_reply();
+			static void continue_sending(connection_ptr self, response_buffer buffer, boost::system::error_code ec, std::size_t);
 
 			std::array<char, 8192> m_buffer;
 			boost::asio::ip::tcp::socket m_socket;
@@ -73,7 +74,7 @@ namespace net
 			connection_manager& m_manager;
 			request_handler& m_handler;
 			response m_response;
-			std::vector<char> m_reply;
+			std::vector<char> m_response_chunk;
 			int m_pos;
 		};
 

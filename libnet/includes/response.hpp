@@ -107,6 +107,31 @@ namespace net
 			return std::make_shared<file_content>(path);
 		}
 
+		class response;
+
+		class response_buffer
+		{
+			enum status
+			{
+				header,
+				chunks,
+				last_chunk,
+				invalid
+			};
+			response& m_data;
+			bool m_chunked;
+			status m_status;
+			std::vector<char> m_current_buffer;
+
+			response_buffer& operator = (response_buffer && rhs);
+			response_buffer& operator = (const response_buffer & rhs);
+
+		public:
+			explicit response_buffer(response& data);
+
+			bool advance(std::vector<char>& buffer);
+		};
+
 		class response : boost::noncopyable
 		{
 			http_response m_response;
@@ -115,7 +140,7 @@ namespace net
 			http_response& header() { return m_response; }
 			content_ptr content() { return m_content; }
 			void content(content_ptr c) { m_content = c; }
-			std::vector<char> get_data();
+			response_buffer get_data();
 		};
 	}
 }

@@ -31,39 +31,67 @@ namespace net
 	{
 		static const char CRLF [] = "\r\n";
 
-		std::vector<char> response::get_data()
+		response_buffer::response_buffer(response& data)
+			: m_data(data)
+			, m_chunked(!data.content()->size_known())
+			, m_status(header)
+		{
+		}
+
+		bool response_buffer::advance(std::vector<char>& out_buffer)
+		{
+			if (m_status == header)
+			{
+				std::ostringstream o;
+				o << m_data.header();
+				auto str = o.str();
+				m_current_buffer.assign(str.begin(), str.end());
+				m_status = chunks;
+				return true;
+			}
+
+			if (m_status == chunks)
+			{
+				char buffer[8192];
+				if (m_chunked)
+				{
+					std::ostringstream o;
+					auto chunk_size = m_data.content()->read(buffer);
+					o << std::hex << chunk_size << std::dec << CRLF;
+					o.write(buffer, chunk_size);
+					o << CRLF;
+					auto str = o.str();
+					out_buffer.assign(str.begin(), str.end());
+
+					if (chunk_size == 0)
+						m_status = last_chunk;
+				}
+				else
+				{
+					auto chunk_size = m_data.content()->read(buffer);
+					out_buffer.assign(buffer, chunk_size + buffer);
+					if (chunk_size == 0)
+						m_status = invalid;
+				}
+				return m_status != invalid;
+			}
+
+			if (m_status == last_chunk)
+				m_status = invalid;
+
+			return false;
+		}
+
+		response_buffer response::get_data()
 		{
 			if (m_content)
 			{
 				if (m_content->size_known())
 					m_response.append("content-size")->out() << m_content->get_size();
 				else
-					m_response.append("transfer-encoding", "chunked");
+					m_response.append("transfer-encoding")->out() << "chunked";
 			}
-			std::ostringstream o;
-			o << m_response;
-			if (m_content)
-			{
-				bool chunked = !m_content->size_known();
-				char buffer[8192];
-				size_t chunk_size;
-				do
-				{
-					chunk_size = m_content->read(buffer);
-					if (chunked)
-						o << std::hex << chunk_size << std::dec << CRLF;
-					o.write(buffer, chunk_size);
-					if (chunked)
-						o << CRLF;
-				} while (chunk_size > 0);
-			}
-
-			auto str = o.str();
-			std::vector<char> out;
-			out.reserve(str.length());
-			for (auto && c : str)
-				out.push_back(c);
-			return out;
+			return response_buffer(*this);
 		}
 	}
 }
