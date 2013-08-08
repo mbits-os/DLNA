@@ -105,6 +105,15 @@ namespace net
 
 		typedef std::shared_ptr<request_data> request_data_ptr;
 
+		enum class http_method
+		{
+			other,
+			get,
+			head,
+			post,
+			m_search,
+			notify
+		};
 		struct http_request : http_request_line, mime::headers
 		{
 			boost::asio::ip::address m_remote_address;
@@ -127,10 +136,21 @@ namespace net
 			void request_data(request_data_ptr ptr) { m_request_data = ptr; }
 			request_data_ptr request_data() const { return m_request_data; }
 
-			std::string resource() const
+			boost::filesystem::path resource() const
 			{
 				//TODO: decode and normalize
 				return m_resource;
+			}
+
+			http_method method() const
+			{
+				if (m_method == "GET")      return http_method::get;
+				if (m_method == "HEAD")     return http_method::head;
+				if (m_method == "POST")     return http_method::post;
+				if (m_method == "M-SEARCH") return http_method::m_search;
+				if (m_method == "NOTIFY")   return http_method::notify;
+
+				return http_method::other;
 			}
 
 			std::string SOAPAction() const

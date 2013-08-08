@@ -42,7 +42,10 @@ namespace net
 		{
 			template_vars m_vars;
 			void make_templated(const char* tmplt, const char* content_type, response& resp);
-			void make_file(const boost::filesystem::path& path, const char* content_type, response& resp);
+			void make_file(const boost::filesystem::path& path, response& resp);
+
+			void ContentDirectory_GetSystemUpdateID(const http_request& req, response& resp);
+			void ContentDirectory_Browse(const http_request& req, response& resp);
 		public:
 			request_handler(const std::string& usn);
 			void handle(const http_request& req, response& resp);

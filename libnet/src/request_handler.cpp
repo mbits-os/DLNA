@@ -263,22 +263,99 @@ namespace net
 			std::cout << o.str();
 		}
 
+		std::pair<fs::path, fs::path> pop(const fs::path& p)
+		{
+			if (p.empty())
+				return std::make_pair(p, p);
+			auto it = p.begin();
+			auto root = *it++;
+			fs::path rest;
+			while (it != p.end())
+				rest /= *it++;
+
+			return std::make_pair(root, rest);
+		}
+
+		std::tuple<std::string, std::string, std::string> break_action(const std::string& action)
+		{
+			auto hash = action.find('#');
+
+			// no hash - no function; no function - no sense
+			if (hash == std::string::npos)
+				return std::make_tuple(std::string(), std::string(), std::string());
+
+			auto colon = action.find_last_of(':', hash);
+			if (colon != std::string::npos)
+				colon = action.find_last_of(':', colon - 1);
+
+			return std::make_tuple(action.substr(0, colon), action.substr(colon + 1, hash - colon - 1), action.substr(hash + 1));
+		}
+
 		void request_handler::handle(const http_request& req, response& resp)
 		{
 			auto SOAPAction = req.SOAPAction();
 			auto res = req.resource();
+			auto method = req.method();
+
+			std::string soap_domain, soap_object, soap_method;
+			std::tie(soap_domain, soap_object, soap_method) = break_action(SOAPAction);
 
 			print_debug(req, SOAPAction);
 
-			// THIS should be mapping
-			if (res == "/config/device.xml")
-				return make_templated(device::xml, "text/xml", resp);
-			if (res == "/config/directory.xml")
-				return make_file(boost::filesystem::path("data") / res, "text/xml", resp);
-			if (res == "/config/manager.xml")
-				return make_file(boost::filesystem::path("data") / res, "text/xml", resp);
-			if (res == "/images/icon-256.png")
-				return make_file(boost::filesystem::path("data") / res, "image/png", resp);
+			fs::path root, rest;
+			std::tie(root, rest) = pop(res); // pop leading slash
+			std::tie(root, rest) = pop(rest);
+
+			if (method == http_method::get)
+			{
+				if (root == "config")
+				{
+					if (rest == "device.xml")
+						return make_templated(device::xml, "text/xml", resp);
+
+					return make_file(boost::filesystem::path("data") / root / rest, resp);
+				}
+				if (root == "images")
+					return make_file(boost::filesystem::path("data") / root / rest, resp);
+			}
+
+			if (method == http_method::post)
+			{
+				if (root == "upnp")
+				{
+					std::tie(root, rest) = pop(rest);
+					if (root == "control")
+					{
+						if (rest == "content_directory" && soap_object == "ContentDirectory:1")
+						{
+							if (soap_method == "GetSystemUpdateID")
+								return ContentDirectory_GetSystemUpdateID(req, resp);
+							if (soap_method == "Browse")
+								return ContentDirectory_Browse(req, resp);
+							return make_404(resp);
+						}
+						if (rest == "connection_manager" && soap_object == "ContentManager:1")
+						{
+							return make_404(resp);
+						}
+						return make_404(resp);
+					}
+
+					if (root == "event")
+					{
+						if (rest == "content_directory" && soap_object == "ContentDirectory:1")
+						{
+							return make_404(resp);
+						}
+						if (rest == "connection_manager" && soap_object == "ContentManager:1")
+						{
+							return make_404(resp);
+						}
+						return make_404(resp);
+					}
+				}
+			}
+
 			make_404(resp);
 		}
 
@@ -290,15 +367,59 @@ namespace net
 			resp.content(std::make_shared<template_content>(tmplt, std::ref(m_vars)));
 		}
 
-		void request_handler::make_file(const fs::path& path, const char* content_type, response& resp)
+		static struct
+		{
+			std::string ext;
+			const char* mime_type;
+		} s_extensions [] = {
+			{ ".xml", "text/xml" },
+			{ ".png", "image/png" }
+		};
+
+		void request_handler::make_file(const fs::path& path, response& resp)
 		{
 			if (!fs::exists(path))
 				return make_404(resp);
+
+			const char* content_type = "text/html";
+			if (path.has_extension())
+			{
+				std::string cmp = path.extension().string();
+				for (auto && c : cmp) c = std::tolower((unsigned char) c);
+
+				for (auto && ext : s_extensions)
+					if (ext.ext == cmp)
+					{
+						content_type = ext.mime_type;
+						break;
+					}
+			}
+
 			auto & header = resp.header();
 			header.clear();
 			header.append("content-type", content_type);
 			header.append("last-modified")->out() << to_string(time::last_write(path));
 			resp.content(content::from_file(path));
+		}
+
+		void request_handler::ContentDirectory_GetSystemUpdateID(const http_request& req, response& resp)
+		{
+			auto & header = resp.header();
+			header.clear();
+			header.append("content-type", "text/xml; charset=\"utf-8\"");
+			resp.content(content::from_string(
+				R"(<?xml version="1.0" encoding="utf-8"?>)"
+				R"(<s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/" s:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"><s:Body>)"
+				R"(<u:GetSystemUpdateIDResponse xmlns:u="urn:schemas-upnp-org:service:ContentDirectory:1">)"
+				R"(<Id>1</Id>)"
+				R"(</u:GetSystemUpdateIDResponse>)"
+				R"(</s:Body></s:Envelope>)"
+				));
+		}
+
+		void request_handler::ContentDirectory_Browse(const http_request& req, response& resp)
+		{
+			make_404(resp);
 		}
 
 		void request_handler::make_404(response& resp)
