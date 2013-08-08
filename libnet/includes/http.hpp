@@ -284,6 +284,7 @@ namespace net
 				m_status = 200;
 				mime::headers::clear();
 				append("server")->out() << get_server_module_version() << " (" << get_os_module_version() << ")";
+				append("date")->out() << to_string(time::now());
 			}
 		};
 

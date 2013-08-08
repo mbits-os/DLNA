@@ -297,6 +297,7 @@ namespace net
 			auto & header = resp.header();
 			header.clear();
 			header.append("content-type", content_type);
+			header.append("last-modified")->out() << to_string(time::last_write(path));
 			resp.content(content::from_file(path));
 		}
 
