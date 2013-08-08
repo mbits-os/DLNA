@@ -27,6 +27,11 @@
 
 #include <http.hpp>
 #include <boost/utility.hpp>
+#include <boost/filesystem.hpp>
+#include <boost/filesystem/fstream.hpp>
+#include <limits>
+
+namespace fs = boost::filesystem;
 
 namespace net
 {
@@ -42,24 +47,64 @@ namespace net
 
 			virtual bool size_known() = 0;
 			virtual std::size_t get_size() = 0;
-			virtual const char* data() = 0;
+			virtual std::size_t read(void* buffer, std::size_t size) = 0;
+			template <std::size_t size>
+			std::size_t read(char (&buffer)[size]) { return read(buffer, size); }
 
 			inline static content_ptr from_string(const std::string& text);
+			inline static content_ptr from_file(const fs::path& path);
 		};
 
 		class string_content : public content
 		{
 			std::string m_text;
+			std::size_t m_pointer;
 		public:
-			string_content(const std::string& text): m_text(text) {}
+			string_content(const std::string& text) : m_text(text), m_pointer(0) {}
 			bool size_known() override { return true; }
 			std::size_t get_size() override { return m_text.size(); }
-			const char* data() override { return m_text.c_str(); }
+			std::size_t read(void* buffer, std::size_t size) override
+			{
+				auto rest = m_text.size() - m_pointer;
+				if (size > rest)
+					size = rest;
+				memcpy(buffer, m_text.c_str() + m_pointer, size);
+				m_pointer += size;
+				return size;
+			}
+		};
+
+		class file_content : public content
+		{
+			std::size_t m_size;
+			fs::ifstream m_stream;
+		public:
+			file_content(const fs::path& path)
+				: m_size(0)
+				, m_stream(path)
+			{
+				auto size = fs::file_size(path);
+
+				// clip instead of overflow
+				decltype(size) max = std::numeric_limits<std::size_t>::max();
+				if (size > max) size = max;
+				m_size = (std::size_t)max;
+			}
+			bool size_known() override { return true; }
+			std::size_t get_size() override { return m_size; }
+			std::size_t read(void* buffer, std::size_t size) override
+			{
+				return (std::size_t)m_stream.read((char*) buffer, size).gcount();
+			}
 		};
 
 		inline content_ptr content::from_string(const std::string& text)
 		{
 			return std::make_shared<string_content>(text);
+		}
+		inline content_ptr content::from_file(const fs::path& path)
+		{
+			return std::make_shared<file_content>(path);
 		}
 
 		class response : boost::noncopyable

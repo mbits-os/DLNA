@@ -55,5 +55,5 @@ Build the Boost to support vc2
 
 To get only the minimal number of libraries needed by both ```Boost.Asio``` and DLNA Radio:
 
-    > b2 toolset=msvc-12.0 variant=debug link=static threading=multi runtime-link=static --with-system --with-date_time --with-regex
-    > b2 toolset=msvc-12.0 variant=release link=static threading=multi runtime-link=static --with-system --with-date_time --with-regex
+    > b2 toolset=msvc-12.0 variant=debug link=static threading=multi runtime-link=static --with-system --with-date_time --with-regex --with-filesystem
+    > b2 toolset=msvc-12.0 variant=release link=static threading=multi runtime-link=static --with-system --with-date_time --with-regex --with-filesystem
