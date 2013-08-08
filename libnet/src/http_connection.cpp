@@ -73,31 +73,68 @@ namespace net
 					if (ret == parser::finished)
 					{
 						auto header = m_parser.header();
-						auto ua = header.find("user-agent");
-						std::ostringstream o;
-						o << (http_request_line&) header;
-						if (ua != header.end())
+						if (header.m_method != "POST")
 						{
-							o << "   [ " << ua->value();
-							auto pui = header.find("x-av-physical-unit-info");
-							auto ci = header.find("x-av-client-info");
-							if (pui != header.end() || ci != header.end())
+							auto ua = header.find("user-agent");
+							std::ostringstream o;
+							o << (http_request_line&) header;
+							if (ua != header.end())
 							{
-								o << " | ";
-								if (pui != header.end())
+								o << "   [ " << ua->value();
+								auto pui = header.find("x-av-physical-unit-info");
+								auto ci = header.find("x-av-client-info");
+								if (pui != header.end() || ci != header.end())
 								{
-									o << pui->value();
+									o << " | ";
+									if (pui != header.end())
+									{
+										o << pui->value();
+										if (ci != header.end())
+											o << " | ";
+									}
 									if (ci != header.end())
-										o << " | ";
+									{
+										o << ci->value();
+									}
 								}
-								if (ci != header.end())
-								{
-									o << ci->value();
-								}
+								o << " ]\n";
 							}
-							o << " ]\n";
+							std::cout << o.str();
 						}
-						std::cout << o.str();
+						else
+						{
+							std::cout << header;
+
+							auto len_it = header.find("content-length");
+							if (len_it != header.end())
+							{
+								size_t len;
+								std::istringstream in(len_it->value());
+								in >> len;
+
+								auto seen = end - data;
+								auto rest = len - seen;
+								std::cout << len << " bytes, " << seen << " seen, " << rest << " to go\n";
+								std::cout.write(data, seen);
+
+								while (rest)
+								{
+									auto chunk = m_buffer.size();
+									if (chunk > rest)
+										chunk = rest;
+									rest -= chunk;
+									boost::system::error_code sub_ec;
+									auto read = m_socket.read_some(boost::asio::buffer(m_buffer, chunk), sub_ec);
+									if (sub_ec)
+									{
+										m_manager.stop(shared_from_this());
+										return;
+									}
+									std::cout.write(m_buffer.data(), read);
+								}
+								std::cout << "\n";
+							}
+						}
 						m_handler.handle(header, m_response);
 						send_reply();
 					}
@@ -122,6 +159,7 @@ namespace net
 			{
 				if (buffer.advance(self->m_response_chunk))
 				{
+					//std::cout.write(self->m_response_chunk.data(), self->m_response_chunk.size());
 					boost::asio::async_write(
 						self->m_socket, boost::asio::buffer(self->m_response_chunk),
 						[self, buffer](boost::system::error_code ec, std::size_t size)
