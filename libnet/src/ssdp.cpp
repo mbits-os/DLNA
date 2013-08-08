@@ -113,7 +113,22 @@ namespace net
 					
 					if (parser.parse(data, data + bytes_recvd) == net::http::parser::finished)
 					{
-						std::cout << "[Listener] Remote: " << to_string(m_remote_endpoint.address()) << ":" << m_remote_endpoint.port() << "\r\nREQUEST\r\n" << parser.header();
+						auto && header = parser.header();
+						if (header.m_method == "M-SEARCH")
+						{
+							auto st_it = header.find("st");
+							if (st_it != header.end())
+							{
+								auto && st = st_it->value();
+								if (st == "urn:schemas-upnp-org:service:ContentDirectory:1" ||
+									st == "urn:schemas-upnp-org:device:MediaServer:1" ||
+									st == "upnp:rootdevice" ||
+									st == m_notifier.usn())
+								{
+									std::cout << "[Listener] Remote: " << to_string(m_remote_endpoint.address()) << ":" << m_remote_endpoint.port() << "\r\nREQUEST\r\n" << header;
+								}
+							}
+						}
 					}
 
 					do_accept();

@@ -62,6 +62,8 @@ namespace net
 			void join_group();
 			void leave_group();
 
+			const std::string& usn() const { return m_usn; }
+
 			void notify(notification_type nts)
 			{
 				printf("Sending %s...\n", nts == ALIVE ? "ALIVE" : "BYEBYE"); fflush(stdout);
