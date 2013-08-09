@@ -287,7 +287,14 @@ namespace net
 			m_vars.emplace_back("uuid", usn);
 		}
 
-		static void print_debug(const http_request& header, const std::string& SOAPAction, dom::XmlDocumentPtr dom)
+		static dom::XmlNodeListPtr env_body(dom::XmlDocumentPtr& doc)
+		{
+			dom::NSData ns [] = { { "s", "http://schemas.xmlsoap.org/soap/envelope/" } };
+			auto body = doc->find("/s:Envelope/s:Body", ns);
+			return body ? body->childNodes() : nullptr;
+		}
+
+		static void print_debug(const http_request& header, const std::string& SOAPAction, dom::XmlDocumentPtr& doc)
 		{
 			std::ostringstream o;
 			o << header.m_method << " ";
@@ -327,9 +334,15 @@ namespace net
 			if (!SOAPAction.empty())
 				o << "  [ " << SOAPAction << " ]\n";
 
-			if (dom)
+			if (doc)
 			{
-				dom::Print(o, dom->documentElement());
+				o << "\nSOAP:\n";
+				auto children = env_body(doc);
+				if (children)
+					dom::Print(o, children);
+				else
+					dom::Print(o, doc->documentElement());
+				o << "\n";
 			}
 
 			std::cout << o.str();
