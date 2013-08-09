@@ -1,0 +1,80 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="12.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\libdom\expat\inc\amigaconfig.h" />
+    <ClInclude Include="..\..\libdom\expat\inc\ascii.h" />
+    <ClInclude Include="..\..\libdom\expat\inc\asciitab.h" />
+    <ClInclude Include="..\..\libdom\expat\inc\expat.h" />
+    <ClInclude Include="..\..\libdom\expat\inc\expat_config.h" />
+    <ClInclude Include="..\..\libdom\expat\inc\expat_external.h" />
+    <ClInclude Include="..\..\libdom\expat\inc\iasciitab.h" />
+    <ClInclude Include="..\..\libdom\expat\inc\internal.h" />
+    <ClInclude Include="..\..\libdom\expat\inc\latin1tab.h" />
+    <ClInclude Include="..\..\libdom\expat\inc\macconfig.h" />
+    <ClInclude Include="..\..\libdom\expat\inc\nametab.h" />
+    <ClInclude Include="..\..\libdom\expat\inc\utf8tab.h" />
+    <ClInclude Include="..\..\libdom\expat\inc\winconfig.h" />
+    <ClInclude Include="..\..\libdom\expat\inc\xmlrole.h" />
+    <ClInclude Include="..\..\libdom\expat\inc\xmltok.h" />
+    <ClInclude Include="..\..\libdom\expat\inc\xmltok_impl.h" />
+    <ClInclude Include="..\..\libdom\includes\dom.hpp" />
+    <ClInclude Include="..\..\libdom\includes\dom_xpath.hpp" />
+    <ClInclude Include="..\..\libdom\includes\expat.hpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\libdom\expat\src\xmlparse.c" />
+    <ClCompile Include="..\..\libdom\expat\src\xmlrole.c" />
+    <ClCompile Include="..\..\libdom\expat\src\xmltok.c" />
+    <ClCompile Include="..\..\libdom\expat\src\xmltok_impl.c" />
+    <ClCompile Include="..\..\libdom\expat\src\xmltok_ns.c" />
+    <ClCompile Include="..\..\libdom\src\dom.cpp" />
+    <ClCompile Include="..\..\libdom\src\dom_xpath.cpp" />
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{A432694A-25B2-4CB8-A93F-CBB7A5D92D22}</ProjectGuid>
+    <Keyword>Win32Proj</Keyword>
+    <RootNamespace>libdom</RootNamespace>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <PlatformToolset>v120</PlatformToolset>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)'=='Debug'" Label="Configuration">
+    <UseDebugLibraries>true</UseDebugLibraries>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)'=='Release'" Label="Configuration">
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+  </PropertyGroup>
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="$(SolutionDir)\Radio.props" Condition="exists('$(SolutionDir)\Radio.props')" />
+    <Import Project="$(SolutionDir)\Radio.$(Platform).props" Condition="exists('$(SolutionDir)\Radio.$(Platform).props')" />
+    <Import Project="$(SolutionDir)\Radio.$(Configuration).props" Condition="exists('$(SolutionDir)\Radio.$(Configuration).props')" />
+    <Import Project="$(SolutionDir)\Radio.$(Platform).$(Configuration).props" Condition="exists('$(SolutionDir)\Radio.$(Platform).$(Configuration).props')" />
+    <Import Project="$(SolutionDir)\Radio.libdom.props" Condition="exists('$(SolutionDir)\Radio.libdom.props')" />
+    <Import Project="$(SolutionDir)\Radio.libdom.$(Platform).props" Condition="exists('$(SolutionDir)\Radio.libdom.$(Platform).props')" />
+    <Import Project="$(SolutionDir)\Radio.libdom.$(Configuration).props" Condition="exists('$(SolutionDir)\Radio.libdom.$(Configuration).props')" />
+    <Import Project="$(SolutionDir)\Radio.libdom.$(Platform).$(Configuration).props" Condition="exists('$(SolutionDir)\Radio.libdom.$(Platform).$(Configuration).props')" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup />
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

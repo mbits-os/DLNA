@@ -1,0 +1,102 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="includes">
+      <UniqueIdentifier>{fb88f64b-351a-4728-9614-90670321aa7f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="expat">
+      <UniqueIdentifier>{3524f61a-92c9-4fce-8b89-08d91d15c81f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src">
+      <UniqueIdentifier>{1d1b4211-7be8-411d-ac80-5773453d522f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="expat\src">
+      <UniqueIdentifier>{42ad9c85-5f36-4a7d-8257-670fc43691b0}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="expat\inc">
+      <UniqueIdentifier>{e5aaf90f-d31f-4020-bbc8-5759c3b84e6f}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\libdom\includes\expat.hpp">
+      <Filter>includes</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\libdom\includes\dom_xpath.hpp">
+      <Filter>includes</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\libdom\includes\dom.hpp">
+      <Filter>includes</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\libdom\expat\inc\xmltok_impl.h">
+      <Filter>expat\inc</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\libdom\expat\inc\xmltok.h">
+      <Filter>expat\inc</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\libdom\expat\inc\xmlrole.h">
+      <Filter>expat\inc</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\libdom\expat\inc\winconfig.h">
+      <Filter>expat\inc</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\libdom\expat\inc\utf8tab.h">
+      <Filter>expat\inc</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\libdom\expat\inc\nametab.h">
+      <Filter>expat\inc</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\libdom\expat\inc\macconfig.h">
+      <Filter>expat\inc</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\libdom\expat\inc\latin1tab.h">
+      <Filter>expat\inc</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\libdom\expat\inc\internal.h">
+      <Filter>expat\inc</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\libdom\expat\inc\iasciitab.h">
+      <Filter>expat\inc</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\libdom\expat\inc\expat_external.h">
+      <Filter>expat\inc</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\libdom\expat\inc\expat_config.h">
+      <Filter>expat\inc</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\libdom\expat\inc\expat.h">
+      <Filter>expat\inc</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\libdom\expat\inc\asciitab.h">
+      <Filter>expat\inc</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\libdom\expat\inc\ascii.h">
+      <Filter>expat\inc</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\libdom\expat\inc\amigaconfig.h">
+      <Filter>expat\inc</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\libdom\src\dom_xpath.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\libdom\src\dom.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\libdom\expat\src\xmltok_ns.c">
+      <Filter>expat\src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\libdom\expat\src\xmltok_impl.c">
+      <Filter>expat\src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\libdom\expat\src\xmltok.c">
+      <Filter>expat\src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\libdom\expat\src\xmlrole.c">
+      <Filter>expat\src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\libdom\expat\src\xmlparse.c">
+      <Filter>expat\src</Filter>
+    </ClCompile>
+  </ItemGroup>
+</Project>
