@@ -124,6 +124,9 @@ namespace net
 
 		static void print_debug(bool ignoring, const net::http::http_request& header, const std::string& ssdp_ST, const std::string& ssdp_MAN)
 		{
+			if (ssdp_ST == "urn:schemas-upnp-org:device:InternetGatewayDevice:1")
+				return;
+
 			std::ostringstream o;
 			if (ignoring)
 				o << "[...] ";
