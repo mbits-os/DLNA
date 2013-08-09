@@ -27,6 +27,8 @@
 #include <response.hpp>
 #include <regex>
 #include <interface.hpp>
+#include <expat.hpp>
+#include <dom.hpp>
 
 namespace net
 {
@@ -84,6 +86,92 @@ namespace net
 	</device>
 </root>
 )";
+		}
+
+		class DOMParser : public xml::ExpatBase<DOMParser>
+		{
+			dom::XmlElementPtr elem;
+			std::string text;
+
+			void addText()
+			{
+				if (text.empty()) return;
+				if (elem)
+					elem->appendChild(doc->createTextNode(text));
+				text.clear();
+			}
+		public:
+
+			dom::XmlDocumentPtr doc;
+
+			bool create(const char* cp)
+			{
+				doc = dom::XmlDocument::create();
+				if (!doc) return false;
+				return xml::ExpatBase<DOMParser>::create(cp);
+			}
+
+			void onStartElement(const XML_Char *name, const XML_Char **attrs)
+			{
+				addText();
+				auto current = doc->createElement(name);
+				if (!current) return;
+				for (; *attrs; attrs += 2)
+				{
+					auto attr = doc->createAttribute(attrs[0], attrs[1]);
+					if (!attr) continue;
+					current->setAttribute(attr);
+				}
+				if (elem)
+					elem->appendChild(current);
+				else
+					doc->setDocumentElement(current);
+				elem = current;
+			}
+
+			void onEndElement(const XML_Char *name)
+			{
+				addText();
+				if (!elem) return;
+				dom::XmlNodePtr node = elem->parentNode();
+				elem = std::static_pointer_cast<dom::XmlElement>(node);
+			}
+
+			void onCharacterData(const XML_Char *pszData, int nLength)
+			{
+				text += std::string(pszData, nLength);
+			}
+		};
+
+		dom::XmlDocumentPtr create_from_socket(request_data_ptr data)
+		{
+			if (!data || !data->content_length())
+				return nullptr;
+
+			DOMParser parser;
+			if (!parser.create(nullptr)) return nullptr;
+
+			parser.enableElementHandler();
+			parser.enableCharacterDataHandler();
+
+			auto rest = data->content_length();
+			char buffer[8192];
+			while (rest)
+			{
+				auto chunk = sizeof(buffer);
+				if (chunk > rest)
+					chunk = rest;
+				rest -= chunk;
+				auto read = data->read(buffer, chunk);
+
+				if (!parser.parse(buffer, read, false))
+					return nullptr;
+			}
+
+			if (!parser.parse(buffer, 0))
+				return nullptr;
+
+			return parser.doc;
 		}
 
 		struct tmplt_chunk
@@ -199,7 +287,7 @@ namespace net
 			m_vars.emplace_back("uuid", usn);
 		}
 
-		static void print_debug(const http_request& header, const std::string& SOAPAction)
+		static void print_debug(const http_request& header, const std::string& SOAPAction, dom::XmlDocumentPtr dom)
 		{
 			std::ostringstream o;
 			o << header.m_method << " ";
@@ -239,25 +327,9 @@ namespace net
 			if (!SOAPAction.empty())
 				o << "  [ " << SOAPAction << " ]\n";
 
-			if (header.m_method == "POST")
+			if (dom)
 			{
-				auto data = header.request_data();
-				if (data && data->content_length())
-				{
-					o << "\n";
-					auto rest = data->content_length();
-					char buffer[1024];
-					while (rest)
-					{
-						auto chunk = sizeof(buffer);
-						if (chunk > rest)
-							chunk = rest;
-						rest -= chunk;
-						auto read = data->read(buffer, chunk);
-						o.write(buffer, read);
-					}
-					o << "\n\n";
-				}
+				dom::Print(o, dom->documentElement());
 			}
 
 			std::cout << o.str();
@@ -297,10 +369,17 @@ namespace net
 			auto res = req.resource();
 			auto method = req.method();
 
+			dom::XmlDocumentPtr doc;
+
+			if (method == http_method::post && !SOAPAction.empty())
+			{
+				doc = create_from_socket(req.request_data());
+			}
+
 			std::string soap_domain, soap_object, soap_method;
 			std::tie(soap_domain, soap_object, soap_method) = break_action(SOAPAction);
 
-			print_debug(req, SOAPAction);
+			print_debug(req, SOAPAction, doc);
 
 			fs::path root, rest;
 			std::tie(root, rest) = pop(res); // pop leading slash
