@@ -129,13 +129,14 @@ namespace net
 				o << "[...] ";
 			else
 				o << "[SSDP] ";
-			o << header.m_method << " " << header.m_resource << " " << header.m_protocol;
-			o << "\n  [ " << to_string(header.m_remote_address) << ":" << header.m_remote_port << " ]";
+			o << header.m_method << " " << header.m_resource << " " << header.m_protocol << " [ " << to_string(header.m_remote_address) << ":" << header.m_remote_port << " ]";
 
 			if (!ssdp_ST.empty())
 				o << " [ " << ssdp_ST << " ]";
 			if (!ssdp_MAN.empty())
 				o << " [ " << ssdp_MAN << " ]";
+
+			o << "\n";
 
 			std::cout << o.str();
 		}
