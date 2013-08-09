@@ -26,7 +26,6 @@
 #include <dom_xpath.hpp>
 #include <vector>
 #include <string.h>
-#include <algorithm>
 
 namespace dom {
 	XmlNodeListPtr createList(const std::vector<XmlNodePtr>& list);
@@ -219,10 +218,8 @@ namespace dom { namespace xpath {
 			auto& query = *from;
 
 			std::list<XmlNodePtr> list;
-			std::for_each(parent.begin(), parent.end(), [&](XmlNodePtr ctx)
-			{
+			for (auto && ctx : parent)
 				query.select(ctx, list);
-			});
 			parent = list;
 			++from;
 		}
@@ -236,26 +233,32 @@ namespace dom { namespace xpath {
 		if (m_type == PRED_EXISTS)
 			return !list.empty();
 
-		auto it = std::find_if(list.begin(), list.end(), [&](XmlNodePtr node)
+		for (auto && node : list)
 		{
-			return node && node->stringValue() == m_value;
-		});
-		return it != list.end();
+			if (node && node->stringValue() == m_value)
+				return true;
+		}
+		return false;
 	}
 
 	void Segment::select(XmlNodePtr context, std::list<XmlNodePtr>& list)
 	{
 		std::list<XmlNodePtr> local;
 		m_selector.select(context, local);
-		std::for_each(local.begin(), local.end(), [&](XmlNodePtr node)
+		for (auto && node : local)
 		{
-			auto it = std::find_if(m_preds.begin(), m_preds.end(), [&](Predicate& pred) -> bool
+			bool failed = false;
+			for (auto && pred : m_preds)
 			{
-				return !pred.test(node);
-			});
-			if (it == m_preds.end())
+				if (!pred.test(node))
+				{
+					failed = true;
+					break;
+				}
+			}
+			if (!failed)
 				list.push_back(node);
-		});
+		};
 	}
 
 	XmlNodePtr XPath::find(XmlNodePtr context)
@@ -537,12 +540,12 @@ namespace dom { namespace xpath {
 	{
 		o << "[";
 		bool first = true;
-		std::for_each (pred.m_selectors.begin(), pred.m_selectors.end(), [&first, &o](const SimpleSelector& selector)
+		for (auto && selector : pred.m_selectors)
 		{
 			if (first) first = false;
 			else o << "/";
 			o << selector;
-		});
+		};
 		if (pred.m_type == PRED_EQUALS)
 			o << "='" << pred.m_value << "'";
 		return o << "]";
@@ -550,22 +553,20 @@ namespace dom { namespace xpath {
 	std::ostream& operator << (std::ostream& o, const Segment& seg)
 	{
 		o << seg.m_selector;
-		std::for_each(seg.m_preds.begin(), seg.m_preds.end(), [&](const Predicate& pred)
-		{
+		for (auto && pred : seg.m_preds)
 			o << pred;
-		});
 		return o;
 	}
 
 	std::ostream& operator << (std::ostream& o, const XPath& xpath)
 	{
 		bool first = true;
-		std::for_each(xpath.m_segments.begin(), xpath.m_segments.end(), [&](const Segment& seg)
+		for (auto && seg : xpath.m_segments)
 		{
 			if (first) first = false;
 			else o << "/";
 			o << seg;
-		});
+		};
 
 		return o;
 	}
