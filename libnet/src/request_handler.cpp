@@ -361,19 +361,15 @@ namespace net
 			return std::make_pair(root, rest);
 		}
 
-		std::tuple<std::string, std::string, std::string> break_action(const std::string& action)
+		std::pair<std::string, std::string> break_action(const std::string& action)
 		{
 			auto hash = action.find('#');
 
 			// no hash - no function; no function - no sense
 			if (hash == std::string::npos)
-				return std::make_tuple(std::string(), std::string(), std::string());
+				return std::make_pair(std::string(), std::string());
 
-			auto colon = action.find_last_of(':', hash);
-			if (colon != std::string::npos)
-				colon = action.find_last_of(':', colon - 1);
-
-			return std::make_tuple(action.substr(0, colon), action.substr(colon + 1, hash - colon - 1), action.substr(hash + 1));
+			return std::make_pair(action.substr(0, hash), action.substr(hash + 1));
 		}
 
 		void request_handler::handle(const http_request& req, response& resp)
@@ -388,9 +384,6 @@ namespace net
 			{
 				doc = create_from_socket(req.request_data());
 			}
-
-			std::string soap_domain, soap_object, soap_method;
-			std::tie(soap_domain, soap_object, soap_method) = break_action(SOAPAction);
 
 			print_debug(req, SOAPAction, doc);
 
@@ -415,16 +408,19 @@ namespace net
 			{
 				if (root == "upnp")
 				{
+					std::string soap_type, soap_method;
+					std::tie(soap_type, soap_method) = break_action(SOAPAction);
+
 					std::tie(root, rest) = pop(rest);
 					if (root == "control")
 					{
-						if (rest == "content_directory" && soap_object == "ContentDirectory:1")
+						if (rest == "content_directory" && soap_type == "urn:schemas-upnp-org:service:ContentDirectory:1")
 						{
 							if (soap_method == "GetSystemUpdateID") return ContentDirectory_GetSystemUpdateID(req, resp);
 							if (soap_method == "Browse")            return ContentDirectory_Browse(req, resp, doc);
 							return make_404(resp);
 						}
-						if (rest == "connection_manager" && soap_object == "ContentManager:1")
+						if (rest == "connection_manager" && soap_type == "urn:schemas-upnp-org:service:ContentManager:1")
 						{
 							return make_404(resp);
 						}
@@ -433,11 +429,11 @@ namespace net
 
 					if (root == "event")
 					{
-						if (rest == "content_directory" && soap_object == "ContentDirectory:1")
+						if (rest == "content_directory" && soap_type == "urn:schemas-upnp-org:service:ContentDirectory:1")
 						{
 							return make_404(resp);
 						}
-						if (rest == "connection_manager" && soap_object == "ContentManager:1")
+						if (rest == "connection_manager" && soap_type == "urn:schemas-upnp-org:service:ContentManager:1")
 						{
 							return make_404(resp);
 						}
