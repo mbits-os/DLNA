@@ -153,20 +153,25 @@ namespace net
 				return http_method::other;
 			}
 
-			std::string quoted(const std::string& name) const
+			std::string simple(const std::string& name) const
 			{
 				auto it = find(name);
 				if (it == end())
 					return std::string();
-				auto tmp = it->value();
+				return it->value();
+			}
+			std::string quoted(const std::string& name) const
+			{
+				auto tmp = simple(name);
 				if (!tmp.empty() && *tmp.begin() == '"' && *tmp.rbegin() == '"')
 					tmp = tmp.substr(1, tmp.length() - 2);
 				return tmp;
-
 			}
+			std::string user_agent() const { return simple("user-agent"); }
 			std::string SOAPAction() const { return quoted("soapaction"); }
 			std::string ssdp_MAN() const { return quoted("man"); }
 			std::string ssdp_ST() const { return quoted("st"); }
+			std::string ssdp_USN() const { return quoted("usn"); }
 		};
 
 		inline std::ostream& operator << (std::ostream& o, const http_request& resp)

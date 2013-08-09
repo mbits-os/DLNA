@@ -45,9 +45,9 @@ namespace net
 		{
 		}
 
-#define SWS while (data < end && std::isspace((unsigned char) *data)) { ++data; }
-#define SNWS while (data < end && !std::isspace((unsigned char) *data)) { ++data; }
-#define SNWS2(c) while (data < end && !std::isspace((unsigned char) *data) && (*data != (c))) { ++data; }
+#define SWS while (data < end && *data == ' ') { ++data; }
+#define SNWS while (data < end && *data != ' ') { ++data; }
+#define SNWS2(c) while (data < end && *data != ' ' && (*data != (c))) { ++data; }
 #define S2CRLF while (data < end && *data != CR) { ++data; }
 
 		bool header_parser_base::skip_ws(state expected, state next, const char*& data, const char* end, std::string& dst)
@@ -148,7 +148,72 @@ namespace net
 
 		parser header_parser_base::parse_first_line(http_response_line& line, const char*& data, const char* end)
 		{
-			return parser::error;
+			// HTTP/MAJ.MIN STATUS MESSAGE[ignored] 
+			if (m_state == before_first_line)
+			{
+				m_protocol.clear();
+				m_state = in_resp_protocol;
+			}
+
+			parser ret;
+			if (m_state == in_resp_protocol)
+			{
+				ret = get_token(before_resp_status, data, end, m_protocol);
+				if (ret != parser::finished)
+					return ret;
+
+				line.m_protocol = parse_protocol();
+				if (line.m_protocol == http::undeclared)
+					return parser::error;
+			}
+
+			if (skip_ws(before_resp_status, in_resp_status, data, end, m_protocol))
+				return parser::pending;
+
+			if (m_state == in_resp_status)
+			{
+				ret = get_token(in_resp_message, data, end, m_protocol);
+				if (ret != parser::finished)
+					return ret;
+
+				std::istringstream i(m_protocol);
+				i >> line.m_status;
+				std::ostringstream o;
+				o << (int)line.m_status;
+
+				if (m_protocol != o.str())
+					return parser::error;
+			}
+
+			if (m_state == in_resp_message)
+			{
+				while (data != end && *data != CR) ++data;
+				if (data == end)
+					return parser::pending;
+
+				m_state = in_first_line_end;
+
+				++data;
+				if (data == end)
+					return parser::pending;
+			}
+
+			if (m_state == in_first_line_end)
+			{
+				if (data == end)
+					return parser::pending;
+				if (*data != LF)
+					return parser::error;
+
+				m_state = line_start;
+				m_name.clear();
+
+				++data;
+				if (data == end)
+					return parser::pending;
+			}
+
+			return parser::pending;
 		}
 
 		parser header_parser_base::parse_header(mime::headers& headers, const char*& data, const char* end)
