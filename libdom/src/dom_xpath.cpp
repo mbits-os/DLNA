@@ -99,20 +99,21 @@ namespace dom { namespace xpath {
 		return false;
 	}
 
-	void SimpleSelector::test(XmlNodePtr node, std::list<XmlNodePtr>& list)
+	void SimpleSelector::test(const XmlNodePtr& node, std::list<XmlNodePtr>& list)
 	{
-		if (passable(node))
-			list.push_back(node);
+		auto pass = node;
+		if (passable(pass))
+			list.push_back(pass);
 	}
 	
-	void SimpleSelector::select(XmlNodeListPtr nodes, std::list<XmlNodePtr>& list)
+	void SimpleSelector::select(const XmlNodeListPtr& nodes, std::list<XmlNodePtr>& list)
 	{
 		size_t count = nodes ? nodes->length() : 0;
 		for (size_t i = 0; i < count; ++i)
 			test(nodes->item(i), list);
 	}
 
-	void SimpleSelector::select(XmlNodePtr context, std::list<XmlNodePtr>& list)
+	void SimpleSelector::select(const XmlNodePtr& context, std::list<XmlNodePtr>& list)
 	{
 		switch(m_axis)
 		{
@@ -144,13 +145,13 @@ namespace dom { namespace xpath {
 		}
 	}
 
-	void SimpleSelector::child(XmlNodePtr context, std::list<XmlNodePtr>& list)
+	void SimpleSelector::child(const XmlNodePtr& context, std::list<XmlNodePtr>& list)
 	{
 		if (!context) return;
 		select(context->childNodes(), list);
 	}
 
-	void SimpleSelector::descendant(XmlNodePtr context, std::list<XmlNodePtr>& list)
+	void SimpleSelector::descendant(const XmlNodePtr& context, std::list<XmlNodePtr>& list)
 	{
 		if (!context) return;
 		auto nodes = context->childNodes();
@@ -161,7 +162,7 @@ namespace dom { namespace xpath {
 			descendant(nodes->item(i), list);
 	}
 
-	void SimpleSelector::attribute(XmlNodePtr context, std::list<XmlNodePtr>& list)
+	void SimpleSelector::attribute(const XmlNodePtr& context, std::list<XmlNodePtr>& list)
 	{
 		if (!context) return;
 		if (context->nodeType() == ELEMENT_NODE)
@@ -171,19 +172,19 @@ namespace dom { namespace xpath {
 		}
 	}
 
-	void SimpleSelector::self(XmlNodePtr context, std::list<XmlNodePtr>& list)
+	void SimpleSelector::self(const XmlNodePtr& context, std::list<XmlNodePtr>& list)
 	{
 		if (!context) return;
 		test(context, list);
 	}
 
-	void SimpleSelector::descendant_or_self(XmlNodePtr context, std::list<XmlNodePtr>& list)
+	void SimpleSelector::descendant_or_self(const XmlNodePtr& context, std::list<XmlNodePtr>& list)
 	{
 		self(context, list);
 		descendant(context, list);
 	}
 
-	void SimpleSelector::parent(XmlNodePtr context, std::list<XmlNodePtr>& list)
+	void SimpleSelector::parent(const XmlNodePtr& context, std::list<XmlNodePtr>& list)
 	{
 		if (!context) return;
 		XmlNodePtr parent = context->parentNode();
@@ -191,7 +192,7 @@ namespace dom { namespace xpath {
 		test(parent, list);
 	}
 
-	void SimpleSelector::ancestor(XmlNodePtr context, std::list<XmlNodePtr>& list)
+	void SimpleSelector::ancestor(const XmlNodePtr& context, std::list<XmlNodePtr>& list)
 	{
 		if (!context) return;
 		XmlNodePtr parent = context->parentNode();
@@ -202,33 +203,32 @@ namespace dom { namespace xpath {
 		}
 	}
 
-	void SimpleSelector::ancestor_or_self(XmlNodePtr context, std::list<XmlNodePtr>& list)
+	void SimpleSelector::ancestor_or_self(const XmlNodePtr& context, std::list<XmlNodePtr>& list)
 	{
 		self(context, list);
 		ancestor(context, list);
 	}
 
-	template <typename It>
-	std::list<XmlNodePtr> select(It from, It to, XmlNodePtr context)
+	template <typename Container>
+	std::list<XmlNodePtr> select(Container& container, const XmlNodePtr& context)
 	{
 		std::list<XmlNodePtr> parent;
 		parent.push_back(context);
-		while (from != to)
-		{
-			auto& query = *from;
 
+		for (auto && query : container)
+		{
 			std::list<XmlNodePtr> list;
 			for (auto && ctx : parent)
 				query.select(ctx, list);
 			parent = list;
-			++from;
 		}
+
 		return parent;
 	}
 
-	bool Predicate::test(XmlNodePtr context)
+	bool Predicate::test(const XmlNodePtr& context)
 	{
-		std::list<XmlNodePtr> list = select(m_selectors.begin(), m_selectors.end(), context);
+		std::list<XmlNodePtr> list = select(m_selectors, context);
 
 		if (m_type == PRED_EXISTS)
 			return !list.empty();
@@ -241,7 +241,7 @@ namespace dom { namespace xpath {
 		return false;
 	}
 
-	void Segment::select(XmlNodePtr context, std::list<XmlNodePtr>& list)
+	void Segment::select(const XmlNodePtr& context, std::list<XmlNodePtr>& list)
 	{
 		std::list<XmlNodePtr> local;
 		m_selector.select(context, local);
@@ -261,17 +261,17 @@ namespace dom { namespace xpath {
 		};
 	}
 
-	XmlNodePtr XPath::find(XmlNodePtr context)
+	XmlNodePtr XPath::find(const XmlNodePtr& context)
 	{
-		std::list<XmlNodePtr> list = select(m_segments.begin(), m_segments.end(), context);
+		std::list<XmlNodePtr> list = select(m_segments, context);
 		if (list.size())
 			return *list.begin();
 		return nullptr;
 	}
 
-	XmlNodeListPtr XPath::findall(XmlNodePtr context)
+	XmlNodeListPtr XPath::findall(const XmlNodePtr& context)
 	{
-		std::list<XmlNodePtr> list = select(m_segments.begin(), m_segments.end(), context);
+		std::list<XmlNodePtr> list = select(m_segments, context);
 		if (list.size())
 		{
 			std::vector<XmlNodePtr> nodes(list.begin(), list.end());
@@ -301,13 +301,16 @@ namespace dom { namespace xpath {
 
 	inline const char* FindNamespace(const Namespaces& ns, const char* key)
 	{
+		if (!ns)
+			return nullptr;
+
 		NSData* item = ns;
 		while (item->key)
 		{
 			if (strcmp(item->key, key) == 0) return item->ns;
 			item++;
 		}
-		return NULL;
+		return nullptr;
 	}
 
 	static inline const char* readQName(const char* ptr, const char* end, QName& qname, const Namespaces& ns)
@@ -331,7 +334,7 @@ namespace dom { namespace xpath {
 		if (col != std::string::npos)
 		{
 			const char* _it = FindNamespace(ns, std::string(ptr, col).c_str());
-			if (_it != NULL)
+			if (_it != nullptr)
 			{
 				qname.nsName = _it;
 				qname.localName = std::string(ptr + col + 1, end);

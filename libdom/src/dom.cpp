@@ -135,7 +135,7 @@ namespace dom
 			}
 
 			dom::XmlDocumentPtr ownerDocument() { return document.lock(); }
-			bool appendChild(dom::XmlNodePtr newChild)
+			bool appendChild(const dom::XmlNodePtr& newChild)
 			{
 				if (!newChild) return false;
 				dom::XmlDocumentPtr doc = newChild->ownerDocument();
@@ -155,7 +155,7 @@ namespace dom
 
 			void* internalData() { return (XmlNodeImplInit*)this; }
 
-			bool appendAttr(dom::XmlNodePtr newChild) { return false; }
+			bool appendAttr(const dom::XmlNodePtr& newChild) { return false; }
 
 			XmlNodePtr find(const std::string& path, const Namespaces& ns)
 			{
@@ -245,7 +245,7 @@ namespace dom
 				return _it->second;
 			}
 
-			bool setAttribute(dom::XmlAttributePtr attr)
+			bool setAttribute(const dom::XmlAttributePtr& attr)
 			{
 				XmlNodeImplInit* p = (XmlNodeImplInit*)attr->internalData();
 				if (p)
@@ -300,7 +300,7 @@ namespace dom
 				return std::make_shared<XmlNodeList>(out);
 			}
 
-			bool appendAttr(dom::XmlNodePtr newChild)
+			bool appendAttr(const dom::XmlNodePtr& newChild)
 			{
 				if (!newChild.get() || newChild->nodeType() != dom::ATTRIBUTE_NODE)
 					return false;
@@ -343,10 +343,10 @@ namespace dom
 					if (strncmp(pair.first.c_str(), "xmlns", 5) == 0 &&
 						(pair.first.length() == 5 || pair.first[5] == ':'))
 					{
-						return;
+						continue;
 					}
 					XmlNodeImplInit* p = (XmlNodeImplInit*)pair.second->internalData();
-					if (!p) return;
+					if (!p) continue;
 					p->fixQName(false);
 				};
 			}
@@ -359,8 +359,8 @@ namespace dom
 					namespaces.clear();
 					for (auto && pair : lookup)
 					{
-						if (strncmp(pair.first.c_str(), "xmlns", 5) != 0) return;
-						if (pair.first.length() != 5 && pair.first[5] != ':') return;
+						if (strncmp(pair.first.c_str(), "xmlns", 5) != 0) continue;
+						if (pair.first.length() != 5 && pair.first[5] != ':') continue;
 						if (pair.first.length() == 5) namespaces[""] = pair.second->value();
 						else namespaces[std::string(pair.first.c_str() + 6)] = pair.second->value();
 					};
@@ -414,11 +414,11 @@ namespace dom
 			}
 
 			XmlDocumentPtr ownerDocument() { return self.lock(); }
-			bool appendChild(XmlNodePtr newChild) { return false; }
+			bool appendChild(const XmlNodePtr& newChild) { return false; }
 			void* internalData() { return nullptr; }
 
 			dom::XmlElementPtr documentElement() { return root; }
-			void setDocumentElement(dom::XmlElementPtr elem)
+			void setDocumentElement(const dom::XmlElementPtr& elem)
 			{
 				root = elem;
 				if (elem)
@@ -576,7 +576,7 @@ namespace dom
 		return parser.doc;
 	}
 
-	void Print(std::ostream& out, dom::XmlNodeListPtr subs, bool ignorews, size_t depth)
+	void Print(std::ostream& out, const dom::XmlNodeListPtr& subs, bool ignorews, size_t depth)
 	{
 		if (subs)
 		{
@@ -594,7 +594,7 @@ namespace dom
 		return "{" + qname.nsName + "}" + qname.localName;
 	}
 
-	void Print(std::ostream& out, dom::XmlNodePtr node, bool ignorews, size_t depth)
+	void Print(std::ostream& out, const dom::XmlNodePtr& node, bool ignorews, size_t depth)
 	{
 		dom::XmlNodeListPtr subs = node->childNodes();
 

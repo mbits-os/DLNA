@@ -100,7 +100,7 @@ namespace dom
 		virtual XmlNodePtr nextSibling() = 0;
 
 		virtual XmlDocumentPtr ownerDocument() = 0;
-		virtual bool appendChild(XmlNodePtr newChild) = 0;
+		virtual bool appendChild(const XmlNodePtr& newChild) = 0;
 		virtual void* internalData() = 0;
 
 		virtual XmlNodePtr find(const std::string& path, const Namespaces& ns) = 0;
@@ -115,7 +115,7 @@ namespace dom
 		virtual ~XmlDocument() {}
 
 		virtual XmlElementPtr documentElement() = 0;
-		virtual void setDocumentElement(XmlElementPtr elem) = 0;
+		virtual void setDocumentElement(const XmlElementPtr& elem) = 0;
 
 		virtual XmlElementPtr createElement(const std::string& tagName) = 0;
 		virtual XmlTextPtr createTextNode(const std::string& data) = 0;
@@ -152,7 +152,7 @@ namespace dom
 		virtual std::string stringValue() { return innerText(); }
 		virtual std::string getAttribute(const std::string& name) = 0;
 		virtual XmlAttributePtr getAttributeNode(const std::string& name) = 0;
-		virtual bool setAttribute(XmlAttributePtr attr) = 0;
+		virtual bool setAttribute(const XmlAttributePtr& attr) = 0;
 		virtual XmlNodeListPtr getAttributes() = 0;
 		virtual bool hasAttribute(const std::string& name) = 0;
 		virtual XmlNodeListPtr getElementsByTagName(const std::string& tagName) = 0;
@@ -175,8 +175,8 @@ namespace dom
 		virtual std::string data() const { return nodeValue(); }
 	};
 
-	void Print(std::ostream& out, XmlNodePtr node, bool ignorews = false, size_t depth = 0);
-	void Print(std::ostream& out, XmlNodeListPtr subs, bool ignorews = false, size_t depth = 0);
+	void Print(std::ostream& out, const XmlNodePtr& node, bool ignorews = false, size_t depth = 0);
+	void Print(std::ostream& out, const XmlNodeListPtr& subs, bool ignorews = false, size_t depth = 0);
 }
 
 #endif // __DOM_HPP__
