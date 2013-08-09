@@ -55,6 +55,8 @@ namespace net
 			void async_close();
 
 			boost::asio::io_service& service() { return m_io_service; }
+			boost::asio::ip::udp::socket& socket() { return m_socket; }
+			boost::asio::ip::udp::endpoint& endpoint() { return m_endpoint;  }
 		};
 
 		struct datagram : private boost::noncopyable, public std::enable_shared_from_this<datagram>
@@ -64,10 +66,24 @@ namespace net
 				, m_payload(std::move(payload))
 			{}
 
+			virtual void post() { post(m_socket.socket(), m_socket.endpoint()); }
+		protected:
 			void post(boost::asio::ip::udp::socket& socket, boost::asio::ip::udp::endpoint& endpoint);
-		private:
+
 			datagram_socket& m_socket;
 			std::string m_payload;
+		};
+
+		struct endpoint_datagram : datagram
+		{
+			endpoint_datagram(datagram_socket& socket, const boost::asio::ip::udp::endpoint& endpoint, std::string payload)
+				: datagram(socket, std::move(payload))
+				, m_endpoint(endpoint)
+			{}
+
+			void post() override { datagram::post(m_socket.socket(), m_endpoint); }
+		private:
+			boost::asio::ip::udp::endpoint m_endpoint;
 		};
 	}
 }

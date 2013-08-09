@@ -52,7 +52,7 @@ namespace net
 		void datagram_socket::post(datagram_ptr d)
 		{
 			m_datagrams.insert(d);
-			d->post(m_socket, m_endpoint);
+			d->post();
 		}
 
 		void datagram_socket::post(std::string payload)
