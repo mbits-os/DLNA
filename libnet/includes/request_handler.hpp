@@ -31,6 +31,12 @@
 #include <vector>
 #include <boost/filesystem.hpp>
 
+namespace dom
+{
+	struct XmlDocument;
+	typedef std::shared_ptr<XmlDocument> XmlDocumentPtr;
+};
+
 namespace net
 {
 	namespace http
@@ -45,7 +51,7 @@ namespace net
 			void make_file(const boost::filesystem::path& path, response& resp);
 
 			void ContentDirectory_GetSystemUpdateID(const http_request& req, response& resp);
-			void ContentDirectory_Browse(const http_request& req, response& resp);
+			void ContentDirectory_Browse(const http_request& req, response& resp, const dom::XmlDocumentPtr& doc);
 		public:
 			request_handler(const std::string& usn);
 			void handle(const http_request& req, response& resp);

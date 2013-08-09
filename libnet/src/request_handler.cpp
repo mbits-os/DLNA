@@ -287,7 +287,7 @@ namespace net
 			m_vars.emplace_back("uuid", usn);
 		}
 
-		static dom::XmlNodeListPtr env_body(dom::XmlDocumentPtr& doc)
+		static dom::XmlNodeListPtr env_body(const dom::XmlDocumentPtr& doc)
 		{
 			dom::NSData ns [] = { { "s", "http://schemas.xmlsoap.org/soap/envelope/" } };
 			auto body = doc->find("/s:Envelope/s:Body", ns);
@@ -420,10 +420,8 @@ namespace net
 					{
 						if (rest == "content_directory" && soap_object == "ContentDirectory:1")
 						{
-							if (soap_method == "GetSystemUpdateID")
-								return ContentDirectory_GetSystemUpdateID(req, resp);
-							if (soap_method == "Browse")
-								return ContentDirectory_Browse(req, resp);
+							if (soap_method == "GetSystemUpdateID") return ContentDirectory_GetSystemUpdateID(req, resp);
+							if (soap_method == "Browse")            return ContentDirectory_Browse(req, resp, doc);
 							return make_404(resp);
 						}
 						if (rest == "connection_manager" && soap_object == "ContentManager:1")
@@ -509,9 +507,42 @@ namespace net
 				));
 		}
 
-		void request_handler::ContentDirectory_Browse(const http_request& req, response& resp)
+		void request_handler::ContentDirectory_Browse(const http_request& req, response& resp, const dom::XmlDocumentPtr& doc)
 		{
-			make_404(resp);
+			std::string browse_flag;
+			//auto children = env_body(doc);
+			if (doc)
+			{
+				dom::NSData ns [] = { { "s", "http://schemas.xmlsoap.org/soap/envelope/" }, { "upnp", "urn:schemas-upnp-org:service:ContentDirectory:1" } };
+				auto BrowseFlag = doc->find("/s:Envelope/s:Body/upnp:Browse/BrowseFlag", ns);
+				if (BrowseFlag)
+					browse_flag = BrowseFlag->stringValue();
+			}
+
+			auto & header = resp.header();
+			header.clear();
+			header.append("content-type", "text/xml; charset=\"utf-8\"");
+			auto msg = 
+				R"(<?xml version="1.0" encoding="utf-8"?>)"
+				R"(<s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/" s:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"><s:Body>)"
+
+				R"(<u:BrowseResponse xmlns:u="urn:schemas-upnp-org:service:ContentDirectory:1">)"
+				R"(<Result>)"
+				R"(&lt;DIDL-Lite xmlns="urn:schemas-upnp-org:metadata-1-0/DIDL-Lite/" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:upnp="urn:schemas-upnp-org:metadata-1-0/upnp/"&gt;)"
+
+				// EMPTY RESPONSE
+
+				R"(&lt;/DIDL-Lite&gt;)"
+				R"(</Result>)"
+				R"(<NumberReturned>0</NumberReturned>)"
+				// from upnp spec: If BrowseMetadata is specified in the BrowseFlags then TotalMatches = 1
+				R"(<TotalMatches>1</TotalMatches>)"
+				R"(<UpdateID>1</UpdateID>)"
+				R"(</u:BrowseResponse>)"
+
+				R"(</s:Body></s:Envelope>)";
+			std::cout << msg << "\n";
+			resp.content(content::from_string(msg));
 		}
 
 		void request_handler::make_404(response& resp)
