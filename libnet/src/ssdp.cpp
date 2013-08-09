@@ -84,6 +84,28 @@ namespace net
 			return os.str();
 		}
 
+		std::string notifier::build_discovery_msg(const std::string& st) const
+		{
+			http::http_response resp {};
+			resp.append("date")->out() << net::to_string(net::time::now());
+			resp.append("location")->out() << "http://" << net::to_string(m_local) << ":" << m_port << "/config/device.xml";
+			resp.append("cache-control")->out() << "max-age=" << m_interval;
+			resp.append("server")->out() << http::get_server_version();
+			resp.append("st", st);
+			resp.append("ext");
+
+			if (st == m_usn)
+				resp.append("usn", m_usn);
+			else
+				resp.append("usn")->out() << m_usn << "::" << st;
+
+			resp.append("content-length", "0");
+
+			std::ostringstream os;
+			os << resp;
+			return os.str();
+		}
+
 		listener::listener(notifier& socket)
 			: m_notifier(socket)
 		{
@@ -100,6 +122,24 @@ namespace net
 			m_notifier.leave_group();
 		}
 
+		static void print_debug(bool ignoring, const net::http::http_request& header, const std::string& ssdp_ST, const std::string& ssdp_MAN)
+		{
+			std::ostringstream o;
+			if (ignoring)
+				o << "[...] ";
+			else
+				o << "[SSDP] ";
+			o << header.m_method << " " << header.m_resource << " " << header.m_protocol;
+			o << "\n  [ " << to_string(header.m_remote_address) << ":" << header.m_remote_port << " ]";
+
+			if (!ssdp_ST.empty())
+				o << " [ " << ssdp_ST << " ]";
+			if (!ssdp_MAN.empty())
+				o << " [ " << ssdp_MAN << " ]";
+
+			std::cout << o.str();
+		}
+
 		void listener::do_accept()
 		{
 			m_notifier.listen_from(boost::asio::buffer(m_buffer), m_remote_endpoint,
@@ -114,36 +154,35 @@ namespace net
 					if (parser.parse(data, data + bytes_recvd) == net::http::parser::finished)
 					{
 						auto && header = parser.header();
+						header.remote_endpoint(m_remote_endpoint);
+
 						if (header.m_method == "M-SEARCH")
 						{
 							bool printed = false;
-							auto st_it = header.find("st");
-							if (st_it != header.end())
+							std::string st = header.ssdp_ST();
+							std::string man = header.ssdp_MAN();
+							if (!st.empty())
 							{
-								auto && st = st_it->value();
-								if (st == "urn:schemas-upnp-org:service:ContentDirectory:1" ||
+								if (st == "urn:schemas-upnp-org:service:ContentManager:1" ||
+									st == "urn:schemas-upnp-org:service:ContentDirectory:1" ||
 									st == "urn:schemas-upnp-org:device:MediaServer:1" ||
 									st == "upnp:rootdevice" ||
+									st == "ssdp:all" ||
 									st == m_notifier.usn())
 								{
-									std::cout << "[Listener] Remote: " << to_string(m_remote_endpoint.address()) << ":" << m_remote_endpoint.port() << "\r\nREQUEST\r\n" << header;
+									print_debug(false, header, st, man);
 									printed = true;
+
+									if (st == "ssdp:all")
+										st = "urn:schemas-upnp-org:device:MediaServer:1";
+
+									m_notifier.discovery(st, m_remote_endpoint);
 								}
 							}
 
 							if (!printed)
 							{
-								std::ostringstream o;
-								o << "[IGNORING] " << header.m_method << " ";
-								if (header.m_resource != "*")
-								{
-									auto it = header.find("host");
-									if (it != header.end())
-										o << it->value();
-								}
-								o << header.m_resource << " " << header.m_protocol;
-								o << " [ " << to_string(m_remote_endpoint.address()) << ":" << m_remote_endpoint.port() << " ]\n";
-								std::cout << o.str();
+								print_debug(true, header, st, man);
 							}
 						}
 					}

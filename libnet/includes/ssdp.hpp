@@ -36,8 +36,10 @@ namespace net
 	{
 		enum notification_type
 		{
+			ssdp_other,
 			ALIVE,
-			BYEBYE
+			BYEBYE,
+			DISCOVER
 		};
 
 		static const net::ushort PORT = 1900;
@@ -49,8 +51,21 @@ namespace net
 			{
 			case ALIVE: return o << "ssdp:alive";
 			case BYEBYE: return o << "ssdp:byebye";
+			case DISCOVER: return o << "ssdp:discover";
 			}
 			return o << "ssdp:unknown:" << (int) type;
+		}
+
+		inline notification_type from_string(const std::string& header)
+		{
+			if (header.substr(0, 5) == "ssdp:")
+			{
+				auto type = header.substr(5);
+				if (type == "discover") return DISCOVER;
+				if (type == "alive") return ALIVE;
+				if (type == "byebye") return BYEBYE;
+			}
+			return ssdp_other;
 		}
 
 		const boost::asio::ip::address & ipv4_multicast();
@@ -72,6 +87,15 @@ namespace net
 				notify(m_usn, nts);
 				notify("urn:schemas-upnp-org:device:MediaServer:1", nts);
 				notify("urn:schemas-upnp-org:service:ContentDirectory:1", nts);
+				notify("urn:schemas-upnp-org:service:ContentManager:1", nts);
+			}
+
+			void discovery(const std::string& st, const boost::asio::ip::udp::endpoint& endpoint)
+			{
+				printf("Sending DISCOVER reply...\n"); fflush(stdout);
+
+				auto message = build_discovery_msg(st);
+				post(std::make_shared<udp::endpoint_datagram>(*this, endpoint, std::move(message)));
 			}
 
 			bool is_valid() const { return !m_local.is_unspecified(); }
@@ -105,6 +129,7 @@ namespace net
 			net::ushort                 m_port;
 
 			std::string build_msg(const std::string& nt, notification_type nts) const;
+			std::string build_discovery_msg(const std::string& st) const;
 
 			void notify(const std::string& nt, notification_type nts)
 			{
