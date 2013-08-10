@@ -30,57 +30,6 @@ namespace net
 {
 	namespace udp
 	{
-		void datagram::post(boost::asio::ip::udp::socket& socket, boost::asio::ip::udp::endpoint& endpoint)
-		{
-			auto shared = shared_from_this();
-			//std::cout << ">>>> " << to_string(endpoint.address()) << ":" << endpoint.port() << "\n";
-			//std::cout << m_payload;
-			socket.async_send_to(boost::asio::buffer(m_payload), endpoint, [this, shared](boost::system::error_code ec, size_t)
-			{
-				m_socket.done(shared_from_this());
-			});
-		}
-
-		datagram_socket::datagram_socket(boost::asio::io_service& io_service, const boost::asio::ip::address& address, net::ushort port)
-			: m_async_close(false)
-			, m_io_service(io_service)
-			, m_endpoint(address, port)
-			, m_socket(m_io_service, m_endpoint.protocol())
-			, m_address(address)
-			, m_port(port)
-		{
-		}
-
-		void datagram_socket::post(datagram_ptr d)
-		{
-			m_datagrams.insert(d);
-			d->post();
-		}
-
-		void datagram_socket::post(std::string payload)
-		{
-			post(std::make_shared<datagram>(*this, std::move(payload)));
-		}
-
-		void datagram_socket::done(datagram_ptr d)
-		{
-			m_datagrams.erase(d);
-			if (m_async_close && m_datagrams.empty())
-			{
-				m_async_close = false;
-				m_socket.close();
-			}
-		}
-
-		void datagram_socket::async_close()
-		{
-			m_async_close = false;
-			if (m_datagrams.empty())
-				m_socket.close();
-			else
-				m_async_close = true;
-		}
-
 		multicast_receiver::multicast_receiver(boost::asio::io_service& io_service, const endpoint_t& multicast)
 			: m_io_service(io_service)
 			, m_local(net::iface::get_default_interface())
