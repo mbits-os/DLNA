@@ -215,10 +215,10 @@ namespace dom { namespace xpath {
 		std::list<XmlNodePtr> parent;
 		parent.push_back(context);
 
-		for (auto && query : container)
+		for (auto&& query : container)
 		{
 			std::list<XmlNodePtr> list;
-			for (auto && ctx : parent)
+			for (auto&& ctx : parent)
 				query.select(ctx, list);
 			parent = list;
 		}
@@ -233,7 +233,7 @@ namespace dom { namespace xpath {
 		if (m_type == PRED_EXISTS)
 			return !list.empty();
 
-		for (auto && node : list)
+		for (auto&& node : list)
 		{
 			if (node && node->stringValue() == m_value)
 				return true;
@@ -245,10 +245,10 @@ namespace dom { namespace xpath {
 	{
 		std::list<XmlNodePtr> local;
 		m_selector.select(context, local);
-		for (auto && node : local)
+		for (auto&& node : local)
 		{
 			bool failed = false;
-			for (auto && pred : m_preds)
+			for (auto&& pred : m_preds)
 			{
 				if (!pred.test(node))
 				{
@@ -543,7 +543,7 @@ namespace dom { namespace xpath {
 	{
 		o << "[";
 		bool first = true;
-		for (auto && selector : pred.m_selectors)
+		for (auto&& selector : pred.m_selectors)
 		{
 			if (first) first = false;
 			else o << "/";
@@ -556,7 +556,7 @@ namespace dom { namespace xpath {
 	std::ostream& operator << (std::ostream& o, const Segment& seg)
 	{
 		o << seg.m_selector;
-		for (auto && pred : seg.m_preds)
+		for (auto&& pred : seg.m_preds)
 			o << pred;
 		return o;
 	}
@@ -564,7 +564,7 @@ namespace dom { namespace xpath {
 	std::ostream& operator << (std::ostream& o, const XPath& xpath)
 	{
 		bool first = true;
-		for (auto && seg : xpath.m_segments)
+		for (auto&& seg : xpath.m_segments)
 		{
 			if (first) first = false;
 			else o << "/";

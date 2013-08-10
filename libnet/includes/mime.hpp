@@ -82,14 +82,14 @@ namespace net
 			std::string m_value;
 			static inline std::string tolower(std::string s)
 			{
-				for (auto && c : s)
+				for (auto&& c : s)
 					c = std::tolower((unsigned char) c);
 				return s;
 			}
 			static inline std::string camel_case(std::string s)
 			{
 				bool capitalize = true;
-				for (auto && c : s)
+				for (auto&& c : s)
 				{
 					if (capitalize)
 						c = std::toupper((unsigned char) c);
@@ -199,7 +199,7 @@ namespace net
 
 		inline std::ostream& operator << (std::ostream& o, const headers& hh)
 		{
-			for (auto && h : hh)
+			for (auto&& h : hh)
 				o << h;
 			return o;
 		}

@@ -265,7 +265,7 @@ namespace dom
 			dom::XmlNodeListPtr getAttributes()
 			{
 				std::vector< dom::XmlNodePtr > out;
-				for (auto && pair : lookup)
+				for (auto&& pair : lookup)
 				{
 					out.push_back(pair.second);
 				}
@@ -338,7 +338,7 @@ namespace dom
 			{
 				XmlNodeImpl<XmlElement, dom::XmlElement>::fixQName(forElem);
 				if (!forElem) return;
-				for (auto && pair : lookup)
+				for (auto&& pair : lookup)
 				{
 					if (strncmp(pair.first.c_str(), "xmlns", 5) == 0 &&
 						(pair.first.length() == 5 || pair.first[5] == ':'))
@@ -357,7 +357,7 @@ namespace dom
 				{
 					nsRebuilt = true;
 					namespaces.clear();
-					for (auto && pair : lookup)
+					for (auto&& pair : lookup)
 					{
 						if (strncmp(pair.first.c_str(), "xmlns", 5) != 0) continue;
 						if (pair.first.length() != 5 && pair.first[5] != ':') continue;
