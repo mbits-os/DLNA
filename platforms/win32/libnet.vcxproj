@@ -72,6 +72,8 @@
     <ClInclude Include="..\..\libnet\includes\request_handler.hpp" />
     <ClInclude Include="..\..\libnet\includes\response.hpp" />
     <ClInclude Include="..\..\libnet\includes\ssdp.hpp" />
+    <ClInclude Include="..\..\libnet\includes\ssdp_device.hpp" />
+    <ClInclude Include="..\..\libnet\includes\ssdp_media_server.hpp" />
     <ClInclude Include="..\..\libnet\includes\types.hpp" />
     <ClInclude Include="..\..\libnet\includes\udp.hpp" />
     <ClInclude Include="..\..\libnet\pch.h" />

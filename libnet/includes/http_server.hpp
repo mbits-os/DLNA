@@ -29,6 +29,7 @@
 #include <http_connection.hpp>
 #include <memory>
 #include <request_handler.hpp>
+#include <ssdp_device.hpp>
 
 namespace net
 {
@@ -36,12 +37,13 @@ namespace net
 	{
 		struct server
 		{
-			server(boost::asio::io_service& service, const std::string& usn, net::ushort port);
+			server(boost::asio::io_service& service, const ssdp::device_ptr& device, net::ushort port);
 
 			void start() { do_accept(); }
 			void stop();
 
 		private:
+			ssdp::device_ptr m_device;
 			request_handler m_handler;
 			boost::asio::io_service& m_io_service;
 			boost::asio::ip::tcp::acceptor m_acceptor;

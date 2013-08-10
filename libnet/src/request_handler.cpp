@@ -280,11 +280,12 @@ namespace net
 			}
 		};
 
-		request_handler::request_handler(const std::string& usn)
+		request_handler::request_handler(const ssdp::device_ptr& device)
+			: m_device(device)
 		{
 			m_vars.emplace_back("host", to_string(iface::get_default_interface()));
 			m_vars.emplace_back("port", "6001");
-			m_vars.emplace_back("uuid", usn);
+			m_vars.emplace_back("uuid", m_device->usn());
 		}
 
 		static dom::XmlNodeListPtr env_body(const dom::XmlDocumentPtr& doc)
@@ -448,7 +449,7 @@ namespace net
 		void request_handler::make_templated(const char* tmplt, const char* content_type, response& resp)
 		{
 			auto & header = resp.header();
-			header.clear();
+			header.clear(m_device->server());
 			header.append("content-type", content_type);
 			resp.content(std::make_shared<template_content>(tmplt, std::ref(m_vars)));
 		}
@@ -482,7 +483,7 @@ namespace net
 			}
 
 			auto & header = resp.header();
-			header.clear();
+			header.clear(m_device->server());
 			header.append("content-type", content_type);
 			header.append("last-modified")->out() << to_string(time::last_write(path));
 			resp.content(content::from_file(path));
@@ -491,7 +492,7 @@ namespace net
 		void request_handler::ContentDirectory_GetSystemUpdateID(const http_request& req, response& resp)
 		{
 			auto & header = resp.header();
-			header.clear();
+			header.clear(m_device->server());
 			header.append("content-type", "text/xml; charset=\"utf-8\"");
 			resp.content(content::from_string(
 				R"(<?xml version="1.0" encoding="utf-8"?>)"
@@ -516,7 +517,7 @@ namespace net
 			}
 
 			auto & header = resp.header();
-			header.clear();
+			header.clear(m_device->server());
 			header.append("content-type", "text/xml; charset=\"utf-8\"");
 			auto msg = 
 				R"(<?xml version="1.0" encoding="utf-8"?>)"
@@ -544,7 +545,7 @@ namespace net
 		void request_handler::make_404(response& resp)
 		{
 			auto & header = resp.header();
-			header.clear();
+			header.clear(m_device->server());
 			header.m_status = 404;
 			header.append("content-type", "text/plain");
 			resp.content(content::from_string("File not found...\n"));

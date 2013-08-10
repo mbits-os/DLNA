@@ -79,5 +79,11 @@
     <ClInclude Include="..\..\libnet\includes\response.hpp">
       <Filter>includes</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\libnet\includes\ssdp_device.hpp">
+      <Filter>includes</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\libnet\includes\ssdp_media_server.hpp">
+      <Filter>includes</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

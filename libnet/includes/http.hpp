@@ -66,12 +66,11 @@ namespace net
 		}
 
 		module_version get_os_module_version();
-		module_version get_server_module_version();
 		inline module_version get_upnp_module_version() { return { "UPnP", 1, 1 }; }
 
-		inline std::tuple<module_version, module_version, module_version> get_server_version()
+		inline std::tuple<module_version, module_version, module_version> get_ssdp_server_version(const module_version& server)
 		{
-			return std::make_tuple(get_os_module_version(), get_upnp_module_version(), get_server_module_version());
+			return std::make_tuple(get_os_module_version(), get_upnp_module_version(), server);
 		}
 
 		struct http_request_line
@@ -307,12 +306,12 @@ namespace net
 				: http_response_line(status, proto)
 			{}
 
-			void clear()
+			void clear(const module_version& server)
 			{
 				m_protocol = http_1_1;
 				m_status = 200;
 				mime::headers::clear();
-				append("server")->out() << get_server_module_version() << " (" << get_os_module_version() << ")";
+				append("server")->out() << server << " (" << get_os_module_version() << ")";
 				append("date")->out() << to_string(time::now());
 			}
 		};

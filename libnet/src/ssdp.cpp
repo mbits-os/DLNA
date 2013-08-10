@@ -91,12 +91,12 @@ namespace net
 			std::cout << o.str();
 		}
 
-		ticker::ticker(boost::asio::io_service& io_service, long seconds, const std::string& usn, net::ushort port)
+		ticker::ticker(boost::asio::io_service& io_service, const device_ptr& device, long seconds, net::ushort port)
 			: m_service(io_service)
+			, m_device(device)
 			, m_timer(io_service, boost::posix_time::seconds(seconds / 3))
 			, m_interval(seconds)
 			, m_local(net::iface::get_default_interface())
-			, m_usn(usn)
 			, m_port(port)
 		{
 		}
@@ -124,15 +124,18 @@ namespace net
 			req.append("host")->out() << net::to_string(ipv4_multicast()) << ":" << PORT;
 			req.append("nt", nt);
 			req.append("nts")->out() << nts;
-			if (nt == m_usn)
-				req.append("usn", m_usn);
+
+			auto && usn = m_device->usn();
+			if (nt == usn)
+				req.append("usn", usn);
 			else
-				req.append("usn")->out() << m_usn << "::" << nt;
+				req.append("usn")->out() << usn << "::" << nt;
+
 			if (nts == ALIVE)
 			{
 				req.append("location")->out() << "http://" << net::to_string(m_local) << ":" << m_port << "/config/device.xml";
 				req.append("cache-control")->out() << "max-age=" << m_interval;
-				req.append("server")->out() << http::get_server_version();
+				req.append("server")->out() << http::get_ssdp_server_version(m_device->server());
 			}
 
 			std::ostringstream os;
@@ -147,7 +150,7 @@ namespace net
 			printf("Sending %s...\n", nts == ALIVE ? "ALIVE" : "BYEBYE"); fflush(stdout);
 
 			socket->send(build_msg("upnp:rootdevice", nts));
-			socket->send(build_msg(m_usn, nts));
+			socket->send(build_msg(m_device->usn(), nts));
 			socket->send(build_msg("urn:schemas-upnp-org:device:MediaServer:1", nts));
 			socket->send(build_msg("urn:schemas-upnp-org:service:ContentDirectory:1", nts));
 			socket->send(build_msg("urn:schemas-upnp-org:service:ContentManager:1", nts));
@@ -164,11 +167,11 @@ namespace net
 			});
 		}
 
-		receiver::receiver(boost::asio::io_service& io_service, const std::string& usn, net::ushort port)
+		receiver::receiver(boost::asio::io_service& io_service, const device_ptr& device, net::ushort port)
 			: m_impl(io_service, boost::asio::ip::udp::endpoint(ipv4_multicast(), PORT))
+			, m_device(device)
 			, m_service(io_service)
 			, m_local(net::iface::get_default_interface())
-			, m_usn(usn)
 			, m_port(port)
 		{
 		}
@@ -200,7 +203,7 @@ namespace net
 								st == "urn:schemas-upnp-org:device:MediaServer:1" ||
 								st == "upnp:rootdevice" ||
 								st == "ssdp:all" ||
-								st == m_usn)
+								st == m_device->usn())
 							{
 								print_debug(false, header);
 								printed = true;
@@ -246,14 +249,15 @@ namespace net
 			resp.append("date")->out() << net::to_string(net::time::now());
 			resp.append("location")->out() << "http://" << net::to_string(m_local) << ":" << m_port << "/config/device.xml";
 			resp.append("cache-control")->out() << "max-age=1800";
-			resp.append("server")->out() << http::get_server_version();
+			resp.append("server")->out() << http::get_ssdp_server_version(m_device->server());
 			resp.append("st", st);
 			resp.append("ext");
 
-			if (st == m_usn)
-				resp.append("usn", m_usn);
+			auto && usn = m_device->usn();
+			if (st == usn)
+				resp.append("usn", usn);
 			else
-				resp.append("usn")->out() << m_usn << "::" << st;
+				resp.append("usn")->out() << usn << "::" << st;
 
 			resp.append("content-length", "0");
 

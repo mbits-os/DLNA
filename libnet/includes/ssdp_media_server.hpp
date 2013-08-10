@@ -21,46 +21,47 @@
  * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
+#ifndef __SSDP_MEDIA_SERVER_HPP__
+#define __SSDP_MEDIA_SERVER_HPP__
 
-#ifndef __REQUEST_HANDLER_HPP__
-#define __REQUEST_HANDLER_HPP__
-
-#include <http.hpp>
-#include <boost/utility.hpp>
-#include <string>
-#include <vector>
-#include <boost/filesystem.hpp>
 #include <ssdp_device.hpp>
-
-namespace dom
-{
-	struct XmlDocument;
-	typedef std::shared_ptr<XmlDocument> XmlDocumentPtr;
-};
 
 namespace net
 {
-	namespace http
+	namespace ssdp
 	{
-		class response;
-
-		typedef std::vector<std::pair<std::string, std::string>> template_vars;
-		class request_handler: boost::noncopyable
+		namespace av
 		{
-			template_vars m_vars;
-			ssdp::device_ptr m_device;
-			void make_templated(const char* tmplt, const char* content_type, response& resp);
-			void make_file(const boost::filesystem::path& path, response& resp);
+			struct media_server : device
+			{
+				media_server(const device_info& info) : device(info) {}
+			};
+		}
 
-			void ContentDirectory_GetSystemUpdateID(const http_request& req, response& resp);
-			void ContentDirectory_Browse(const http_request& req, response& resp, const dom::XmlDocumentPtr& doc);
-
-		public:
-			request_handler(const ssdp::device_ptr& device);
-			void handle(const http_request& req, response& resp);
-			void make_404(response& resp);
+		/*
+		struct service
+		{
+			virtual ~service() = 0;
 		};
+		typedef std::shared_ptr<service> service_ptr;
+
+		struct device
+		{
+			device(const device_info& info)
+				: m_info(info)
+			{
+
+			}
+			virtual ~device() {}
+
+			virtual net::http::module_version server() const { return m_info.m_server; }
+		private:
+			const device_info m_info;
+		};
+		typedef std::shared_ptr<device> device_ptr;
+		*/
+
 	}
 }
 
-#endif // __REQUEST_HANDLER_HPP__
+#endif //__SSDP_MEDIA_SERVER_HPP__

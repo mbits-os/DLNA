@@ -29,6 +29,7 @@
 #include <http_server.hpp>
 #include <udp.hpp>
 #include <interface.hpp>
+#include <ssdp_device.hpp>
 
 namespace net
 {
@@ -72,15 +73,15 @@ namespace net
 
 		struct ticker
 		{
-			ticker(boost::asio::io_service& io_service, long seconds, const std::string& usn, net::ushort port);
+			ticker(boost::asio::io_service& io_service, const device_ptr& device, long seconds, net::ushort port);
 			void start();
 			void stop();
 		private:
+			device_ptr                  m_device;
 			boost::asio::io_service&    m_service;
 			boost::asio::deadline_timer m_timer;
 			long                        m_interval;
 			boost::asio::ip::address    m_local;
-			std::string                 m_usn;
 			net::ushort                 m_port;
 
 			std::string build_msg(const std::string& nt, notification_type nts) const;
@@ -91,7 +92,7 @@ namespace net
 
 		struct receiver
 		{
-			receiver(boost::asio::io_service& io_service, const std::string& usn, net::ushort port);
+			receiver(boost::asio::io_service& io_service, const device_ptr& device, net::ushort port);
 			void start();
 			void stop();
 		private:
@@ -102,9 +103,9 @@ namespace net
 			typedef boost::asio::ip::udp::endpoint endpoint_t;
 			typedef std::array<char, 1024>         buffer_t;
 
+			device_ptr  m_device;
 			service_t&  m_service;
 			address_t   m_local;
-			std::string m_usn;
 			net::ushort m_port;
 
 			void discovery(const std::string& st);
@@ -113,11 +114,10 @@ namespace net
 
 		struct server
 		{
-			server(boost::asio::io_service& service, net::ushort port)
-				: m_usn("uuid:" + net::create_uuid())
-				, m_http(service, m_usn, port)
-				, m_alive_ticker(service, INTERVAL, m_usn, port)
-				, m_listener(service, m_usn, port)
+			server(boost::asio::io_service& service, const device_ptr& device, net::ushort port)
+				: m_http(service, device, port)
+				, m_alive_ticker(service, device, INTERVAL, port)
+				, m_listener(service, device, port)
 			{
 			}
 
@@ -136,7 +136,6 @@ namespace net
 			}
 
 		private:
-			std::string  m_usn;
 			http::server m_http;
 			ticker       m_alive_ticker;
 			receiver     m_listener;

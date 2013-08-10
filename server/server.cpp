@@ -28,10 +28,7 @@
 #include <http.hpp>
 #include <http_server.hpp>
 #include <ssdp.hpp>
-
-namespace net { namespace http {
-	module_version get_server_module_version() { return {"lanRadio", 0, 1}; }
-}}
+#include <ssdp_media_server.hpp>
 
 namespace lan
 {
@@ -39,10 +36,10 @@ namespace lan
 
 	struct radio
 	{
-		radio()
+		radio(const net::ssdp::device_ptr& device)
 			: m_service()
 			, m_signals(m_service)
-			, m_upnp(m_service, PORT)
+			, m_upnp(m_service, device, PORT)
 		{
 			m_signals.add(SIGINT);
 			m_signals.add(SIGTERM);
@@ -69,7 +66,15 @@ int main(int argc, char* argv [])
 {
 	try
 	{
-		lan::radio lanRadio;
+		net::ssdp::device_info info = {
+			{ "lanRadio", 0, 1 },
+			{ "lanRadio", "LAN Radio [" + boost::asio::ip::host_name() + "]", "01", "http://www.midnightbits.org/lanRadio" },
+			{ "midnightBITS", "http://www.midnightbits.com" }
+		};
+
+		auto av = std::make_shared<net::ssdp::av::media_server>(info);
+
+		lan::radio lanRadio(av);
 
 		lanRadio.run();
 	}

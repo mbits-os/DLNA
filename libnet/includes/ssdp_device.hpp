@@ -21,46 +21,58 @@
  * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-
-#ifndef __REQUEST_HANDLER_HPP__
-#define __REQUEST_HANDLER_HPP__
+#ifndef __SSDP_DEVICE_HPP__
+#define __SSDP_DEVICE_HPP__
 
 #include <http.hpp>
-#include <boost/utility.hpp>
-#include <string>
-#include <vector>
-#include <boost/filesystem.hpp>
-#include <ssdp_device.hpp>
-
-namespace dom
-{
-	struct XmlDocument;
-	typedef std::shared_ptr<XmlDocument> XmlDocumentPtr;
-};
 
 namespace net
 {
-	namespace http
+	namespace ssdp
 	{
-		class response;
-
-		typedef std::vector<std::pair<std::string, std::string>> template_vars;
-		class request_handler: boost::noncopyable
+		struct device_info
 		{
-			template_vars m_vars;
-			ssdp::device_ptr m_device;
-			void make_templated(const char* tmplt, const char* content_type, response& resp);
-			void make_file(const boost::filesystem::path& path, response& resp);
+			net::http::module_version m_server;
 
-			void ContentDirectory_GetSystemUpdateID(const http_request& req, response& resp);
-			void ContentDirectory_Browse(const http_request& req, response& resp, const dom::XmlDocumentPtr& doc);
+			struct model_info
+			{
+				std::string m_name;
+				std::string m_friendly_name;
+				std::string m_number;
+				std::string m_url;
+			} m_model;
 
-		public:
-			request_handler(const ssdp::device_ptr& device);
-			void handle(const http_request& req, response& resp);
-			void make_404(response& resp);
+			struct manufacturer_info
+			{
+				std::string m_name;
+				std::string m_url;
+			} m_manufacturer;
 		};
+
+		struct service
+		{
+			virtual ~service() = 0;
+		};
+		typedef std::shared_ptr<service> service_ptr;
+
+		struct device
+		{
+			device(const device_info& info)
+				: m_info(info)
+				, m_usn("uuid:" + net::create_uuid())
+			{
+			}
+			virtual ~device() {}
+
+			virtual const net::http::module_version& server() const { return m_info.m_server; }
+			virtual const std::string& usn() const { return m_usn; }
+		private:
+			const device_info m_info;
+			const std::string m_usn;
+		};
+		typedef std::shared_ptr<device> device_ptr;
+
 	}
 }
 
-#endif // __REQUEST_HANDLER_HPP__
+#endif //__SSDP_DEVICE_HPP__
