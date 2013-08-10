@@ -226,6 +226,85 @@ namespace net
 			const_iterator end() const { return const_iterator(m_device, m_device->get_service_count()); }
 		};
 
+		namespace error
+		{
+			enum error_code
+			{
+				no_error                               = 0,
+				invalid_action                         = 401,
+				invalid_args                           = 402,
+				action_failed                          = 501,
+				argument_value_invalid                 = 600,
+				argument_value_out_of_range            = 601,
+				optional_action_not_implemented        = 602,
+				out_of_memory                          = 603,
+				human_intervention_required            = 604,
+				string_argument_too_long               = 605,
+				no_such_object                         = 701,
+				unsupported_or_invalid_search_criteria = 708,
+				unsupported_or_invalid_sort_criteria   = 709,
+				no_such_container                      = 710,
+				cannot_process_the_request             = 720,
+			};
+		}
+
+		struct service_error : std::runtime_error
+		{
+			static inline const char* error_message(error::error_code code)
+			{
+				switch (code)
+				{
+				case error::invalid_action:                         return "Invalid Action";
+				case error::invalid_args:                           return "Invalid Args";
+				case error::action_failed:                          return "Action Failed";
+				case error::argument_value_invalid:                 return "Argument Value Invalid";
+				case error::argument_value_out_of_range:            return "Argument Value Out of Range";
+				case error::optional_action_not_implemented:        return "Optional Action Not Implemented";
+				case error::out_of_memory:                          return "Out of Memory";
+				case error::human_intervention_required:            return "Human Intervention Required";
+				case error::string_argument_too_long:               return "String Argument Too Long";
+				case error::no_such_object:                         return "No such object";
+				case error::unsupported_or_invalid_search_criteria: return "Unsupported or invalid search criteria";
+				case error::unsupported_or_invalid_sort_criteria:   return "Unsupported or invalid sort criteria";
+				case error::no_such_container:                      return "No such container";
+				case error::cannot_process_the_request:             return "Cannot process the request";
+				}
+				return "";
+			}
+
+			service_error(error::error_code code)
+				: std::runtime_error(error_message(code))
+				, m_code(code)
+			{}
+			service_error(error::error_code code, const char* message)
+				: std::runtime_error(message)
+				, m_code(code)
+			{}
+
+			error::error_code code() const throw() { return m_code; }
+			const char * message() const throw() { return std::runtime_error::what(); }
+			const char * what() const throw()
+			{
+				if (m_what.empty())
+				{
+					try
+					{
+						const char* message = std::runtime_error::what();
+						m_what = std::to_string(m_code);
+						if (message && *message)
+						{
+							m_what += ": ";
+							m_what += message;
+						}
+					}
+					catch (...) { return std::runtime_error::what(); }
+				}
+				return m_what.c_str();
+			}
+		private:
+			error::error_code   m_code;
+			mutable std::string m_what;
+		};
 	}
 }
 
