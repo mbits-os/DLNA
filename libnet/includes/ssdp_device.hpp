@@ -84,14 +84,25 @@ namespace net
 				return call_by_name(events, name, req, doc, response);
 			}
 		protected:
-			template <typename Klass>
-			void add_control(const char* name, void (Klass::* method)(const http::http_request& req, const dom::XmlDocumentPtr& doc, http::response& response)) { controls.emplace_back(name, make_call(method)); }
-			template <typename Klass>
-			void add_event(const char* name, void (Klass::* method)(const http::http_request& req, const dom::XmlDocumentPtr& doc, http::response& response)) { events.emplace_back(name, make_call(method)); }
-			template <typename Klass>
-			void add_control(const char* name, void (*function)(Klass*, const http::http_request& req, const dom::XmlDocumentPtr& doc, http::response& response)) { controls.emplace_back(name, make_call(function)); }
-			template <typename Klass>
-			void add_event(const char* name, void (*function)(Klass*, const http::http_request& req, const dom::XmlDocumentPtr& doc, http::response& response)) { events.emplace_back(name, make_call(function)); }
+#define ADD_(type, PRE_CLASS, FIRST_ARG) \
+	template <typename Klass> \
+	void add_##type(const char* name, void (PRE_CLASS* call)(FIRST_ARG const http::http_request& req, const dom::XmlDocumentPtr& doc, http::response& response)) { type##s.emplace_back(name, make_call(call)); }
+
+#define KLASS_ Klass*,
+#define ADD_METHOD_(type) ADD_(type, Klass::, )
+#define ADD_FUNC_(type) ADD_(type, , KLASS_)
+#define ADD_METHOD ADD_METHOD_(control) ADD_METHOD_(event)
+#define ADD_FUNC ADD_FUNC_(control) ADD_FUNC_(event)
+
+			ADD_METHOD
+			ADD_FUNC
+
+#undef KLASS_
+#undef ADD_METHOD
+#undef ADD_METHOD_
+#undef ADD_FUNC
+#undef ADD_FUNC_
+#undef ADD_
 
 		private:
 			typedef std::function<void (service*, const http::http_request&, const dom::XmlDocumentPtr&, http::response&)> call;

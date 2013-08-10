@@ -253,44 +253,38 @@ namespace net
 					o << it->value();
 			}
 			o << header.m_resource << " " << header.m_protocol;
-			o << "\n  [ " << to_string(header.m_remote_address) << ":" << header.m_remote_port << " ]";
+			o << " [" << to_string(header.m_remote_address) << ":" << header.m_remote_port << "]";
 
-			auto ua = header.find("user-agent");
-			if (ua != header.end())
+			auto ua = header.user_agent();
+			if (!ua.empty())
 			{
-				o << " [ " << ua->value();
-				auto pui = header.find("x-av-physical-unit-info");
-				auto ci = header.find("x-av-client-info");
-				if (pui != header.end() || ci != header.end())
+				o << " " << ua;
+				auto pui = header.simple("x-av-physical-unit-info");
+				auto ci = header.simple("x-av-client-info");
+				if (!pui.empty() || !ci.empty())
 				{
-					o << " | ";
-					if (pui != header.end())
-					{
-						o << pui->value();
-						if (ci != header.end())
-							o << " | ";
-					}
-					if (ci != header.end())
-					{
-						o << ci->value();
-					}
+					o << " | " << pui;
+					if (!pui.empty() && !ci.empty())
+						o << " ";
+					o << ci;
 				}
-				o << " ]";
 			}
 			o << "\n";
 
 			if (!SOAPAction.empty())
-				o << "  [ " << SOAPAction << " ]\n";
-
-			if (doc)
 			{
-				o << "\nSOAP:\n";
-				auto children = env_body(doc);
-				if (children)
-					dom::Print(o, children);
+				if (doc)
+				{
+					o << "\n[" << SOAPAction << "]:\n";
+					auto children = env_body(doc);
+					if (children)
+						dom::Print(o, children, false, 1);
+					else
+						dom::Print(o, doc->documentElement(), false, 1);
+					o << "\n";
+				}
 				else
-					dom::Print(o, doc->documentElement());
-				o << "\n";
+					o << "    [" << SOAPAction << "]\n";
 			}
 
 			std::cout << o.str();
