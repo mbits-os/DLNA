@@ -95,31 +95,85 @@ namespace net
 					o << "<Id>" << m_device->system_update_id() << "</Id>";
 					return o.str();
 				}
+				template <typename T, typename Node>
+				T extract(const Node& node, const std::string& xpath, const T& def = T())
+				{
+					auto ptr = node->find(xpath);
+					if (!ptr)
+						return def;
+
+					auto text = ptr->stringValue();
+					if (text.empty())
+						return def;
+
+					T val;
+					std::istringstream i(text);
+					i >> val;
+					return val;
+				}
+
+				static search_criteria parse_sort(const std::string& sort)
+				{
+					return search_criteria();
+				}
+
 				std::string content_directory::soap_control_Browse(const http::http_request& req, const dom::XmlDocumentPtr& doc)
 				{
-					std::string browse_flag;
-					//auto children = env_body(doc);
-					if (doc)
+					if (!doc)
+						throw ssdp::service_error(ssdp::error::invalid_args);
+
+					dom::NSData ns [] = { { "s", "http://schemas.xmlsoap.org/soap/envelope/" }, { "upnp", "urn:schemas-upnp-org:service:ContentDirectory:1" } };
+					auto browse = doc->find("/s:Envelope/s:Body/upnp:Browse", ns);
+					if (!browse)
+						throw ssdp::service_error(ssdp::error::invalid_args);
+
+					auto object_id       = extract<std::string>(browse, "ObjectID", "0");
+					auto browse_flag     = extract<std::string>(browse, "BrowseFlag");
+					auto filter          = extract<std::string>(browse, "Filter");
+					auto starting_index  = extract<unsigned long long>(browse, "StartingIndex", 0);
+					auto requested_count = extract<unsigned long long>(browse, "RequestedCount", (unsigned long long)-1);
+					auto sort_criteria   = extract<std::string>(browse, "SortCriteria");
+
+					bool browse_children = browse_flag == "BrowseDirectChildren";
+					if (!browse_children && browse_flag != "BrowseMetadata")
+						throw ssdp::service_error(ssdp::error::invalid_action);
+
+					std::ostringstream value;
+					unsigned long long returned = 0;
+					unsigned long long contains = 0;
+					unsigned long long update_id = m_device->system_update_id();
+
 					{
-						dom::NSData ns [] = { { "s", "http://schemas.xmlsoap.org/soap/envelope/" }, { "upnp", "urn:schemas-upnp-org:service:ContentDirectory:1" } };
-						auto BrowseFlag = doc->find("/s:Envelope/s:Body/upnp:Browse/BrowseFlag", ns);
-						if (BrowseFlag)
-							browse_flag = BrowseFlag->stringValue();
+						value<< "<Result>" << R"(&lt;DIDL-Lite xmlns="urn:schemas-upnp-org:metadata-1-0/DIDL-Lite/" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:upnp="urn:schemas-upnp-org:metadata-1-0/upnp/"&gt;)";
+						auto item = m_device->get_item(object_id);
+
+						if (item)
+						{
+							update_id = item->update_id();
+
+							if (browse_children)
+							{
+								auto children = item->list(starting_index, requested_count, parse_sort(sort_criteria));
+								// for each child in children: filter and output the child
+								returned = children.size();
+								contains = item->predict_count(starting_index + returned);
+							}
+							else
+							{
+								// filter and output the item
+								returned = 1;
+								contains = 1;
+							}
+						}
+
+						value
+							<< R"(&lt;/DIDL-Lite&gt;)" << "</Result>\n"
+							<< "<NumberReturned>" << returned << "</NumberReturned>\n"
+							<< "<TotalMatches>" << contains << "</TotalMatches>\n"
+							<< "<UpdateID>" << update_id << "</UpdateID>\n";
 					}
 
-					return
-						R"(<Result>)"
-						R"(&lt;DIDL-Lite xmlns="urn:schemas-upnp-org:metadata-1-0/DIDL-Lite/" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:upnp="urn:schemas-upnp-org:metadata-1-0/upnp/"&gt;)"
-
-						// EMPTY RESPONSE
-
-						R"(&lt;/DIDL-Lite&gt;)"
-						R"(</Result>)"
-						R"(<NumberReturned>0</NumberReturned>)"
-						// from upnp spec: If BrowseMetadata is specified in the BrowseFlags then TotalMatches = 1
-						R"(<TotalMatches>1</TotalMatches>)"
-						R"(<UpdateID>1</UpdateID>)"
-						;
+					return value.str();
 				}
 
 				std::string connection_manager::soap_control_GetProtocolInfo(const http::http_request& req, const dom::XmlDocumentPtr& doc)
