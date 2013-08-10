@@ -162,37 +162,76 @@ namespace net
 			void do_accept();
 		};
 
+		struct ticker
+		{
+			ticker(boost::asio::io_service& io_service, long seconds, const std::string& usn, net::ushort port);
+			void start();
+			void stop();
+		private:
+			boost::asio::io_service&    m_service;
+			boost::asio::deadline_timer m_timer;
+			long                        m_interval;
+			boost::asio::ip::address    m_local;
+			std::string                 m_usn;
+			net::ushort                 m_port;
+
+			std::string build_msg(const std::string& nt, notification_type nts) const;
+
+			void notify(notification_type nts) const;
+			void stillAlive();
+		};
+
+		struct receiver
+		{
+			receiver(boost::asio::io_service& io_service, const std::string& usn, net::ushort port);
+			void start();
+			void stop();
+		private:
+			udp::multicast_receiver m_impl;
+
+			typedef boost::asio::io_service        service_t;
+			typedef boost::asio::ip::address_v4    address_t;
+			typedef boost::asio::ip::udp::endpoint endpoint_t;
+			typedef std::array<char, 1024>         buffer_t;
+
+			service_t&  m_service;
+			address_t   m_local;
+			std::string m_usn;
+			net::ushort m_port;
+
+			void discovery(const std::string& st);
+			std::string build_discovery_msg(const std::string& st) const;
+		};
+
 		struct server
 		{
 			server(boost::asio::io_service& service, net::ushort port)
 				: m_usn("uuid:" + net::create_uuid())
 				, m_http(service, m_usn, port)
-				, m_notifier(service, INTERVAL, m_usn, port)
-				, m_listener(m_notifier)
+				, m_alive_ticker(service, INTERVAL, m_usn, port)
+				, m_listener(service, m_usn, port)
 			{
 			}
-
-			bool is_valid() const { return m_notifier.is_valid(); }
 
 			void start()
 			{
 				m_http.start();
-				m_notifier.start();
+				m_alive_ticker.start();
 				m_listener.start();
 			}
 
 			void stop()
 			{
 				m_listener.stop();
-				m_notifier.stop();
+				m_alive_ticker.stop();
 				m_http.stop();
 			}
 
 		private:
 			std::string  m_usn;
 			http::server m_http;
-			notifier     m_notifier;
-			listener     m_listener;
+			ticker       m_alive_ticker;
+			receiver     m_listener;
 		};
 	}
 }

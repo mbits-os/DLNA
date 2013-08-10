@@ -42,6 +42,12 @@ namespace net
 			return multicast_address;
 		}
 
+		const boost::asio::ip::udp::endpoint & ipv4_multicast_endpoint()
+		{
+			static boost::asio::ip::udp::endpoint multicast_endpoint { ipv4_multicast(), PORT };
+			return multicast_endpoint;
+		}
+
 		notifier::notifier(boost::asio::io_service& io_service, long seconds, const std::string& usn, net::ushort port)
 			: udp::datagram_socket(io_service, ipv4_multicast(), PORT)
 			, m_timer(io_service, boost::posix_time::seconds(1))
@@ -122,8 +128,10 @@ namespace net
 			m_notifier.leave_group();
 		}
 
-		static void print_debug(bool ignoring, const net::http::http_request& header, const std::string& ssdp_ST, const std::string& ssdp_MAN)
+		static void print_debug(bool ignoring, const net::http::http_request& header)
 		{
+			std::string ssdp_ST = header.ssdp_ST();
+
 			if (ssdp_ST == "urn:schemas-upnp-org:device:InternetGatewayDevice:1")
 				return;
 
@@ -132,14 +140,33 @@ namespace net
 				o << "[...] ";
 			else
 				o << "[SSDP] ";
-			o << header.m_method << " " << header.m_resource << " " << header.m_protocol << " [ " << to_string(header.m_remote_address) << ":" << header.m_remote_port << " ]";
+			o << header.m_method << " " << header.m_resource << " " << header.m_protocol << " [" << to_string(header.m_remote_address) << ":" << header.m_remote_port << "]";
 
 			if (!ssdp_ST.empty())
-				o << " [ " << ssdp_ST << " ]";
+				o << " [" << ssdp_ST << "]";
+
+			auto ssdp_MAN = header.ssdp_MAN();
 			if (!ssdp_MAN.empty())
-				o << " [ " << ssdp_MAN << " ]";
+				o << " [" << ssdp_MAN << "]";
+
+			auto ssdp_NTS = header.quoted("nts");
+			if (!ssdp_NTS.empty())
+			{
+				auto location = header.simple("location");
+				if (ssdp_NTS == "ssdp:alive" && !location.empty())
+					o << " [" << location << "]";
+				else
+					o << " [" << ssdp_NTS << "]";
+			}
+
+			auto ssdp_NT = header.quoted("nt");
+			if (!ssdp_NT.empty())
+				o << " [" << ssdp_NT << "]";
 
 			o << "\n";
+
+			if (ssdp_ST.empty() && ssdp_MAN.empty() && ssdp_NT.empty() && ssdp_NTS.empty())
+				o << header;
 
 			std::cout << o.str();
 		}
@@ -164,7 +191,6 @@ namespace net
 						{
 							bool printed = false;
 							std::string st = header.ssdp_ST();
-							std::string man = header.ssdp_MAN();
 							if (!st.empty())
 							{
 								if (st == "urn:schemas-upnp-org:service:ContentManager:1" ||
@@ -174,7 +200,7 @@ namespace net
 									st == "ssdp:all" ||
 									st == m_notifier.usn())
 								{
-									print_debug(false, header, st, man);
+									print_debug(false, header);
 									printed = true;
 
 									if (st == "ssdp:all")
@@ -186,7 +212,7 @@ namespace net
 
 							if (!printed)
 							{
-								print_debug(true, header, st, man);
+								print_debug(true, header);
 							}
 						}
 					}
@@ -195,5 +221,177 @@ namespace net
 				}
 			});
 		}
+
+		ticker::ticker(boost::asio::io_service& io_service, long seconds, const std::string& usn, net::ushort port)
+			: m_service(io_service)
+			, m_timer(io_service, boost::posix_time::seconds(seconds / 3))
+			, m_interval(seconds)
+			, m_local(net::iface::get_default_interface())
+			, m_usn(usn)
+			, m_port(port)
+		{
+		}
+
+		void ticker::start()
+		{
+			notify(ALIVE);
+
+			m_timer.async_wait([this](boost::system::error_code ec)
+			{
+				if (!ec)
+					stillAlive();
+			});
+		}
+
+		void ticker::stop()
+		{
+			m_timer.cancel();
+			notify(BYEBYE);
+		}
+
+		std::string ticker::build_msg(const std::string& nt, notification_type nts) const
+		{
+			http::http_request req { "NOTIFY", "*" };
+			req.append("host")->out() << net::to_string(ipv4_multicast()) << ":" << PORT;
+			req.append("nt", nt);
+			req.append("nts")->out() << nts;
+			if (nt == m_usn)
+				req.append("usn", m_usn);
+			else
+				req.append("usn")->out() << m_usn << "::" << nt;
+			if (nts == ALIVE)
+			{
+				req.append("location")->out() << "http://" << net::to_string(m_local) << ":" << m_port << "/config/device.xml";
+				req.append("cache-control")->out() << "max-age=" << m_interval;
+				req.append("server")->out() << http::get_server_version();
+			}
+
+			std::ostringstream os;
+			os << req;
+			return os.str();
+		}
+
+		void ticker::notify(notification_type nts) const
+		{
+			auto socket = std::make_shared<udp::multicast_socket>(m_service, ipv4_multicast_endpoint());
+
+			printf("Sending %s...\n", nts == ALIVE ? "ALIVE" : "BYEBYE"); fflush(stdout);
+
+			socket->send(build_msg("upnp:rootdevice", nts));
+			socket->send(build_msg(m_usn, nts));
+			socket->send(build_msg("urn:schemas-upnp-org:device:MediaServer:1", nts));
+			socket->send(build_msg("urn:schemas-upnp-org:service:ContentDirectory:1", nts));
+			socket->send(build_msg("urn:schemas-upnp-org:service:ContentManager:1", nts));
+		}
+
+		void ticker::stillAlive()
+		{
+			notify(ALIVE);
+			m_timer.expires_at(m_timer.expires_at() + boost::posix_time::seconds(m_interval));
+			m_timer.async_wait([this](boost::system::error_code ec)
+			{
+				if (!ec)
+					stillAlive();
+			});
+		}
+
+		receiver::receiver(boost::asio::io_service& io_service, const std::string& usn, net::ushort port)
+			: m_impl(io_service, boost::asio::ip::udp::endpoint(ipv4_multicast(), PORT))
+			, m_service(io_service)
+			, m_local(net::iface::get_default_interface())
+			, m_usn(usn)
+			, m_port(port)
+		{
+		}
+
+		namespace mcast = boost::asio::ip::multicast;
+		void receiver::start()
+		{
+			m_impl.start([this]
+			{
+				net::http::header_parser<net::http::http_request> parser;
+
+				const char* data = m_impl.data();
+
+				if (parser.parse(data, data + m_impl.received()) == net::http::parser::finished)
+				{
+					auto && header = parser.header();
+					header.remote_endpoint(m_impl.remote());
+
+					bool printed = false;
+
+					if (header.m_method == "M-SEARCH")
+					{
+						std::string st = header.ssdp_ST();
+						std::string man = header.ssdp_MAN();
+						if (!st.empty())
+						{
+							if (st == "urn:schemas-upnp-org:service:ContentManager:1" ||
+								st == "urn:schemas-upnp-org:service:ContentDirectory:1" ||
+								st == "urn:schemas-upnp-org:device:MediaServer:1" ||
+								st == "upnp:rootdevice" ||
+								st == "ssdp:all" ||
+								st == m_usn)
+							{
+								print_debug(false, header);
+								printed = true;
+
+								if (st == "ssdp:all")
+									st = "urn:schemas-upnp-org:device:MediaServer:1";
+
+								discovery(st);
+							}
+						}
+					}
+
+					if (!printed)
+					{
+						print_debug(true, header);
+					}
+				}
+				else
+				{
+					std::cout << "[ " << m_impl.remote().address() << ":" << m_impl.remote().port() << " ]\n";
+					std::cout.write(m_impl.data(), m_impl.received());
+					std::cout << "\n";
+				}
+
+				return true;
+			});
+		}
+
+		void receiver::stop()
+		{
+			m_impl.stop();
+		}
+
+		void receiver::discovery(const std::string& st)
+		{
+			auto datagram = std::make_shared<udp::unicast_socket>(m_service, m_impl.remote());
+			datagram->send(build_discovery_msg(st));
+		}
+
+		std::string receiver::build_discovery_msg(const std::string& st) const
+		{
+			http::http_response resp {};
+			resp.append("date")->out() << net::to_string(net::time::now());
+			resp.append("location")->out() << "http://" << net::to_string(m_local) << ":" << m_port << "/config/device.xml";
+			resp.append("cache-control")->out() << "max-age=1800";
+			resp.append("server")->out() << http::get_server_version();
+			resp.append("st", st);
+			resp.append("ext");
+
+			if (st == m_usn)
+				resp.append("usn", m_usn);
+			else
+				resp.append("usn")->out() << m_usn << "::" << st;
+
+			resp.append("content-length", "0");
+
+			std::ostringstream os;
+			os << resp;
+			return os.str();
+		}
+
 	}
 }

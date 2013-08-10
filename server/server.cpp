@@ -54,8 +54,7 @@ namespace lan
 				m_upnp.stop();
 			});
 
-			if (m_upnp.is_valid())
-				m_upnp.start();
+			m_upnp.start();
 		}
 
 		void run() { m_service.run(); }
