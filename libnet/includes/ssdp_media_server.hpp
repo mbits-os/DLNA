@@ -103,12 +103,31 @@ namespace net
 				typedef std::shared_ptr<connection_manager> connection_manager_ptr;
 			}
 
+			struct sort_criterion
+			{
+				bool m_ascending;
+				std::string m_term;
+			};
+			typedef std::vector<sort_criterion> search_criteria;
+
+			struct media_item;
+			typedef std::shared_ptr<media_item> media_item_ptr;
+
+			struct media_item
+			{
+				virtual ~media_item() {}
+				std::vector<media_item_ptr> list(unsigned long long start_from, unsigned long long max_count, const search_criteria& sort) const;
+				unsigned long long predict_count(unsigned long long served) const;
+				unsigned long long update_id() const;
+			};
+
 			struct media_server : device
 			{
 				media_server(const device_info& info)
 					: device(info)
 					, m_directory(std::make_shared<service::content_directory>(this))
 					, m_manager(std::make_shared<service::connection_manager>(this))
+					, m_system_update_id(1)
 				{
 					add(m_directory);
 					add(m_manager);
@@ -116,9 +135,15 @@ namespace net
 
 				const char* get_type() const override { return "urn:schemas-upnp-org:device:MediaServer:1"; }
 				const char* get_description() const override { return "UPnP/AV 1.0 Compliant Media Server"; }
+
+				unsigned long long system_update_id() const { return m_system_update_id; }
+
+				media_item_ptr get_item(const std::string& id);
+
 			private:
 				service::content_directory_ptr m_directory;
 				service::connection_manager_ptr m_manager;
+				unsigned long long m_system_update_id;
 			};
 		}
 	}

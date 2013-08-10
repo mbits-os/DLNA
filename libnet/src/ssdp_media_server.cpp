@@ -161,6 +161,26 @@ namespace net
 						;
 				}
 			}
+
+			std::vector<media_item_ptr> media_item::list(unsigned long long start_from, unsigned long long max_count, const search_criteria& sort) const
+			{
+				return std::vector<media_item_ptr>();
+			}
+
+			unsigned long long media_item::predict_count(unsigned long long served) const
+			{
+				return served;
+			}
+
+			unsigned long long media_item::update_id() const
+			{
+				return 0;
+			}
+
+			media_item_ptr media_server::get_item(const std::string& id)
+			{
+				return nullptr;
+			}
 		}
 	}
 }
