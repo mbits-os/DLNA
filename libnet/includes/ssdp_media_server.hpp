@@ -32,35 +32,57 @@ namespace net
 	{
 		namespace av
 		{
+			struct media_server;
+			namespace service
+			{
+				struct content_directory : service
+				{
+					media_server* m_device;
+					content_directory(media_server* device)
+						: m_device(device)
+					{
+						typedef content_directory service_t;
+						SSDP_ADD_CONTROL(GetSystemUpdateID);
+						SSDP_ADD_CONTROL(Browse);
+					}
+					const char* get_type() const override { return "urn:schemas-upnp-org:service:ContentDirectory:1"; }
+					const char* get_uri() const override { return "content_directory"; }
+
+					void control_GetSystemUpdateID(const http::http_request& req, const dom::XmlDocumentPtr& doc, http::response& response);
+					void control_Browse(const http::http_request& req, const dom::XmlDocumentPtr& doc, http::response& response);
+				};
+				typedef std::shared_ptr<content_directory> content_directory_ptr;
+
+				struct content_manager : service
+				{
+					media_server* m_device;
+					content_manager(media_server* device)
+						: m_device(device)
+					{
+						typedef content_directory service_t;
+					}
+					const char* get_type() const override { return "urn:schemas-upnp-org:service:ContentManager:1"; }
+					const char* get_uri() const override { return "content_manager"; }
+				};
+				typedef std::shared_ptr<content_manager> content_manager_ptr;
+			}
+
 			struct media_server : device
 			{
-				media_server(const device_info& info) : device(info) {}
+				service::content_directory_ptr m_directory;
+				service::content_manager_ptr m_manager;
+				media_server(const device_info& info)
+					: device(info)
+					, m_directory(std::make_shared<service::content_directory>(this))
+					, m_manager(std::make_shared<service::content_manager>(this))
+				{
+					add(m_directory);
+					add(m_manager);
+				}
+
+				const char* get_type() const override { return "urn:schemas-upnp-org:device:MediaServer:1"; }
 			};
 		}
-
-		/*
-		struct service
-		{
-			virtual ~service() = 0;
-		};
-		typedef std::shared_ptr<service> service_ptr;
-
-		struct device
-		{
-			device(const device_info& info)
-				: m_info(info)
-			{
-
-			}
-			virtual ~device() {}
-
-			virtual net::http::module_version server() const { return m_info.m_server; }
-		private:
-			const device_info m_info;
-		};
-		typedef std::shared_ptr<device> device_ptr;
-		*/
-
 	}
 }
 

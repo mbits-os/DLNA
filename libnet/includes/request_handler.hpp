@@ -32,12 +32,6 @@
 #include <boost/filesystem.hpp>
 #include <ssdp_device.hpp>
 
-namespace dom
-{
-	struct XmlDocument;
-	typedef std::shared_ptr<XmlDocument> XmlDocumentPtr;
-};
-
 namespace net
 {
 	namespace http
@@ -51,14 +45,11 @@ namespace net
 			ssdp::device_ptr m_device;
 			void make_templated(const char* tmplt, const char* content_type, response& resp);
 			void make_file(const boost::filesystem::path& path, response& resp);
-
-			void ContentDirectory_GetSystemUpdateID(const http_request& req, response& resp);
-			void ContentDirectory_Browse(const http_request& req, response& resp, const dom::XmlDocumentPtr& doc);
-
 		public:
 			request_handler(const ssdp::device_ptr& device);
 			void handle(const http_request& req, response& resp);
 			void make_404(response& resp);
+			void make_500(response& resp);
 		};
 	}
 }

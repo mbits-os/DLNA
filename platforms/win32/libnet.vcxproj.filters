@@ -43,6 +43,9 @@
     <ClCompile Include="..\..\libnet\src\response.cpp">
       <Filter>src</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\libnet\src\ssdp_media_server.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\libnet\pch.h" />

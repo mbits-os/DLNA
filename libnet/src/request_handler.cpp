@@ -412,33 +412,38 @@ namespace net
 					std::string soap_type, soap_method;
 					std::tie(soap_type, soap_method) = break_action(SOAPAction);
 
+					ssdp::service_ptr service;
+					for (auto&& candidate: ssdp::services(m_device))
+					{
+						if (soap_type == candidate->get_type())
+						{
+							service = candidate;
+							break;
+						}
+					}
+
+					if (!service)
+						return make_404(resp);
+
 					std::tie(root, rest) = pop(rest);
 					if (root == "control")
 					{
-						if (rest == "content_directory" && soap_type == "urn:schemas-upnp-org:service:ContentDirectory:1")
+						if (rest == service->get_uri()) try
 						{
-							if (soap_method == "GetSystemUpdateID") return ContentDirectory_GetSystemUpdateID(req, resp);
-							if (soap_method == "Browse")            return ContentDirectory_Browse(req, resp, doc);
-							return make_404(resp);
+							if (service->control_call_by_name(soap_method, req, doc, resp))
+								return;
 						}
-						if (rest == "connection_manager" && soap_type == "urn:schemas-upnp-org:service:ContentManager:1")
-						{
-							return make_404(resp);
-						}
-						return make_404(resp);
+						catch (...) { return make_500(resp); }
 					}
 
 					if (root == "event")
 					{
-						if (rest == "content_directory" && soap_type == "urn:schemas-upnp-org:service:ContentDirectory:1")
+						if (rest == service->get_uri()) try
 						{
-							return make_404(resp);
+							if (service->event_call_by_name(soap_method, req, doc, resp))
+								return;
 						}
-						if (rest == "connection_manager" && soap_type == "urn:schemas-upnp-org:service:ContentManager:1")
-						{
-							return make_404(resp);
-						}
-						return make_404(resp);
+						catch (...) { return make_500(resp); }
 					}
 				}
 			}
@@ -472,9 +477,9 @@ namespace net
 			if (path.has_extension())
 			{
 				std::string cmp = path.extension().string();
-				for (auto && c : cmp) c = std::tolower((unsigned char) c);
+				for (auto&& c : cmp) c = std::tolower((unsigned char) c);
 
-				for (auto && ext : s_extensions)
+				for (auto&& ext : s_extensions)
 					if (ext.ext == cmp)
 					{
 						content_type = ext.mime_type;
@@ -489,59 +494,6 @@ namespace net
 			resp.content(content::from_file(path));
 		}
 
-		void request_handler::ContentDirectory_GetSystemUpdateID(const http_request& req, response& resp)
-		{
-			auto & header = resp.header();
-			header.clear(m_device->server());
-			header.append("content-type", "text/xml; charset=\"utf-8\"");
-			resp.content(content::from_string(
-				R"(<?xml version="1.0" encoding="utf-8"?>)"
-				R"(<s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/" s:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"><s:Body>)"
-				R"(<u:GetSystemUpdateIDResponse xmlns:u="urn:schemas-upnp-org:service:ContentDirectory:1">)"
-				R"(<Id>1</Id>)"
-				R"(</u:GetSystemUpdateIDResponse>)"
-				R"(</s:Body></s:Envelope>)"
-				));
-		}
-
-		void request_handler::ContentDirectory_Browse(const http_request& req, response& resp, const dom::XmlDocumentPtr& doc)
-		{
-			std::string browse_flag;
-			//auto children = env_body(doc);
-			if (doc)
-			{
-				dom::NSData ns [] = { { "s", "http://schemas.xmlsoap.org/soap/envelope/" }, { "upnp", "urn:schemas-upnp-org:service:ContentDirectory:1" } };
-				auto BrowseFlag = doc->find("/s:Envelope/s:Body/upnp:Browse/BrowseFlag", ns);
-				if (BrowseFlag)
-					browse_flag = BrowseFlag->stringValue();
-			}
-
-			auto & header = resp.header();
-			header.clear(m_device->server());
-			header.append("content-type", "text/xml; charset=\"utf-8\"");
-			auto msg = 
-				R"(<?xml version="1.0" encoding="utf-8"?>)"
-				R"(<s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/" s:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"><s:Body>)"
-
-				R"(<u:BrowseResponse xmlns:u="urn:schemas-upnp-org:service:ContentDirectory:1">)"
-				R"(<Result>)"
-				R"(&lt;DIDL-Lite xmlns="urn:schemas-upnp-org:metadata-1-0/DIDL-Lite/" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:upnp="urn:schemas-upnp-org:metadata-1-0/upnp/"&gt;)"
-
-				// EMPTY RESPONSE
-
-				R"(&lt;/DIDL-Lite&gt;)"
-				R"(</Result>)"
-				R"(<NumberReturned>0</NumberReturned>)"
-				// from upnp spec: If BrowseMetadata is specified in the BrowseFlags then TotalMatches = 1
-				R"(<TotalMatches>1</TotalMatches>)"
-				R"(<UpdateID>1</UpdateID>)"
-				R"(</u:BrowseResponse>)"
-
-				R"(</s:Body></s:Envelope>)";
-			std::cout << msg << "\n";
-			resp.content(content::from_string(msg));
-		}
-
 		void request_handler::make_404(response& resp)
 		{
 			auto & header = resp.header();
@@ -549,6 +501,15 @@ namespace net
 			header.m_status = 404;
 			header.append("content-type", "text/plain");
 			resp.content(content::from_string("File not found...\n"));
+		}
+
+		void request_handler::make_500(response& resp)
+		{
+			auto & header = resp.header();
+			header.clear(m_device->server());
+			header.m_status = 500;
+			header.append("content-type", "text/plain");
+			resp.content(content::from_string("Internal server error...\n"));
 		}
 	}
 }

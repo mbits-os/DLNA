@@ -60,6 +60,7 @@
     <ClCompile Include="..\..\libnet\src\request_handler.cpp" />
     <ClCompile Include="..\..\libnet\src\response.cpp" />
     <ClCompile Include="..\..\libnet\src\ssdp.cpp" />
+    <ClCompile Include="..\..\libnet\src\ssdp_media_server.cpp" />
     <ClCompile Include="..\..\libnet\src\udp.cpp" />
   </ItemGroup>
   <ItemGroup>
