@@ -125,7 +125,7 @@ namespace net
 			req.append("nt", nt);
 			req.append("nts")->out() << nts;
 
-			auto && usn = m_device->usn();
+			auto&& usn = m_device->usn();
 			if (nt == usn)
 				req.append("usn", usn);
 			else
@@ -151,9 +151,9 @@ namespace net
 
 			socket->send(build_msg("upnp:rootdevice", nts));
 			socket->send(build_msg(m_device->usn(), nts));
-			socket->send(build_msg("urn:schemas-upnp-org:device:MediaServer:1", nts));
-			socket->send(build_msg("urn:schemas-upnp-org:service:ContentDirectory:1", nts));
-			socket->send(build_msg("urn:schemas-upnp-org:service:ContentManager:1", nts));
+			socket->send(build_msg(m_device->get_type(), nts));
+			for (auto&& service : services(m_device))
+				socket->send(build_msg(service->get_type(), nts));
 		}
 
 		void ticker::stillAlive()
@@ -187,7 +187,7 @@ namespace net
 
 				if (parser.parse(data, data + m_impl.received()) == net::http::parser::finished)
 				{
-					auto && header = parser.header();
+					auto&& header = parser.header();
 					header.remote_endpoint(m_impl.remote());
 
 					bool printed = false;
@@ -198,18 +198,23 @@ namespace net
 						std::string man = header.ssdp_MAN();
 						if (!st.empty())
 						{
-							if (st == "urn:schemas-upnp-org:service:ContentManager:1" ||
-								st == "urn:schemas-upnp-org:service:ContentDirectory:1" ||
-								st == "urn:schemas-upnp-org:device:MediaServer:1" ||
-								st == "upnp:rootdevice" ||
-								st == "ssdp:all" ||
-								st == m_device->usn())
+							bool interesting = false;
+							if (!interesting) interesting = st == "ssdp:all";
+							if (!interesting) interesting = st == "ssdp:rootdevice";
+							if (!interesting) interesting = st == m_device->usn();
+							if (!interesting) interesting = st == m_device->get_type();
+							if (!interesting)
+								for (auto&& service : ssdp::services(m_device))
+									if ((interesting = (st == service->get_type())) == true)
+										break;
+
+							if (interesting)
 							{
 								print_debug(false, header);
 								printed = true;
 
 								if (st == "ssdp:all")
-									st = "urn:schemas-upnp-org:device:MediaServer:1";
+									st = m_device->get_type();
 
 								discovery(st);
 							}
@@ -253,7 +258,7 @@ namespace net
 			resp.append("st", st);
 			resp.append("ext");
 
-			auto && usn = m_device->usn();
+			auto&& usn = m_device->usn();
 			if (st == usn)
 				resp.append("usn", usn);
 			else
