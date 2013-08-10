@@ -87,11 +87,13 @@ namespace net
 
 				std::string content_directory::soap_control_GetSortCapabilities(const http::http_request& req, const dom::XmlDocumentPtr& doc)
 				{
-					return "<SortCaps></SortCaps>";
+					return "<SortCaps>*</SortCaps>";
 				}
 				std::string content_directory::soap_control_GetSystemUpdateID(const http::http_request& req, const dom::XmlDocumentPtr& doc)
 				{
-					return "<Id>1</Id>";
+					std::ostringstream o;
+					o << "<Id>" << m_device->system_update_id() << "</Id>";
+					return o.str();
 				}
 				std::string content_directory::soap_control_Browse(const http::http_request& req, const dom::XmlDocumentPtr& doc)
 				{
