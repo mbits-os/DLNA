@@ -85,6 +85,65 @@ namespace net
 		private:
 			boost::asio::ip::udp::endpoint m_endpoint;
 		};
+
+		struct multicast_receiver
+		{
+			typedef boost::asio::io_service        io_service_t;
+			typedef boost::asio::ip::udp::socket   socket_t;
+			typedef boost::asio::ip::address_v4    address_t;
+			typedef boost::asio::ip::udp::endpoint endpoint_t;
+			typedef std::array<char, 2048>         buffer_t;
+
+			typedef std::function<bool()> receive_handler_t;
+
+			multicast_receiver(io_service_t& io_service, const endpoint_t& multicast);
+			virtual ~multicast_receiver() {}
+
+			void start(const receive_handler_t& handler);
+			void stop();
+
+			const char* data() const { return m_buffer.data(); }
+			size_t received() const { return m_received; }
+			const endpoint_t& remote() const { return m_remote; }
+
+		private:
+
+			io_service_t&     m_io_service;
+			address_t         m_local;
+			endpoint_t        m_multicast;
+			endpoint_t        m_remote;
+			socket_t          m_socket;
+			buffer_t          m_buffer;
+			size_t            m_received;
+			receive_handler_t m_handler;
+
+			void receive();
+		};
+
+		struct multicast_socket : std::enable_shared_from_this<multicast_socket>
+		{
+			multicast_socket(boost::asio::io_service& io_service, const boost::asio::ip::udp::endpoint& endpoint);
+			virtual ~multicast_socket();
+			void send(const std::string& msg);
+
+		private:
+			boost::asio::io_service&       m_io_service;
+			boost::asio::ip::address_v4    m_local;
+			boost::asio::ip::udp::endpoint m_remote;
+			boost::asio::ip::udp::socket   m_socket;
+		};
+
+		struct unicast_socket : std::enable_shared_from_this<unicast_socket>
+		{
+			unicast_socket(boost::asio::io_service& io_service, const boost::asio::ip::udp::endpoint& endpoint);
+			virtual ~unicast_socket();
+			void send(const std::string& msg);
+
+		private:
+			boost::asio::io_service&       m_io_service;
+			boost::asio::ip::udp::endpoint m_remote;
+			boost::asio::ip::udp::socket   m_socket;
+		};
 	}
 }
 
