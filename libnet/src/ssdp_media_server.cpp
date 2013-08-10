@@ -60,6 +60,31 @@ namespace net
 					response.content(http::content::from_string(o.str()));
 				}
 
+				void service_helper::upnp_error(http::response& response, const ssdp::service_error& e)
+				{
+					auto & header = response.header();
+					header.clear(m_device->server());
+					header.m_status = 500;
+					header.append("content-type", "text/xml; charset=\"utf-8\"");
+					std::ostringstream o;
+					o
+						<< SOAP_BODY_START
+						<< "  <s:Fault>\n"
+						   "    <faultcode>s:Client</faultcode>\n"
+						   "    <faultstring>UPnPError</faultstring>\n"
+						   "    <detail>\n"
+						   "      <UPnPError xmlns=\"urn:schemas-upnp-org:control-1-0\">\n"
+						   "        <errorCode>" << e.code() << "</errorCode>\n"
+						   "        <errorDescription>" << e.message() << "</errorDescription>\n"
+						   "      </UPnPError>\n"
+						   "    </detail>\n" 
+						   "  </s:Fault>"
+						<< SOAP_BODY_STOP;
+
+					response.content(http::content::from_string(o.str()));
+
+				}
+
 				std::string content_directory::soap_control_GetSortCapabilities(const http::http_request& req, const dom::XmlDocumentPtr& doc)
 				{
 					return "<SortCaps></SortCaps>";

@@ -43,13 +43,22 @@ namespace net
 					{}
 
 					void soap_answer(const char* method, http::response& response, const std::string& body);
+					void upnp_error(http::response& response, const ssdp::service_error& e);
 				};
 
 #define SOAP_CALL(type, name) \
 	void type ## name(const http::http_request& req, const dom::XmlDocumentPtr& doc, http::response& response) \
 	{ \
-		soap_answer(#name, response, soap_ ## type ## name(req, doc)); \
+		try \
+		{ \
+			soap_answer(#name, response, soap_ ## type ## name(req, doc)); \
+		} \
+		catch (ssdp::service_error& e) \
+		{ \
+			upnp_error(response, e); \
+		}; \
 	} \
+	\
 	std::string soap_ ## type ## name(const http::http_request& req, const dom::XmlDocumentPtr& doc)
 
 #define SOAP_CONTROL_CALL(name) SOAP_CALL(control_, name)
@@ -96,8 +105,6 @@ namespace net
 
 			struct media_server : device
 			{
-				service::content_directory_ptr m_directory;
-				service::connection_manager_ptr m_manager;
 				media_server(const device_info& info)
 					: device(info)
 					, m_directory(std::make_shared<service::content_directory>(this))
@@ -109,6 +116,9 @@ namespace net
 
 				const char* get_type() const override { return "urn:schemas-upnp-org:device:MediaServer:1"; }
 				const char* get_description() const override { return "UPnP/AV 1.0 Compliant Media Server"; }
+			private:
+				service::content_directory_ptr m_directory;
+				service::connection_manager_ptr m_manager;
 			};
 		}
 	}
