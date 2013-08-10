@@ -110,6 +110,8 @@ namespace net
 				rest -= chunk;
 				auto read = data->read(buffer, chunk);
 
+				//std::cout.write(buffer, read);
+
 				if (!parser.parse(buffer, read, false))
 					return nullptr;
 			}
@@ -244,6 +246,7 @@ namespace net
 
 		static void print_debug(const http_request& header, const std::string& SOAPAction, dom::XmlDocumentPtr& doc)
 		{
+			return;
 			std::ostringstream o;
 			o << header.m_method << " ";
 			if (header.m_resource != "*")

@@ -50,6 +50,7 @@ namespace net
 
 		static void print_debug(bool ignoring, const net::http::http_request& header)
 		{
+			return;
 			std::string ssdp_ST = header.ssdp_ST();
 
 			if (ssdp_ST == "urn:schemas-upnp-org:device:InternetGatewayDevice:1")
