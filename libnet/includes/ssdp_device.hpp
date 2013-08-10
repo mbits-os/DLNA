@@ -67,11 +67,19 @@ namespace net
 			virtual const char* get_id() const = 0;
 			virtual const char* get_config() const = 0;
 			virtual const char* get_uri() const = 0;
-			virtual bool control_call_by_name(const std::string& name, const http::http_request& req, const dom::XmlDocumentPtr& doc, http::response& response)
+
+			virtual bool control_call_by_name(const std::string& name, const http::http_request& req, const dom::XmlDocumentPtr& doc, http::response& response) = 0;
+			virtual bool event_call_by_name(const std::string& name, const http::http_request& req, const dom::XmlDocumentPtr& doc, http::response& response) = 0;
+		};
+		typedef std::shared_ptr<service> service_ptr;
+
+		struct service_impl: service
+		{
+			bool control_call_by_name(const std::string& name, const http::http_request& req, const dom::XmlDocumentPtr& doc, http::response& response) override
 			{
 				return call_by_name(controls, name, req, doc, response);
 			}
-			virtual bool event_call_by_name(const std::string& name, const http::http_request& req, const dom::XmlDocumentPtr& doc, http::response& response)
+			bool event_call_by_name(const std::string& name, const http::http_request& req, const dom::XmlDocumentPtr& doc, http::response& response) override
 			{
 				return call_by_name(events, name, req, doc, response);
 			}
@@ -109,7 +117,7 @@ namespace net
 				};
 			}
 
-			virtual bool call_by_name(events_t& collection, const std::string& name, const http::http_request& req, const dom::XmlDocumentPtr& doc, http::response& response)
+			bool call_by_name(events_t& collection, const std::string& name, const http::http_request& req, const dom::XmlDocumentPtr& doc, http::response& response)
 			{
 				auto call = by_name(collection, name);
 				if (!call)
@@ -129,7 +137,6 @@ namespace net
 				return nullptr;
 			}
 		};
-		typedef std::shared_ptr<service> service_ptr;
 
 #define SSDP_ADD_CONTROL(name) add_control(#name, &service_t::control_##name);
 #define SSDP_ADD_EVENT(name) add_event(#name, &service_t::event_##name);

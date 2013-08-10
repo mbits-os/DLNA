@@ -35,7 +35,7 @@ namespace net
 			struct media_server;
 			namespace service
 			{
-				struct service_helper : service
+				struct service_helper : service_impl
 				{
 					media_server* m_device;
 					service_helper(media_server* device)
