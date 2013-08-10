@@ -35,21 +35,40 @@ namespace net
 		{
 			namespace service
 			{
-				void content_directory::control_GetSystemUpdateID(const http::http_request& req, const dom::XmlDocumentPtr& doc, http::response& response)
+				namespace
+				{
+					const char* SOAP_BODY_START = 
+						R"(<?xml version="1.0" encoding="utf-8"?>)" "\n"
+						R"(<s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/" s:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/">)" "\n"
+						R"(<s:Body>)" "\n";
+					const char* SOAP_BODY_STOP = "\n</s:Body>\n</s:Envelope>\n";
+				}
+
+				void service_helper::soap_answer(const char* method, http::response& response, const std::string& body)
 				{
 					auto & header = response.header();
 					header.clear(m_device->server());
 					header.append("content-type", "text/xml; charset=\"utf-8\"");
-					response.content(http::content::from_string(
-						R"(<?xml version="1.0" encoding="utf-8"?>)"
-						R"(<s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/" s:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"><s:Body>)"
-						R"(<u:GetSystemUpdateIDResponse xmlns:u="urn:schemas-upnp-org:service:ContentDirectory:1">)"
-						R"(<Id>1</Id>)"
-						R"(</u:GetSystemUpdateIDResponse>)"
-						R"(</s:Body></s:Envelope>)"
-						));
+					std::ostringstream o;
+					o
+						<< SOAP_BODY_START
+						<< "<u:" << method << "Response xmlns:u=\"urn:schemas-upnp-org:service:ContentDirectory:1\">\n" 
+						<< body
+						<< "\n</u:" << method << "Response>"
+						<< SOAP_BODY_STOP;
+
+					response.content(http::content::from_string(o.str()));
 				}
-				void content_directory::control_Browse(const http::http_request& req, const dom::XmlDocumentPtr& doc, http::response& response)
+
+				std::string content_directory::soap_control_GetSortCapabilities(const http::http_request& req, const dom::XmlDocumentPtr& doc)
+				{
+					return "<SortCaps></SortCaps>";
+				}
+				std::string content_directory::soap_control_GetSystemUpdateID(const http::http_request& req, const dom::XmlDocumentPtr& doc)
+				{
+					return "<Id>1</Id>";
+				}
+				std::string content_directory::soap_control_Browse(const http::http_request& req, const dom::XmlDocumentPtr& doc)
 				{
 					std::string browse_flag;
 					//auto children = env_body(doc);
@@ -61,14 +80,7 @@ namespace net
 							browse_flag = BrowseFlag->stringValue();
 					}
 
-					auto & header = response.header();
-					header.clear(m_device->server());
-					header.append("content-type", "text/xml; charset=\"utf-8\"");
-					auto msg =
-						R"(<?xml version="1.0" encoding="utf-8"?>)"
-						R"(<s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/" s:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"><s:Body>)"
-
-						R"(<u:BrowseResponse xmlns:u="urn:schemas-upnp-org:service:ContentDirectory:1">)"
+					return
 						R"(<Result>)"
 						R"(&lt;DIDL-Lite xmlns="urn:schemas-upnp-org:metadata-1-0/DIDL-Lite/" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:upnp="urn:schemas-upnp-org:metadata-1-0/upnp/"&gt;)"
 
@@ -80,11 +92,15 @@ namespace net
 						// from upnp spec: If BrowseMetadata is specified in the BrowseFlags then TotalMatches = 1
 						R"(<TotalMatches>1</TotalMatches>)"
 						R"(<UpdateID>1</UpdateID>)"
-						R"(</u:BrowseResponse>)"
+						;
+				}
 
-						R"(</s:Body></s:Envelope>)";
-					std::cout << msg << "\n";
-					response.content(http::content::from_string(msg));
+				std::string connection_manager::soap_control_GetProtocolInfo(const http::http_request& req, const dom::XmlDocumentPtr& doc)
+				{
+					return
+						"<Source>http-get:*:image/jpeg:DLNA.ORG_PN=JPEG_SM,http-get:*:image/jpeg:DLNA.ORG_PN=JPEG_MED,http-get:*:image/jpeg:DLNA.ORG_PN=JPEG_LRG,http-get:*:audio/mpeg:DLNA.ORG_PN=MP3,http-get:*:audio/L16:DLNA.ORG_PN=LPCM,http-get:*:video/mpeg:DLNA.ORG_PN=AVC_TS_HD_24_AC3_ISO;SONY.COM_PN=AVC_TS_HD_24_AC3_ISO,http-get:*:video/vnd.dlna.mpeg-tts:DLNA.ORG_PN=AVC_TS_HD_24_AC3;SONY.COM_PN=AVC_TS_HD_24_AC3,http-get:*:video/vnd.dlna.mpeg-tts:DLNA.ORG_PN=AVC_TS_HD_24_AC3_T;SONY.COM_PN=AVC_TS_HD_24_AC3_T,http-get:*:video/vnd.dlna.mpeg-tts:DLNA.ORG_PN=MPEG_PS_PAL,http-get:*:video/vnd.dlna.mpeg-tts:DLNA.ORG_PN=MPEG_PS_NTSC,http-get:*:video/vnd.dlna.mpeg-tts:DLNA.ORG_PN=MPEG_TS_SD_50_L2_T,http-get:*:video/vnd.dlna.mpeg-tts:DLNA.ORG_PN=MPEG_TS_SD_60_L2_T,http-get:*:video/mpeg:DLNA.ORG_PN=MPEG_TS_SD_EU_ISO,http-get:*:video/vnd.dlna.mpeg-tts:DLNA.ORG_PN=MPEG_TS_SD_EU,http-get:*:video/vnd.dlna.mpeg-tts:DLNA.ORG_PN=MPEG_TS_SD_EU_T,http-get:*:video/vnd.dlna.mpeg-tts:DLNA.ORG_PN=MPEG_TS_SD_50_AC3_T,http-get:*:video/mpeg:DLNA.ORG_PN=MPEG_TS_HD_50_L2_ISO;SONY.COM_PN=HD2_50_ISO,http-get:*:video/vnd.dlna.mpeg-tts:DLNA.ORG_PN=MPEG_TS_SD_60_AC3_T,http-get:*:video/mpeg:DLNA.ORG_PN=MPEG_TS_HD_60_L2_ISO;SONY.COM_PN=HD2_60_ISO,http-get:*:video/vnd.dlna.mpeg-tts:DLNA.ORG_PN=MPEG_TS_HD_50_L2_T;SONY.COM_PN=HD2_50_T,http-get:*:video/vnd.dlna.mpeg-tts:DLNA.ORG_PN=MPEG_TS_HD_60_L2_T;SONY.COM_PN=HD2_60_T,http-get:*:video/mpeg:DLNA.ORG_PN=AVC_TS_HD_50_AC3_ISO;SONY.COM_PN=AVC_TS_HD_50_AC3_ISO,http-get:*:video/vnd.dlna.mpeg-tts:DLNA.ORG_PN=AVC_TS_HD_50_AC3;SONY.COM_PN=AVC_TS_HD_50_AC3,http-get:*:video/mpeg:DLNA.ORG_PN=AVC_TS_HD_60_AC3_ISO;SONY.COM_PN=AVC_TS_HD_60_AC3_ISO,http-get:*:video/vnd.dlna.mpeg-tts:DLNA.ORG_PN=AVC_TS_HD_60_AC3;SONY.COM_PN=AVC_TS_HD_60_AC3,http-get:*:video/vnd.dlna.mpeg-tts:DLNA.ORG_PN=AVC_TS_HD_50_AC3_T;SONY.COM_PN=AVC_TS_HD_50_AC3_T,http-get:*:video/vnd.dlna.mpeg-tts:DLNA.ORG_PN=AVC_TS_HD_60_AC3_T;SONY.COM_PN=AVC_TS_HD_60_AC3_T,http-get:*:video/x-mp2t-mphl-188:*,http-get:*:*:*,http-get:*:video/*:*,http-get:*:audio/*:*,http-get:*:image/*:*</Source>"
+						"<Sink></Sink>"
+						;
 				}
 			}
 		}
