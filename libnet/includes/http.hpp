@@ -239,6 +239,55 @@ namespace net
 			return std::make_shared<request_data_impl<socket_type>>(socket, content_length, size ? data : nullptr, size);
 		}
 
+		inline const char* http_message(int status)
+		{
+			switch (status)
+			{
+			case 100: return "Continue";
+			case 101: return "Switching Protocols";
+			case 200: return "OK";
+			case 201: return "Created";
+			case 202: return "Accepted";
+			case 203: return "Non-Authoritative Information";
+			case 204: return "No Content";
+			case 205: return "Reset Content";
+			case 206: return "Partial Content";
+			case 300: return "Multiple Choices";
+			case 301: return "Moved Permanently";
+			case 302: return "Found";
+			case 303: return "See Other";
+			case 304: return "Not Modified";
+			case 305: return "Use Proxy";
+			case 306: return "(Unused)";
+			case 307: return "Temporary Redirect";
+			case 400: return "Bad Request";
+			case 401: return "Unauthorized";
+			case 402: return "Payment Required";
+			case 403: return "Forbidden";
+			case 404: return "Not Found";
+			case 405: return "Method Not Allowed";
+			case 406: return "Not Acceptable";
+			case 407: return "Proxy Authentication Required";
+			case 408: return "Request Timeout";
+			case 409: return "Conflict";
+			case 410: return "Gone";
+			case 411: return "Length Required";
+			case 412: return "Precondition Failed";
+			case 413: return "Request Entity Too Large";
+			case 414: return "Request-URI Too Long";
+			case 415: return "Unsupported Media Type";
+			case 416: return "Requested Range Not Satisfiable";
+			case 417: return "Expectation Failed";
+			case 500: return "Internal Server Error";
+			case 501: return "Not Implemented";
+			case 502: return "Bad Gateway";
+			case 503: return "Service Unavailable";
+			case 504: return "Gateway Timeout";
+			case 505: return "HTTP Version Not Supported";
+			};
+			return nullptr;
+		}
+
 		struct http_response_line
 		{
 			protocol m_protocol;
@@ -252,51 +301,10 @@ namespace net
 
 		inline std::ostream& operator << (std::ostream& o, const http_response_line& first_line)
 		{
-			o << first_line.m_protocol << " " << first_line.m_status << " ";
-			switch (first_line.m_status)
-			{
-			case 100: o << "Continue"; break;
-			case 101: o << "Switching Protocols"; break;
-			case 200: o << "OK"; break;
-			case 201: o << "Created"; break;
-			case 202: o << "Accepted"; break;
-			case 203: o << "Non-Authoritative Information"; break;
-			case 204: o << "No Content"; break;
-			case 205: o << "Reset Content"; break;
-			case 206: o << "Partial Content"; break;
-			case 300: o << "Multiple Choices"; break;
-			case 301: o << "Moved Permanently"; break;
-			case 302: o << "Found"; break;
-			case 303: o << "See Other"; break;
-			case 304: o << "Not Modified"; break;
-			case 305: o << "Use Proxy"; break;
-			case 306: o << "(Unused)"; break;
-			case 307: o << "Temporary Redirect"; break;
-			case 400: o << "Bad Request"; break;
-			case 401: o << "Unauthorized"; break;
-			case 402: o << "Payment Required"; break;
-			case 403: o << "Forbidden"; break;
-			case 404: o << "Not Found"; break;
-			case 405: o << "Method Not Allowed"; break;
-			case 406: o << "Not Acceptable"; break;
-			case 407: o << "Proxy Authentication Required"; break;
-			case 408: o << "Request Timeout"; break;
-			case 409: o << "Conflict"; break;
-			case 410: o << "Gone"; break;
-			case 411: o << "Length Required"; break;
-			case 412: o << "Precondition Failed"; break;
-			case 413: o << "Request Entity Too Large"; break;
-			case 414: o << "Request-URI Too Long"; break;
-			case 415: o << "Unsupported Media Type"; break;
-			case 416: o << "Requested Range Not Satisfiable"; break;
-			case 417: o << "Expectation Failed"; break;
-			case 500: o << "Internal Server Error"; break;
-			case 501: o << "Not Implemented"; break;
-			case 502: o << "Bad Gateway"; break;
-			case 503: o << "Service Unavailable"; break;
-			case 504: o << "Gateway Timeout"; break;
-			case 505: o << "HTTP Version Not Supported"; break;
-			}
+			o << first_line.m_protocol << " " << first_line.m_status;
+			const char* message = http_message(first_line.m_status);
+			if (message)
+				o << " " << message;
 			return o << "\r\n";
 		}
 

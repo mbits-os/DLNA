@@ -460,8 +460,6 @@ namespace net
 			auto & header = resp.header();
 			header.clear(m_device->server());
 			header.m_status = 500;
-			header.append("content-type", "text/plain");
-			resp.content(content::from_string("Internal server error...\n"));
 		}
 	}
 }
