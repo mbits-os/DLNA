@@ -46,8 +46,8 @@ namespace net
 		}
 
 #define SWS while (data < end && *data == ' ') { ++data; }
-#define SNWS while (data < end && *data != ' ') { ++data; }
-#define SNWS2(c) while (data < end && *data != ' ' && (*data != (c))) { ++data; }
+#define SNWS while (data < end && !std::isspace((unsigned int)*data)) { ++data; }
+#define SNWS2(c) while (data < end && !std::isspace((unsigned int)*data) && (*data != (c))) { ++data; }
 #define S2CRLF while (data < end && *data != CR) { ++data; }
 
 		bool header_parser_base::skip_ws(state expected, state next, const char*& data, const char* end, std::string& dst)
