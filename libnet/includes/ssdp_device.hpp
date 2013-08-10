@@ -64,6 +64,8 @@ namespace net
 		{
 			virtual ~service() {}
 			virtual const char* get_type() const = 0;
+			virtual const char* get_id() const = 0;
+			virtual const char* get_config() const = 0;
 			virtual const char* get_uri() const = 0;
 			virtual bool control_call_by_name(const std::string& name, const http::http_request& req, const dom::XmlDocumentPtr& doc, http::response& response)
 			{
@@ -134,7 +136,7 @@ namespace net
 #define SSDP_ADD_CONTROL_F(name) add_control<service_t>(#name, control_##name);
 #define SSDP_ADD_EVENT_F(name) add_event<service_t>(#name, event_##name);
 
-		struct device
+		struct device: std::enable_shared_from_this<device>
 		{
 			device(const device_info& info)
 				: m_info(info)
@@ -146,8 +148,10 @@ namespace net
 			virtual const net::http::module_version& server() const { return m_info.m_server; }
 			virtual const std::string& usn() const { return m_usn; }
 			virtual const char* get_type() const = 0;
+			virtual const char* get_description() const = 0;
 			virtual size_t get_service_count() const { return m_services.size(); }
 			virtual service_ptr get_service(size_t i) const { return m_services[i]; }
+			virtual std::string get_configuration(const std::string& host) const;
 		protected:
 			void add(const service_ptr& service)
 			{

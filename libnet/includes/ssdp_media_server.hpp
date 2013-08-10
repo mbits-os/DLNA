@@ -66,6 +66,8 @@ namespace net
 						SSDP_ADD_CONTROL(Browse);
 					}
 					const char* get_type() const override { return "urn:schemas-upnp-org:service:ContentDirectory:1"; }
+					const char* get_id() const override { return "urn:upnp-org:serviceId:ContentDirectory"; }
+					const char* get_config() const override { return "directory.xml"; }
 					const char* get_uri() const override { return "content_directory"; }
 
 					SOAP_CONTROL_CALL(GetSortCapabilities);
@@ -83,6 +85,8 @@ namespace net
 						SSDP_ADD_CONTROL(GetProtocolInfo);
 					}
 					const char* get_type() const override { return "urn:schemas-upnp-org:service:ConnectionManager:1"; }
+					const char* get_id() const override { return "urn:upnp-org:serviceId:ConnectionManager"; }
+					const char* get_config() const override { return "manager.xml"; }
 					const char* get_uri() const override { return "connection_manager"; }
 
 					SOAP_CONTROL_CALL(GetProtocolInfo);
@@ -104,6 +108,7 @@ namespace net
 				}
 
 				const char* get_type() const override { return "urn:schemas-upnp-org:device:MediaServer:1"; }
+				const char* get_description() const override { return "UPnP/AV 1.0 Compliant Media Server"; }
 			};
 		}
 	}

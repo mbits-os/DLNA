@@ -34,60 +34,6 @@ namespace net
 {
 	namespace http
 	{
-		namespace device
-		{
-			const char xml [] = R"(<?xml version="1.0" encoding="utf-8"?>
-<root xmlns:dlna="urn:schemas-dlna-org:device-1-0" xmlns="urn:schemas-upnp-org:device-1-0">
-	<specVersion>
-		<major>1</major>
-		<minor>0</minor>
-	</specVersion>
-	<URLBase>http://$host:$port/</URLBase>
-	<device>
-		<dlna:X_DLNADOC xmlns:dlna="urn:schemas-dlna-org:device-1-0">DMS-1.50</dlna:X_DLNADOC>
-		<dlna:X_DLNADOC xmlns:dlna="urn:schemas-dlna-org:device-1-0">M-DMS-1.50</dlna:X_DLNADOC>
-		<deviceType>urn:schemas-upnp-org:device:MediaServer:1</deviceType>
-		<friendlyName>LAN Radio</friendlyName>
-        <manufacturer>midnightBITS</manufacturer>
-		<manufacturerURL>http://www.midnightbits.com</manufacturerURL>
-		<modelDescription>UPnP/AV 1.0 Compliant Media Server</modelDescription>
-		<modelName>lanRadio</modelName>
-		<modelNumber>01</modelNumber>
-		<modelURL>http://www.midnightbits.org/lanRadio</modelURL>
-		<serialNumber/>
-        <UPC/>
-        <UDN>$uuid</UDN>
-        <iconList>
-			<icon>
-				<mimetype>image/png</mimetype>
-				<width>256</width>
-				<height>256</height>
-				<depth>24</depth>
-				<url>/images/icon-256.png</url>
-			</icon>
-		</iconList>
-		<presentationURL>http://$host:$port/console/index.html</presentationURL> 
-		<serviceList>
-			<service>
-				<serviceType>urn:schemas-upnp-org:service:ContentDirectory:1</serviceType>
-				<serviceId>urn:upnp-org:serviceId:ContentDirectory</serviceId>
-				<SCPDURL>/config/directory.xml</SCPDURL>
-				<controlURL>/upnp/control/content_directory</controlURL>
-				<eventSubURL>/upnp/event/content_directory</eventSubURL>
-			</service>
-			<service>
-				<serviceType>urn:schemas-upnp-org:service:ConnectionManager:1</serviceType>
-				<serviceId>urn:upnp-org:serviceId:ConnectionManager</serviceId>
-				<SCPDURL>/config/manager.xml</SCPDURL>
-				<controlURL>/upnp/control/connection_manager</controlURL>
-				<eventSubURL>/upnp/event/connection_manager</eventSubURL>
-			</service>
-		</serviceList>
-	</device>
-</root>
-)";
-		}
-
 		class DOMParser : public xml::ExpatBase<DOMParser>
 		{
 			dom::XmlElementPtr elem;
@@ -280,11 +226,12 @@ namespace net
 			}
 		};
 
-		request_handler::request_handler(const ssdp::device_ptr& device)
+		request_handler::request_handler(const ssdp::device_ptr& device, net::ushort port)
 			: m_device(device)
+			, m_port(port)
 		{
 			m_vars.emplace_back("host", to_string(iface::get_default_interface()));
-			m_vars.emplace_back("port", "6001");
+			m_vars.emplace_back("port", std::to_string(m_port));
 			m_vars.emplace_back("uuid", m_device->usn());
 		}
 
@@ -397,7 +344,7 @@ namespace net
 				if (root == "config")
 				{
 					if (rest == "device.xml")
-						return make_templated(device::xml, "text/xml", resp);
+						return make_device_xml(resp);
 
 					return make_file(boost::filesystem::path("data") / root / rest, resp);
 				}
@@ -457,6 +404,14 @@ namespace net
 			header.clear(m_device->server());
 			header.append("content-type", content_type);
 			resp.content(std::make_shared<template_content>(tmplt, std::ref(m_vars)));
+		}
+
+		void request_handler::make_device_xml(response& resp)
+		{
+			auto & header = resp.header();
+			header.clear(m_device->server());
+			header.append("content-type", "text/xml; charset=\"utf-8\"");
+			resp.content(content::from_string(m_device->get_configuration(to_string(iface::get_default_interface()) + ":" + std::to_string(m_port))));
 		}
 
 		static struct

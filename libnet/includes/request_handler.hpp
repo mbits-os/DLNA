@@ -41,12 +41,15 @@ namespace net
 		typedef std::vector<std::pair<std::string, std::string>> template_vars;
 		class request_handler: boost::noncopyable
 		{
-			template_vars m_vars;
+			template_vars    m_vars;
 			ssdp::device_ptr m_device;
+			net::ushort      m_port;
+
 			void make_templated(const char* tmplt, const char* content_type, response& resp);
+			void make_device_xml(response& resp);
 			void make_file(const boost::filesystem::path& path, response& resp);
 		public:
-			request_handler(const ssdp::device_ptr& device);
+			request_handler(const ssdp::device_ptr& device, net::ushort port);
 			void handle(const http_request& req, response& resp);
 			void make_404(response& resp);
 			void make_500(response& resp);
