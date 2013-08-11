@@ -119,6 +119,7 @@ namespace net
 				virtual ~media_item() {}
 				virtual std::vector<media_item_ptr> list(ulong start_from, ulong max_count, const search_criteria& sort) = 0;
 				virtual ulong predict_count(ulong served) const = 0;
+				virtual void check_updates() {}
 				virtual ulong update_id() const = 0;
 				virtual media_item_ptr get_item(const std::string& id) = 0;
 				virtual void set_id(uint id) { m_id = id; }
@@ -141,8 +142,13 @@ namespace net
 
 			namespace items
 			{
+				static const char SEP = '-';
+				static const ulong INVALID_ID = (ulong) - 1;
+
 				struct root_item;
 				typedef std::shared_ptr<root_item> root_item_ptr;
+
+				std::pair<media_item_ptr, std::string> find_item(std::vector<media_item_ptr>& items, const std::string& id);
 			}
 
 			struct media_server : device
@@ -181,6 +187,7 @@ namespace net
 				struct common_props_item : media_item
 				{
 					virtual const char* get_upnp_class() const = 0;
+					virtual time_t get_last_write_time() const { return 0; }
 				protected:
 					void output_open(std::ostream& o, const std::vector<std::string>& filter, ulong child_count) const;
 					void output_close(std::ostream& o, const std::vector<std::string>& filter) const;
@@ -226,6 +233,7 @@ namespace net
 					void output(std::ostream& o, const std::vector<std::string>& filter) const override;
 					const char* get_upnp_class() const override { return "object.container.storageFolder"; }
 
+					virtual void rescan_if_needed() {}
 					virtual void folder_changed() { m_update_id++; /*notify?*/ }
 					virtual void add_child(media_item_ptr);
 					virtual void remove_child(media_item_ptr);

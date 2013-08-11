@@ -158,8 +158,6 @@ namespace net
 
 						if (item)
 						{
-							update_id = item->update_id();
-
 							auto filter = parse_filter(filter_str);
 
 							if (browse_children)
@@ -173,10 +171,14 @@ namespace net
 							}
 							else
 							{
+								item->check_updates();
 								item->output(value, filter);
 								returned = 1;
 								contains = 1;
 							}
+
+							// could change during the item->list
+							update_id = item->update_id();
 						}
 
 						value
@@ -186,6 +188,7 @@ namespace net
 							<< "<UpdateID>" << update_id << "</UpdateID>\n";
 					}
 
+					std::cout << "\n" << value.str() << "\n";
 					return value.str();
 				}
 
@@ -233,9 +236,6 @@ namespace net
 
 			namespace items
 			{
-				static const char SEP = '-';
-				static const ulong INVALID_ID = (ulong)-1;
-
 				std::pair<ulong, std::string> pop_id(const std::string& id)
 				{
 					ulong current_id = 0;
@@ -288,6 +288,7 @@ namespace net
 
 				bool contains(const std::vector<std::string>& filter, const char* key)
 				{
+					if (filter.empty()) return true;
 					return std::find(filter.begin(), filter.end(), key) != filter.end();
 				}
 
@@ -303,6 +304,9 @@ namespace net
 				void common_props_item::output_close(std::ostream& o, const std::vector<std::string>& filter) const
 				{
 					const char* name = is_folder() ? "container" : "item";
+					auto date = get_last_write_time();
+					if (date && contains(filter, "dc:date"))
+						o << "&lt;dc:date&gt;" << to_iso8601(time::from_time_t(date)) << "&lt;/dc:date&gt;";
 					o << "&lt;upnp:class&gt;" << get_upnp_class() << "&lt;/upnp:class&gt;&lt;/" << name << "&gt;\n";
 				}
 
@@ -310,6 +314,8 @@ namespace net
 
 				std::vector<media_item_ptr> container_item::list(ulong start_from, ulong max_count, const search_criteria& sort)
 				{
+					rescan_if_needed();
+
 					std::vector<media_item_ptr> out;
 					if (start_from > m_children.size())
 						start_from = m_children.size();
@@ -358,7 +364,7 @@ namespace net
 					m_children.push_back(child);
 					auto id = ++m_current_max;
 					child->set_id(id);
-					child->set_objectId_attr(child->get_objectId_attr() + SEP + std::to_string(id));
+					child->set_objectId_attr(get_objectId_attr() + SEP + std::to_string(id));
 				}
 
 				void container_item::remove_child(media_item_ptr child)
@@ -419,6 +425,7 @@ namespace net
 			{
 				auto root = std::make_shared<items::root_item>(this);
 				root->set_title("root");
+				root->set_objectId_attr("0");
 				return root;
 			}
 

@@ -54,6 +54,17 @@ namespace net
 		return o.str();
 	}
 
+	inline std::string to_iso8601(const boost::local_time::local_date_time& time)
+	{
+		std::ostringstream o;
+
+		boost::local_time::local_time_facet* lf { new boost::local_time::local_time_facet("%Y-%m-%dT%H:%M:%S%F%Q") };
+		o.imbue(std::locale(o.getloc(), lf));
+
+		o << time;
+		return o.str();
+	}
+
 	std::string create_uuid();
 
 	namespace time
@@ -63,10 +74,15 @@ namespace net
 			return boost::local_time::local_sec_clock::local_time(boost::local_time::time_zone_ptr());
 		}
 
+		inline boost::local_time::local_date_time from_time_t(time_t time)
+		{
+			boost::posix_time::ptime pt = boost::posix_time::from_time_t(time);
+			return boost::local_time::local_date_time(pt, boost::local_time::time_zone_ptr());
+		}
+
 		inline boost::local_time::local_date_time last_write(const boost::filesystem::path& path)
 		{
-			boost::posix_time::ptime pt = boost::posix_time::from_time_t(boost::filesystem::last_write_time(path));
-			return boost::local_time::local_date_time(pt, boost::local_time::time_zone_ptr());
+			return from_time_t(boost::filesystem::last_write_time(path));
 		}
 	}
 }
