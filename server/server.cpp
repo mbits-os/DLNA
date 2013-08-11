@@ -29,10 +29,20 @@
 #include <http_server.hpp>
 #include <ssdp.hpp>
 #include <ssdp_media_server.hpp>
+#include <boost/filesystem.hpp>
+
+namespace fs = boost::filesystem;
+namespace av = net::ssdp::av;
+
 
 namespace lan
 {
 	static const net::ushort PORT = 6001;
+
+	namespace item
+	{
+		av::media_item_ptr from_path(const fs::path& path);
+	}
 
 	struct radio
 	{
@@ -72,9 +82,22 @@ int main(int argc, char* argv [])
 			{ "midnightBITS", "http://www.midnightbits.com" }
 		};
 
-		auto av = std::make_shared<net::ssdp::av::media_server>(info);
+		auto server = std::make_shared<av::media_server>(info);
 
-		lan::radio lanRadio(av);
+		for (int arg = 1; arg < argc; ++arg)
+		{
+			auto path = fs::absolute(argv[arg]);
+			if (!fs::exists(path))
+				continue;
+
+			if (fs::is_directory(path) && path.filename() == ".")
+				path = path.parent_path();
+			auto item = lan::item::from_path(path);
+			if (item)
+				server->add_root_element(item);
+		}
+
+		lan::radio lanRadio(server);
 
 		lanRadio.run();
 	}
