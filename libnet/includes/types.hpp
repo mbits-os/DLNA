@@ -33,6 +33,7 @@ namespace net
 {
 	typedef unsigned short ushort;
 	typedef unsigned int uint;
+	typedef unsigned long ulong;
 
 	inline std::string to_string(const boost::asio::ip::address& addr)
 	{

@@ -115,16 +115,24 @@ namespace net
 
 			struct media_item
 			{
+				media_item() : m_id(0) {}
 				virtual ~media_item() {}
-				std::vector<media_item_ptr> list(unsigned long long start_from, unsigned long long max_count, const search_criteria& sort) const;
-				unsigned long long predict_count(unsigned long long served) const;
-				unsigned long long update_id() const;
+				virtual std::vector<media_item_ptr> list(ulong start_from, ulong max_count, const search_criteria& sort) const { return std::vector<media_item_ptr>(); }
+				virtual ulong predict_count(ulong served) const { return served; }
+				virtual ulong update_id() const { return 0; }
+				virtual media_item_ptr get_item(const std::string& id) { return nullptr; }
+				virtual void set_id(uint id) { m_id = id; }
+				virtual uint get_id() const { return m_id; }
+
+			private:
+				uint m_id;
 			};
 
 			struct media_server : device
 			{
 				media_server(const device_info& info)
 					: device(info)
+					, m_root_item(create_root_item())
 					, m_directory(std::make_shared<service::content_directory>(this))
 					, m_manager(std::make_shared<service::connection_manager>(this))
 					, m_system_update_id(1)
@@ -136,14 +144,19 @@ namespace net
 				const char* get_type() const override { return "urn:schemas-upnp-org:device:MediaServer:1"; }
 				const char* get_description() const override { return "UPnP/AV 1.0 Compliant Media Server"; }
 
-				unsigned long long system_update_id() const { return m_system_update_id; }
+				ulong system_update_id() const { return m_system_update_id; }
 
 				media_item_ptr get_item(const std::string& id);
+				std::vector<media_item_ptr>& root_items() { return m_children; }
 
 			private:
+				media_item_ptr m_root_item;
+				std::vector<media_item_ptr> m_children;
 				service::content_directory_ptr m_directory;
 				service::connection_manager_ptr m_manager;
-				unsigned long long m_system_update_id;
+				ulong m_system_update_id;
+
+				media_item_ptr create_root_item();
 			};
 		}
 	}

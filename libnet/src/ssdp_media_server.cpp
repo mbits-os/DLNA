@@ -139,9 +139,9 @@ namespace net
 						throw ssdp::service_error(ssdp::error::invalid_action);
 
 					std::ostringstream value;
-					unsigned long long returned = 0;
-					unsigned long long contains = 0;
-					unsigned long long update_id = m_device->system_update_id();
+					ulong returned = 0;
+					ulong contains = 0;
+					ulong update_id = m_device->system_update_id();
 
 					{
 						value<< "<Result>" << R"(&lt;DIDL-Lite xmlns="urn:schemas-upnp-org:metadata-1-0/DIDL-Lite/" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:upnp="urn:schemas-upnp-org:metadata-1-0/upnp/"&gt;)";
@@ -218,24 +218,133 @@ namespace net
 				}
 			}
 
-			std::vector<media_item_ptr> media_item::list(unsigned long long start_from, unsigned long long max_count, const search_criteria& sort) const
+			namespace items
 			{
-				return std::vector<media_item_ptr>();
-			}
+				static const char SEP = '-';
+				static const ulong INVALID_ID = (ulong)-1;
 
-			unsigned long long media_item::predict_count(unsigned long long served) const
-			{
-				return served;
-			}
+				std::pair<ulong, std::string> pop_id(const std::string& id)
+				{
+					ulong current_id = 0;
 
-			unsigned long long media_item::update_id() const
-			{
-				return 0;
+					const char* data = id.c_str();
+					const char* end = data + id.length();
+
+					if (data == end || !std::isdigit((unsigned int)*data))
+						return make_pair(INVALID_ID, std::string());
+
+					while (data < end)
+					{
+						switch (*data)
+						{
+						case '0': case '1': case '2': case '3': case '4':
+						case '5': case '6': case '7': case '8': case '9':
+							current_id *= 10;
+							current_id += *data - '0';
+							break;
+
+						case SEP:
+							return make_pair(current_id, std::string(data + 1, end));
+
+						default:
+							return make_pair(INVALID_ID, std::string());
+						}
+						++data;
+					}
+
+					// if we are here, there was no SEP until the end of the id
+					return make_pair(current_id, std::string());
+				}
+
+				std::pair<media_item_ptr, std::string> find_item(std::vector<media_item_ptr>& items, const std::string& id)
+				{
+					ulong current_id;
+					std::string rest_of_id;
+
+					std::tie(current_id, rest_of_id) = pop_id(id);
+
+					if (current_id == INVALID_ID)
+						return make_pair(media_item_ptr(), rest_of_id);
+
+					for (auto&& item: items)
+						if (item->get_id() == current_id)
+							return make_pair(item, rest_of_id);
+
+					return make_pair(media_item_ptr(), rest_of_id);
+				}
+
+				media_item_ptr recursive_find_item(std::vector<media_item_ptr>& items, const std::string& id)
+				{
+					media_item_ptr candidate;
+					std::string rest_of_id;
+
+					std::tie(candidate, rest_of_id) = find_item(items, id);
+
+					if (!candidate || rest_of_id.empty())
+						return candidate;
+
+					return candidate->get_item(rest_of_id);
+				}
+
+				struct root_item : media_item
+				{
+					media_server* m_device;
+					root_item(media_server* device) : m_device(device) {}
+
+					std::vector<media_item_ptr> list(ulong start_from, ulong max_count, const search_criteria& sort) const override
+					{
+						std::vector<media_item_ptr> out;
+						auto & items = m_device->root_items();
+						if (start_from > items.size())
+							start_from >= items.size();
+
+						auto end_at = items.size() - start_from;
+						if (end_at > max_count)
+							end_at = max_count;
+						end_at += start_from;
+
+						for (auto i = start_from; i < end_at; ++i)
+							out.push_back(items.at(i));
+
+						if (!sort.empty())
+						{
+							// TODO: sort the result
+						}
+
+						return out;
+					}
+
+					ulong predict_count(ulong) const override { return m_device->root_items().size(); }
+
+					// If the ObjectID is zero, then the UpdateID returned is SystemUpdateID
+					ulong update_id() const override { return m_device->system_update_id(); }
+
+					media_item_ptr get_item(const std::string& id) override
+					{
+						return recursive_find_item(m_device->root_items(), id);
+					}
+				};
 			}
 
 			media_item_ptr media_server::get_item(const std::string& id)
 			{
-				return nullptr;
+				media_item_ptr candidate;
+				ulong current_id;
+				std::string rest_of_id;
+
+				std::tie(current_id, rest_of_id) = items::pop_id(id);
+				if (current_id == 0)
+					candidate = m_root_item;
+
+				if (!candidate || rest_of_id.empty())
+					return candidate;
+
+				return candidate->get_item(rest_of_id);
+			}
+
+			media_item_ptr media_server::create_root_item()
+			{
+				return std::make_shared<items::root_item>(this);
 			}
 		}
 	}
