@@ -26,6 +26,7 @@
 #include <ssdp_media_server.hpp>
 #include <response.hpp>
 #include <dom.hpp>
+#include <algorithm>
 
 namespace net
 {
@@ -117,6 +118,14 @@ namespace net
 					return search_criteria();
 				}
 
+				static std::vector<std::string> parse_filter(const std::string& sort)
+				{
+					if (sort.empty() || sort == "*")
+						return std::vector<std::string>();
+
+					return std::vector<std::string>();
+				}
+
 				std::string content_directory::soap_control_Browse(const http::http_request& req, const dom::XmlDocumentPtr& doc)
 				{
 					if (!doc)
@@ -129,9 +138,9 @@ namespace net
 
 					auto object_id       = extract<std::string>(browse, "ObjectID", "0");
 					auto browse_flag     = extract<std::string>(browse, "BrowseFlag");
-					auto filter          = extract<std::string>(browse, "Filter");
-					auto starting_index  = extract<unsigned long long>(browse, "StartingIndex", 0);
-					auto requested_count = extract<unsigned long long>(browse, "RequestedCount", (unsigned long long)-1);
+					auto filter_str      = extract<std::string>(browse, "Filter");
+					auto starting_index  = extract<ulong>(browse, "StartingIndex", 0);
+					auto requested_count = extract<ulong>(browse, "RequestedCount", (ulong)-1);
 					auto sort_criteria   = extract<std::string>(browse, "SortCriteria");
 
 					bool browse_children = browse_flag == "BrowseDirectChildren";
@@ -151,16 +160,20 @@ namespace net
 						{
 							update_id = item->update_id();
 
+							auto filter = parse_filter(filter_str);
+
 							if (browse_children)
 							{
 								auto children = item->list(starting_index, requested_count, parse_sort(sort_criteria));
-								// for each child in children: filter and output the child
+								for (auto&& child: children)
+									child->output(value, filter);
+
 								returned = children.size();
 								contains = item->predict_count(starting_index + returned);
 							}
 							else
 							{
-								// filter and output the item
+								item->output(value, filter);
 								returned = 1;
 								contains = 1;
 							}
@@ -273,59 +286,119 @@ namespace net
 					return make_pair(media_item_ptr(), rest_of_id);
 				}
 
-				media_item_ptr recursive_find_item(std::vector<media_item_ptr>& items, const std::string& id)
+				bool contains(const std::vector<std::string>& filter, const char* key)
+				{
+					return std::find(filter.begin(), filter.end(), key) != filter.end();
+				}
+
+				void common_props_item::output_open(std::ostream& o, const std::vector<std::string>& filter, ulong child_count) const
+				{
+					const char* name = is_folder() ? "container" : "item";
+					o << "&lt;" << name << " id=\"" << get_objectId_attr() << "\"";
+					if (is_folder() && contains(filter, "@childCount"))
+						o << " childCount=\"" << child_count << "\"";
+					o << " parentId=\"" << get_parent_attr() << "\"  restricted=\"true\"&gt;&lt;dc:title&gt;" << get_title() << "&lt;/dc:title&gt;";
+				}
+
+				void common_props_item::output_close(std::ostream& o, const std::vector<std::string>& filter) const
+				{
+					const char* name = is_folder() ? "container" : "item";
+					o << "&lt;upnp:class&gt;" << get_upnp_class() << "&lt;/upnp:class&gt;&lt;/" << name << "&gt;\n";
+				}
+
+#pragma region container_item
+
+				std::vector<media_item_ptr> container_item::list(ulong start_from, ulong max_count, const search_criteria& sort)
+				{
+					std::vector<media_item_ptr> out;
+					if (start_from > m_children.size())
+						start_from = m_children.size();
+
+					auto end_at = m_children.size() - start_from;
+					if (end_at > max_count)
+						end_at = max_count;
+					end_at += start_from;
+
+					for (auto i = start_from; i < end_at; ++i)
+						out.push_back(m_children.at(i));
+
+					if (!sort.empty())
+					{
+						// TODO: sort the result
+					}
+
+					return out;
+				}
+
+				media_item_ptr container_item::get_item(const std::string& id)
 				{
 					media_item_ptr candidate;
 					std::string rest_of_id;
 
-					std::tie(candidate, rest_of_id) = find_item(items, id);
+					std::tie(candidate, rest_of_id) = find_item(m_children, id);
 
 					if (!candidate || rest_of_id.empty())
 						return candidate;
 
+					if (!candidate->is_folder())
+						return nullptr;
+
 					return candidate->get_item(rest_of_id);
 				}
 
-				struct root_item : media_item
+				void container_item::output(std::ostream& o, const std::vector<std::string>& filter) const
+				{
+					output_open(o, filter, m_children.size());
+					output_close(o, filter);
+				}
+
+				void container_item::add_child(media_item_ptr child)
+				{
+					remove_child(child);
+					m_children.push_back(child);
+					auto id = ++m_current_max;
+					child->set_id(id);
+					child->set_objectId_attr(child->get_objectId_attr() + SEP + std::to_string(id));
+				}
+
+				void container_item::remove_child(media_item_ptr child)
+				{
+					folder_changed();
+
+					auto pos = std::find(m_children.begin(), m_children.end(), child);
+					if (pos != m_children.end())
+						m_children.erase(pos);
+				}
+#pragma endregion
+
+#pragma region root_item
+
+				struct root_item : container_item
 				{
 					media_server* m_device;
 					root_item(media_server* device) : m_device(device) {}
 
-					std::vector<media_item_ptr> list(ulong start_from, ulong max_count, const search_criteria& sort) const override
-					{
-						std::vector<media_item_ptr> out;
-						auto & items = m_device->root_items();
-						if (start_from > items.size())
-							start_from >= items.size();
-
-						auto end_at = items.size() - start_from;
-						if (end_at > max_count)
-							end_at = max_count;
-						end_at += start_from;
-
-						for (auto i = start_from; i < end_at; ++i)
-							out.push_back(items.at(i));
-
-						if (!sort.empty())
-						{
-							// TODO: sort the result
-						}
-
-						return out;
-					}
-
-					ulong predict_count(ulong) const override { return m_device->root_items().size(); }
-
 					// If the ObjectID is zero, then the UpdateID returned is SystemUpdateID
 					ulong update_id() const override { return m_device->system_update_id(); }
 
-					media_item_ptr get_item(const std::string& id) override
-					{
-						return recursive_find_item(m_device->root_items(), id);
+					std::string get_parent_attr() const override {
+						static std::string parent_id { "-1" };
+						return parent_id;
 					}
 				};
+
+#pragma endregion
 			}
 
+			std::string media_item::get_parent_attr() const
+			{
+				auto pos = m_object_id.find_last_of(items::SEP);
+				if (pos == std::string::npos)
+					return "-1";
+				return m_object_id.substr(0, pos);
+			}
+
+#pragma region media_server
 			media_item_ptr media_server::get_item(const std::string& id)
 			{
 				media_item_ptr candidate;
@@ -342,10 +415,23 @@ namespace net
 				return candidate->get_item(rest_of_id);
 			}
 
-			media_item_ptr media_server::create_root_item()
+			items::root_item_ptr media_server::create_root_item()
 			{
-				return std::make_shared<items::root_item>(this);
+				auto root = std::make_shared<items::root_item>(this);
+				root->set_title("root");
+				return root;
 			}
+
+			void media_server::add_root_element(media_item_ptr ptr)
+			{
+				m_root_item->add_child(ptr);
+			}
+
+			void media_server::remove_root_element(media_item_ptr ptr)
+			{
+				m_root_item->remove_child(ptr);
+			}
+#pragma endregion
 		}
 	}
 }
