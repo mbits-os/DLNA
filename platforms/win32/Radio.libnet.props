@@ -6,7 +6,7 @@
   </ImportGroup>
   <PropertyGroup>
     <_PropertySheetDisplayName>Network Library</_PropertySheetDisplayName>
-    <IncludePath>$(SolutionDir)..\..\libnet;$(SolutionDir)..\..\libnet\inc;$(IncludePath)</IncludePath>
+    <IncludePath>$(SolutionDir)..\..\libnet\pch;$(SolutionDir)..\..\libnet\inc;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Label="UserMacros" />
   <ItemDefinitionGroup>

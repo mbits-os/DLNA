@@ -30,48 +30,48 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\libnet\src\http_connection.cpp">
+    <ClCompile Include="..\..\libnet\src\http\connection.cpp">
       <Filter>src\http</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\libnet\src\http_parser.cpp">
+    <ClCompile Include="..\..\libnet\src\http\header_parser.cpp">
       <Filter>src\http</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\libnet\src\http_server.cpp">
+    <ClCompile Include="..\..\libnet\src\http\http_win32.cpp">
       <Filter>src\http</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\libnet\src\http_win32.cpp">
+    <ClCompile Include="..\..\libnet\src\http\request_handler.cpp">
       <Filter>src\http</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\libnet\src\request_handler.cpp">
+    <ClCompile Include="..\..\libnet\src\http\response.cpp">
       <Filter>src\http</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\libnet\src\response.cpp">
+    <ClCompile Include="..\..\libnet\src\http\server.cpp">
       <Filter>src\http</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\libnet\src\ssdp.cpp">
-      <Filter>src\ssdp</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\libnet\src\ssdp_device.cpp">
-      <Filter>src\ssdp</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\libnet\src\ssdp_media_server.cpp">
-      <Filter>src\ssdp</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\libnet\src\interface_win32.cpp">
+    <ClCompile Include="..\..\libnet\src\network\interface_win32.cpp">
       <Filter>src\network</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\libnet\src\net_win32.cpp">
+    <ClCompile Include="..\..\libnet\src\network\net_win32.cpp">
       <Filter>src\network</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\libnet\pch.cpp">
+    <ClCompile Include="..\..\libnet\src\network\udp.cpp">
+      <Filter>src\network</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\libnet\src\ssdp\device.cpp">
+      <Filter>src\ssdp</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\libnet\src\ssdp\media_server.cpp">
+      <Filter>src\ssdp</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\libnet\src\ssdp\ssdp.cpp">
+      <Filter>src\ssdp</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\libnet\pch\pch.cpp">
       <Filter>pch</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\libnet\src\udp.cpp">
-      <Filter>src\network</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\libnet\pch.h">
+    <ClInclude Include="..\..\libnet\pch\pch.h">
       <Filter>pch</Filter>
     </ClInclude>
     <ClInclude Include="..\..\libnet\includes\http.hpp">
