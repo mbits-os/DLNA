@@ -31,6 +31,7 @@
 #include <ssdp/ssdp.hpp>
 #include <boost/filesystem.hpp>
 #include <iostream>
+#include <ssdp/service_description.hpp>
 
 namespace fs = boost::filesystem;
 
@@ -63,50 +64,62 @@ void help(Args&& ... args)
 
 inline bool is_file(const fs::path& p) { return fs::is_regular_file(p) || fs::is_symlink(p); }
 
-struct state_variable
+void print_idl(std::ostream& o, const net::ssdp::service_description& descr, const std::string& type_name)
 {
-	bool m_event;
-	std::string m_name;
-	std::string m_type;
-	std::vector<std::string> m_values;
-
-	std::string getType() const { return m_values.empty() ? m_type : m_event ? m_name + "_Values" : m_name; }
-};
-
-struct action_arg
-{
-	bool m_input;
-	std::string m_name;
-	std::string m_type_ref;
-	std::string getType(const std::vector<state_variable>& refs) const
+	size_t events = 0;
+	for (auto&& var : descr.m_variables)
 	{
-		for (auto&& ref : refs)
+		if (var.m_values.empty())
 		{
-			if (m_type_ref == ref.m_name)
-				return ref.getType();
+			++events;
+			continue;
 		}
-		return m_type_ref;
+
+		o << "enum " << var.getType() << " { // " << var.m_type << "\n";
+		for (auto&& val : var.m_values)
+		{
+			o << "    " << val << ";\n";
+		}
+		o << "};\n\n";
 	}
-};
 
-struct action
-{
-	std::string m_name;
-	std::vector<action_arg> m_args;
-};
+	o << "[version(" << descr.m_version.m_major << "." << descr.m_version.m_minor << ")] interface " << type_name << " {\n";
 
-inline std::string find_string(const dom::XmlNodePtr& node, const std::string& xpath)
-{
-	auto tmp = node->find(xpath);
-	if (tmp) return tmp->stringValue();
-	return std::string();
-}
+	for (auto&& action : descr.m_actions)
+	{
+		bool first = true;
+		o << "    void " << action.m_name << "(";
 
-inline std::string find_string(const dom::XmlNodePtr& node, const std::string& xpath, dom::Namespaces ns)
-{
-	auto tmp = node->find(xpath, ns);
-	if (tmp) return tmp->stringValue();
-	return std::string();
+		size_t  out_count = 0;
+		for (auto&& arg : action.m_args)
+		{
+			if (!arg.m_input)
+				++out_count;
+		}
+
+		for (auto&& arg : action.m_args)
+		{
+			if (first) first = false;
+			else o << ", ";
+			o << (arg.m_input ? "[in] " : out_count == 1 ? "[retval] " : "[out] ") << arg.getType(descr.m_variables) << " " << arg.m_name;
+		}
+		o << ");\n";
+	}
+
+	if (!descr.m_variables.empty() && events > 0)
+		o << "\n";
+
+	for (auto&& var : descr.m_variables)
+	{
+		if (!var.m_event)
+			continue;
+
+		o << "    ";
+		o << var.getType() << " " << var.m_name << ";\n";
+	}
+
+	o << "};\n";
+
 }
 
 int main(int argc, char* argv [])
@@ -117,7 +130,10 @@ int main(int argc, char* argv [])
 
 		if (argc != 3)
 		{
-			help("File name missing.");
+			if (argc < 3)
+				help("File name missing.");
+			else
+				help("Too much arguments.");
 			return 1;
 		}
 		fs::path in(argv[1]);
@@ -139,115 +155,16 @@ int main(int argc, char* argv [])
 		auto doc = dom::XmlDocument::fromDataSource([&](void* buffer, size_t size) { return (size_t)in_f.read((char*)buffer, size).gcount(); });
 		if (doc)
 		{
-			std::vector<state_variable> types_variables;
-			std::vector<action> actions;
-			int spec_major = 0, spec_minor = 0;
+			net::ssdp::service_description descr;
 
-			// try XML -> IDL
-			dom::NSData ns[] = { {"svc", "urn:schemas-upnp-org:service-1-0"} };
-			auto version = doc->find("/svc:scpd/svc:specVersion", ns);
-			if (version)
+			if (!descr.read_xml(doc))
 			{
-				auto major = find_string(version, "svc:major", ns);
-				auto minor = find_string(version, "svc:minor", ns);
-				{
-					std::istringstream i(major);
-					i >> spec_major;
-				}
-				{
-					std::istringstream i(minor);
-					i >> spec_minor;
-				}
+				help("The XML document does not describe SSDP service.");
+				return 1;
 			}
 
-			auto action_list = doc->findall("/svc:scpd/svc:actionList/svc:action", ns);
-			for (auto&& act : action_list)
-			{
-				action action;
-				action.m_name = find_string(act, "svc:name", ns);
-
-				auto args = act->findall("svc:argumentList/svc:argument", ns);
-				for (auto&& arg : args)
-				{
-					action_arg action_arg;
-					action_arg.m_input = find_string(arg, "svc:direction", ns) == "out";
-					action_arg.m_name = find_string(arg, "svc:name", ns);
-					action_arg.m_type_ref = find_string(arg, "svc:relatedStateVariable", ns);
-					action.m_args.push_back(action_arg);
-				}
-				actions.push_back(action);
-			}
-
-			auto variables = doc->findall("/svc:scpd/svc:serviceStateTable/svc:stateVariable", ns);
-			for (auto&& variable : variables)
-			{
-				auto sendEvent = find_string(variable, "@sendEvents");
-
-				state_variable var;
-				var.m_event = sendEvent == "1" || sendEvent == "yes";
-				var.m_name = find_string(variable, "svc:name", ns);
-				var.m_type = find_string(variable, "svc:dataType", ns);
-
-				auto allowedValues = variable->findall("svc:allowedValueList/svc:allowedValue", ns);
-				for (auto&& value : allowedValues)
-					var.m_values.push_back(value->stringValue());
-
-				types_variables.push_back(var);
-			}
-
-			size_t events = 0;
-			for (auto&& var : types_variables)
-			{
-				if (var.m_values.empty())
-				{
-					++events;
-					continue;
-				}
-
-				std::cout << "enum " << var.getType() << " { // " << var.m_type << "\n";
-				for (auto&& val : var.m_values)
-				{
-					std::cout << "    " << val << ";\n";
-				}
-				std::cout << "};\n\n";
-			}
-
-			std::cout << "[version(" << spec_major << "." << spec_minor << ")] interface <name missing> {\n";
-
-			for (auto&& action : actions)
-			{
-				bool first = true;
-				std::cout << "    void " << action.m_name << "(";
-
-				size_t  out_count = 0;
-				for (auto&& arg : action.m_args)
-				{
-					if (!arg.m_input)
-						++out_count;
-				}
-
-				for (auto&& arg : action.m_args)
-				{
-					if (first) first = false;
-					else std::cout << ", ";
-					std::cout << (arg.m_input ? "[in] " : out_count == 1 ? "[retval] " : "[out] ") << arg.getType(types_variables) << " " << arg.m_name;
-				}
-				std::cout << ");\n";
-			}
-
-			if (!types_variables.empty() && events > 0)
-				std::cout << "\n";
-
-			for (auto && var : types_variables)
-			{
-				if (!var.m_event)
-					continue;
-
-				std::cout << "    ";
-				std::cout << var.getType() << " " << var.m_name << ";\n";
-			}
-
-			std::cout << "};\n";
+			auto stem = in.stem().string();
+			print_idl(std::cout, descr, stem + "_service");
 		}
 		else
 		{
