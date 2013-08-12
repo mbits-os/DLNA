@@ -21,14 +21,14 @@
  * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-#ifndef __UDP_HPP__
-#define __UDP_HPP__
+#ifndef __NETWORK_UDP_HPP__
+#define __NETWORK_UDP_HPP__
 
 #include <memory>
 #include <set>
 #include <boost/utility.hpp>
 #include <boost/asio.hpp>
-#include <types.hpp>
+#include <network/types.hpp>
 
 namespace net
 {
@@ -95,4 +95,4 @@ namespace net
 	}
 }
 
-#endif // __UDP_HPP__
+#endif // __NETWORK_UDP_HPP__

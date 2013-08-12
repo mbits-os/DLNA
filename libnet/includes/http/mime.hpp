@@ -22,8 +22,8 @@
  * SOFTWARE.
  */
 
-#ifndef __MIME_HPP__
-#define __MIME_HPP__
+#ifndef __HTTP_MIME_HPP__
+#define __HTTP_MIME_HPP__
 
 #include <cctype>
 #include <string>
@@ -205,4 +205,4 @@ namespace net
 		}
 	}
 }
-#endif // __MIME_HPP__
+#endif // __HTTP_MIME_HPP__

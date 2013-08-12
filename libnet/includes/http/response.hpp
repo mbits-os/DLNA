@@ -22,10 +22,10 @@
  * SOFTWARE.
  */
 
-#ifndef __RESPONSE_HPP__
-#define __RESPONSE_HPP__
+#ifndef __HTTP_RESPONSE_HPP__
+#define __HTTP_RESPONSE_HPP__
 
-#include <http.hpp>
+#include <http/http.hpp>
 #include <boost/utility.hpp>
 #include <boost/filesystem.hpp>
 #include <boost/filesystem/fstream.hpp>
@@ -144,4 +144,4 @@ namespace net
 	}
 }
 
-#endif // __RESPONSE_HPP__
+#endif // __HTTP_RESPONSE_HPP__

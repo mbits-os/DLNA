@@ -25,11 +25,11 @@
 #ifndef __HTTP_SERVER_HPP__
 #define __HTTP_SERVER_HPP__
 
-#include <http.hpp>
-#include <http_connection.hpp>
+#include <http/http.hpp>
+#include <http/connection.hpp>
 #include <memory>
-#include <request_handler.hpp>
-#include <ssdp_device.hpp>
+#include <http/request_handler.hpp>
+#include <ssdp/device.hpp>
 
 namespace net
 {

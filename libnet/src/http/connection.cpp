@@ -23,8 +23,8 @@
  */
 
 #include "pch.h"
-#include <http_connection.hpp>
-#include <types.hpp>
+#include <http/connection.hpp>
+#include <network/types.hpp>
 #include <iostream>
 
 namespace net

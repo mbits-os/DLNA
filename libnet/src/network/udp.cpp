@@ -23,8 +23,8 @@
  */
 
 #include "pch.h"
-#include <udp.hpp>
-#include <interface.hpp>
+#include <network/udp.hpp>
+#include <network/interface.hpp>
 
 namespace net
 {

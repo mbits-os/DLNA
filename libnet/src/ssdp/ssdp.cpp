@@ -23,10 +23,10 @@
  */
 
 #include "pch.h"
-#include <ssdp.hpp>
+#include <ssdp/ssdp.hpp>
 #include <thread>
-#include <http.hpp>
-#include <http_parser.hpp>
+#include <http/http.hpp>
+#include <http/header_parser.hpp>
 
 namespace net
 {

@@ -28,10 +28,10 @@
 #include <memory>
 #include <set>
 #include <boost/asio.hpp>
-#include <http_parser.hpp>
-#include <http.hpp>
-#include <request_handler.hpp>
-#include <response.hpp>
+#include <http/header_parser.hpp>
+#include <http/http.hpp>
+#include <http/request_handler.hpp>
+#include <http/response.hpp>
 
 namespace net
 {

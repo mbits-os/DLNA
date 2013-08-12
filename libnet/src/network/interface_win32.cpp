@@ -23,7 +23,7 @@
  */
 
 #include "pch.h"
-#include <interface.hpp>
+#include <network/interface.hpp>
 #include <windows.h>
 #include <winsock2.h>
 #include <iphlpapi.h>

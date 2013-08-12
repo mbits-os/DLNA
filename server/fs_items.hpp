@@ -29,7 +29,7 @@
 #ifndef __FS_ITEMS_HPP__
 #define __FS_ITEMS_HPP__
 
-#include <ssdp_media_server.hpp>
+#include <ssdp/media_server.hpp>
 #include <boost/filesystem.hpp>
 
 namespace fs = boost::filesystem;

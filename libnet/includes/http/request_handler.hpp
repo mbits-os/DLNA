@@ -22,15 +22,15 @@
  * SOFTWARE.
  */
 
-#ifndef __REQUEST_HANDLER_HPP__
-#define __REQUEST_HANDLER_HPP__
+#ifndef __HTTP_REQUEST_HANDLER_HPP__
+#define __HTTP_REQUEST_HANDLER_HPP__
 
-#include <http.hpp>
+#include <http/http.hpp>
 #include <boost/utility.hpp>
 #include <string>
 #include <vector>
 #include <boost/filesystem.hpp>
-#include <ssdp_device.hpp>
+#include <ssdp/device.hpp>
 
 namespace net
 {
@@ -57,4 +57,4 @@ namespace net
 	}
 }
 
-#endif // __REQUEST_HANDLER_HPP__
+#endif // __HTTP_REQUEST_HANDLER_HPP__

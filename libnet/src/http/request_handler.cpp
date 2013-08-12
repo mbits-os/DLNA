@@ -23,10 +23,10 @@
  */
 
 #include "pch.h"
-#include <request_handler.hpp>
-#include <response.hpp>
+#include <http/request_handler.hpp>
+#include <http/response.hpp>
 #include <regex>
-#include <interface.hpp>
+#include <network/interface.hpp>
 #include <expat.hpp>
 #include <dom.hpp>
 

@@ -24,7 +24,7 @@
 #ifndef __SSDP_MEDIA_SERVER_HPP__
 #define __SSDP_MEDIA_SERVER_HPP__
 
-#include <ssdp_device.hpp>
+#include <ssdp/device.hpp>
 
 namespace net
 {

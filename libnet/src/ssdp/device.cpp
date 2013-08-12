@@ -23,8 +23,8 @@
  */
 
 #include "pch.h"
-#include <ssdp_device.hpp>
-#include <interface.hpp>
+#include <ssdp/device.hpp>
+#include <network/interface.hpp>
 
 namespace net
 {

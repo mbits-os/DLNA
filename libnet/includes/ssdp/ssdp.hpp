@@ -21,15 +21,15 @@
  * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-#ifndef __SSDP_HPP__
-#define __SSDP_HPP__
+#ifndef __SSDP_SSDP_HPP__
+#define __SSDP_SSDP_HPP__
 
 #include <iostream>
-#include <http.hpp>
-#include <http_server.hpp>
-#include <udp.hpp>
-#include <interface.hpp>
-#include <ssdp_device.hpp>
+#include <http/http.hpp>
+#include <http/server.hpp>
+#include <network/udp.hpp>
+#include <network/interface.hpp>
+#include <ssdp/device.hpp>
 
 namespace net
 {
@@ -143,4 +143,4 @@ namespace net
 	}
 }
 
-#endif //__SSDP_HPP__
+#endif //__SSDP_SSDP_HPP__

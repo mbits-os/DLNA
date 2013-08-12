@@ -25,10 +25,10 @@
 #include <sdkddkver.h>
 #endif
 
-#include <http.hpp>
-#include <http_server.hpp>
-#include <ssdp.hpp>
-#include <ssdp_media_server.hpp>
+#include <http/http.hpp>
+#include <http/server.hpp>
+#include <ssdp/ssdp.hpp>
+#include <ssdp/media_server.hpp>
 #include <boost/filesystem.hpp>
 
 namespace fs = boost::filesystem;

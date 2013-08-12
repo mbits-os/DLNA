@@ -21,8 +21,8 @@
  * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-#ifndef __TYPES_HPP__
-#define __TYPES_HPP__
+#ifndef __NETWORK_TYPES_HPP__
+#define __NETWORK_TYPES_HPP__
 
 #include <boost/asio.hpp>
 #include <boost/date_time.hpp>
@@ -87,4 +87,4 @@ namespace net
 	}
 }
 
-#endif // __TYPES_HPP__
+#endif // __NETWORK_TYPES_HPP__

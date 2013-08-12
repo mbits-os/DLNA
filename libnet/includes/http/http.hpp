@@ -22,11 +22,11 @@
  * SOFTWARE.
  */
 
-#ifndef __HTTP_HPP__
-#define __HTTP_HPP__
+#ifndef __HTTP_HTTP_HPP__
+#define __HTTP_HTTP_HPP__
 
-#include <types.hpp>
-#include <mime.hpp>
+#include <network/types.hpp>
+#include <http/mime.hpp>
 #include <string>
 #include <sstream>
 #include <iostream>
@@ -338,4 +338,4 @@ namespace std
 		return o << std::get<0>(version) << " " << std::get<1>(version) << " " << std::get<2>(version);
 	}
 }
-#endif // __HTTP_HPP__
+#endif // __HTTP_HTTP_HPP__

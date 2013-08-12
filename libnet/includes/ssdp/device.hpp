@@ -24,7 +24,7 @@
 #ifndef __SSDP_DEVICE_HPP__
 #define __SSDP_DEVICE_HPP__
 
-#include <http.hpp>
+#include <http/http.hpp>
 
 namespace dom
 {

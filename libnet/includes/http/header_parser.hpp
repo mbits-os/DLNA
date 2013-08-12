@@ -22,13 +22,13 @@
  * SOFTWARE.
  */
 
-#ifndef __HTTP_PARSER_HPP__
-#define __HTTP_PARSER_HPP__
+#ifndef __HTTP_HEADER_PARSER_HPP__
+#define __HTTP_HEADER_PARSER_HPP__
 
 #include <memory>
 #include <set>
-#include <mime.hpp>
-#include <http.hpp>
+#include <http/mime.hpp>
+#include <http/http.hpp>
 
 namespace net
 {
@@ -109,4 +109,4 @@ namespace net
 	}
 }
 
-#endif // __HTTP_PARSER_HPP__
+#endif // __HTTP_HEADER_PARSER_HPP__
