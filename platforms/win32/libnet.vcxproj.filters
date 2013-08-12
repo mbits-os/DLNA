@@ -7,89 +7,111 @@
     <Filter Include="includes">
       <UniqueIdentifier>{123037d5-267f-4caa-9c8e-0493afb2eb3f}</UniqueIdentifier>
     </Filter>
-    <Filter Include="inc">
-      <UniqueIdentifier>{cc766c8d-5e8b-4159-b61c-9758e61b5586}</UniqueIdentifier>
+    <Filter Include="src\http">
+      <UniqueIdentifier>{ededd7a1-1e77-417e-80b1-f2c0e1de459c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\ssdp">
+      <UniqueIdentifier>{4ab79961-edeb-4c6e-89a0-63939cb77f00}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\network">
+      <UniqueIdentifier>{c8648080-eecd-47cd-a021-d64b1fba4dda}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="pch">
+      <UniqueIdentifier>{4d4076c9-832d-401a-b58c-0d94f6af340c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="includes\http">
+      <UniqueIdentifier>{917870f9-6e59-4bce-bf07-ddcf3e1f831e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="includes\ssdp">
+      <UniqueIdentifier>{4b7a4510-9bd4-4164-92b3-8359452f2e49}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="includes\network">
+      <UniqueIdentifier>{f9eac088-34b9-40ee-b0a3-63674e2ce3ab}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\libnet\pch.cpp" />
-    <ClCompile Include="..\..\libnet\src\udp.cpp">
-      <Filter>src</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\libnet\src\http_win32.cpp">
-      <Filter>src</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\libnet\src\interface_win32.cpp">
-      <Filter>src</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\libnet\src\ssdp.cpp">
-      <Filter>src</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\libnet\src\net_win32.cpp">
-      <Filter>src</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\libnet\src\http_connection.cpp">
-      <Filter>src</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\libnet\src\http_server.cpp">
-      <Filter>src</Filter>
+      <Filter>src\http</Filter>
     </ClCompile>
     <ClCompile Include="..\..\libnet\src\http_parser.cpp">
-      <Filter>src</Filter>
+      <Filter>src\http</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\libnet\src\http_server.cpp">
+      <Filter>src\http</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\libnet\src\http_win32.cpp">
+      <Filter>src\http</Filter>
     </ClCompile>
     <ClCompile Include="..\..\libnet\src\request_handler.cpp">
-      <Filter>src</Filter>
+      <Filter>src\http</Filter>
     </ClCompile>
     <ClCompile Include="..\..\libnet\src\response.cpp">
-      <Filter>src</Filter>
+      <Filter>src\http</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\libnet\src\ssdp_media_server.cpp">
-      <Filter>src</Filter>
+    <ClCompile Include="..\..\libnet\src\ssdp.cpp">
+      <Filter>src\ssdp</Filter>
     </ClCompile>
     <ClCompile Include="..\..\libnet\src\ssdp_device.cpp">
-      <Filter>src</Filter>
+      <Filter>src\ssdp</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\libnet\src\ssdp_media_server.cpp">
+      <Filter>src\ssdp</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\libnet\src\interface_win32.cpp">
+      <Filter>src\network</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\libnet\src\net_win32.cpp">
+      <Filter>src\network</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\libnet\pch.cpp">
+      <Filter>pch</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\libnet\src\udp.cpp">
+      <Filter>src\network</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\libnet\pch.h" />
-    <ClInclude Include="..\..\libnet\includes\ssdp.hpp">
-      <Filter>includes</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\libnet\includes\mime.hpp">
-      <Filter>includes</Filter>
+    <ClInclude Include="..\..\libnet\pch.h">
+      <Filter>pch</Filter>
     </ClInclude>
     <ClInclude Include="..\..\libnet\includes\http.hpp">
-      <Filter>includes</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\libnet\includes\udp.hpp">
-      <Filter>includes</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\libnet\includes\types.hpp">
-      <Filter>includes</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\libnet\includes\interface.hpp">
-      <Filter>includes</Filter>
+      <Filter>includes\http</Filter>
     </ClInclude>
     <ClInclude Include="..\..\libnet\includes\http_connection.hpp">
-      <Filter>includes</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\libnet\includes\http_server.hpp">
-      <Filter>includes</Filter>
+      <Filter>includes\http</Filter>
     </ClInclude>
     <ClInclude Include="..\..\libnet\includes\http_parser.hpp">
-      <Filter>includes</Filter>
+      <Filter>includes\http</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\libnet\includes\http_server.hpp">
+      <Filter>includes\http</Filter>
     </ClInclude>
     <ClInclude Include="..\..\libnet\includes\request_handler.hpp">
-      <Filter>includes</Filter>
+      <Filter>includes\http</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\libnet\includes\mime.hpp">
+      <Filter>includes\http</Filter>
     </ClInclude>
     <ClInclude Include="..\..\libnet\includes\response.hpp">
-      <Filter>includes</Filter>
+      <Filter>includes\http</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\libnet\includes\ssdp.hpp">
+      <Filter>includes\ssdp</Filter>
     </ClInclude>
     <ClInclude Include="..\..\libnet\includes\ssdp_device.hpp">
-      <Filter>includes</Filter>
+      <Filter>includes\ssdp</Filter>
     </ClInclude>
     <ClInclude Include="..\..\libnet\includes\ssdp_media_server.hpp">
-      <Filter>includes</Filter>
+      <Filter>includes\ssdp</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\libnet\includes\interface.hpp">
+      <Filter>includes\network</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\libnet\includes\types.hpp">
+      <Filter>includes\network</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\libnet\includes\udp.hpp">
+      <Filter>includes\network</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>
