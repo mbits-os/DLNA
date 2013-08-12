@@ -148,7 +148,44 @@ namespace dom
 			return XmlTextPtr();
 		}
 		virtual size_t length() const = 0;
+
+		struct iterator
+		{
+			XmlNodeListPtr m_ref;
+			size_t m_index;
+		public:
+
+			iterator(const XmlNodeListPtr& ref, size_t index) : m_ref(ref), m_index(index) {}
+
+			XmlNodePtr operator*() { return m_ref->item(m_index); }
+
+			iterator operator ++()
+			{
+				++m_index;
+				return *this;
+			}
+
+			iterator operator ++(int)
+			{
+				iterator tmp(*this);
+				m_index++;
+				return tmp;
+			}
+
+			bool operator == (const iterator& rhs) const { return m_index == rhs.m_index; }
+			bool operator != (const iterator& rhs) const { return m_index != rhs.m_index; }
+		};
 	};
+
+	inline XmlNodeList::iterator begin(const XmlNodeListPtr& ref)
+	{
+		return XmlNodeList::iterator(ref, 0);
+	}
+
+	inline XmlNodeList::iterator end(const XmlNodeListPtr& ref)
+	{
+		return XmlNodeList::iterator(ref, ref ? ref->length() : 0);
+	}
 
 	struct XmlElement: XmlNode
 	{
