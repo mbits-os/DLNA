@@ -27,99 +27,28 @@
 #include <http/response.hpp>
 #include <regex>
 #include <network/interface.hpp>
-#include <expat.hpp>
 #include <dom.hpp>
 
 namespace net
 {
 	namespace http
 	{
-		class DOMParser : public xml::ExpatBase<DOMParser>
-		{
-			dom::XmlElementPtr elem;
-			std::string text;
-
-			void addText()
-			{
-				if (text.empty()) return;
-				if (elem)
-					elem->appendChild(doc->createTextNode(text));
-				text.clear();
-			}
-		public:
-
-			dom::XmlDocumentPtr doc;
-
-			bool create(const char* cp)
-			{
-				doc = dom::XmlDocument::create();
-				if (!doc) return false;
-				return xml::ExpatBase<DOMParser>::create(cp);
-			}
-
-			void onStartElement(const XML_Char *name, const XML_Char **attrs)
-			{
-				addText();
-				auto current = doc->createElement(name);
-				if (!current) return;
-				for (; *attrs; attrs += 2)
-				{
-					auto attr = doc->createAttribute(attrs[0], attrs[1]);
-					if (!attr) continue;
-					current->setAttribute(attr);
-				}
-				if (elem)
-					elem->appendChild(current);
-				else
-					doc->setDocumentElement(current);
-				elem = current;
-			}
-
-			void onEndElement(const XML_Char *name)
-			{
-				addText();
-				if (!elem) return;
-				dom::XmlNodePtr node = elem->parentNode();
-				elem = std::static_pointer_cast<dom::XmlElement>(node);
-			}
-
-			void onCharacterData(const XML_Char *pszData, int nLength)
-			{
-				text += std::string(pszData, nLength);
-			}
-		};
-
 		dom::XmlDocumentPtr create_from_socket(request_data_ptr data)
 		{
 			if (!data || !data->content_length())
 				return nullptr;
 
-			DOMParser parser;
-			if (!parser.create(nullptr)) return nullptr;
-
-			parser.enableElementHandler();
-			parser.enableCharacterDataHandler();
-
-			auto rest = data->content_length();
-			char buffer[8192];
-			while (rest)
+			size_t rest = data->content_length();
+			return dom::XmlDocument::fromDataSource([&](void* buffer, size_t chunk) -> size_t
 			{
-				auto chunk = sizeof(buffer);
-				if (chunk > rest)
-					chunk = rest;
-				rest -= chunk;
-				auto read = data->read(buffer, chunk);
+				if (!rest)
+					return 0;
 
-				//std::cout.write(buffer, read);
+				auto tmp = data->read(buffer, chunk);
+				rest -= tmp;
 
-				if (!parser.parse(buffer, read, false))
-					return nullptr;
-			}
-
-			if (!parser.parse(buffer, 0))
-				return nullptr;
-
-			return parser.doc;
+				return tmp;
+			});
 		}
 
 		struct tmplt_chunk
