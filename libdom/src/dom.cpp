@@ -27,6 +27,7 @@
 #include <vector>
 #include <map>
 #include <iterator>
+#include <fstream>
 #include <string.h>
 #include <expat.hpp>
 #ifdef WIN32
@@ -549,26 +550,26 @@ namespace dom
 
 	XmlDocumentPtr XmlDocument::fromFile(const char* path)
 	{
+		std::fstream in(path, std::ios::binary | std::ios::in);
+		if (!in)
+			return nullptr;
+		return fromDataSource([&in](void* ptr, size_t size) { return (size_t)in.read((char*) ptr, size).gcount(); });
+	}
+
+	XmlDocumentPtr XmlDocument::fromDataSource(const DataSource& source)
+	{
 		DOMParser parser;
 		if (!parser.create(nullptr)) return nullptr;
 		parser.enableElementHandler();
 		parser.enableCharacterDataHandler();
 
-		FILE* f = fopen(path, "rb");
-		if (!f)
-			return nullptr;
-
 		char buffer[8192];
 		size_t read;
-		while ((read = fread(buffer, 1, sizeof(buffer), f)) > 0)
+		while ((read = source(buffer, sizeof(buffer))) > 0)
 		{
 			if (!parser.parse(buffer, read, false))
-			{
-				fclose(f);
 				return nullptr;
-			}
 		}
-		fclose(f);
 
 		if (!parser.parse(buffer, 0))
 			return nullptr;

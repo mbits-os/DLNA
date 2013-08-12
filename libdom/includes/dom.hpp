@@ -27,6 +27,7 @@
 
 #include <memory>
 #include <string>
+#include <functional>
 
 namespace dom
 {
@@ -110,8 +111,11 @@ namespace dom
 
 	struct XmlDocument: XmlNode
 	{
+		typedef std::function<size_t(void*, size_t)> DataSource;
+
 		static XmlDocumentPtr create();
 		static XmlDocumentPtr fromFile(const char* path);
+		static XmlDocumentPtr fromDataSource(const DataSource& source);
 		virtual ~XmlDocument() {}
 
 		virtual XmlElementPtr documentElement() = 0;
