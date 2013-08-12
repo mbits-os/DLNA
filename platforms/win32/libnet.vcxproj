@@ -65,19 +65,19 @@
     <ClCompile Include="..\..\libnet\src\ssdp\ssdp.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\libnet\includes\http.hpp" />
-    <ClInclude Include="..\..\libnet\includes\http_connection.hpp" />
-    <ClInclude Include="..\..\libnet\includes\http_parser.hpp" />
-    <ClInclude Include="..\..\libnet\includes\http_server.hpp" />
-    <ClInclude Include="..\..\libnet\includes\interface.hpp" />
-    <ClInclude Include="..\..\libnet\includes\mime.hpp" />
-    <ClInclude Include="..\..\libnet\includes\request_handler.hpp" />
-    <ClInclude Include="..\..\libnet\includes\response.hpp" />
-    <ClInclude Include="..\..\libnet\includes\ssdp.hpp" />
-    <ClInclude Include="..\..\libnet\includes\ssdp_device.hpp" />
-    <ClInclude Include="..\..\libnet\includes\ssdp_media_server.hpp" />
-    <ClInclude Include="..\..\libnet\includes\types.hpp" />
-    <ClInclude Include="..\..\libnet\includes\udp.hpp" />
+    <ClInclude Include="..\..\libnet\includes\http\connection.hpp" />
+    <ClInclude Include="..\..\libnet\includes\http\header_parser.hpp" />
+    <ClInclude Include="..\..\libnet\includes\http\http.hpp" />
+    <ClInclude Include="..\..\libnet\includes\http\mime.hpp" />
+    <ClInclude Include="..\..\libnet\includes\http\request_handler.hpp" />
+    <ClInclude Include="..\..\libnet\includes\http\response.hpp" />
+    <ClInclude Include="..\..\libnet\includes\http\server.hpp" />
+    <ClInclude Include="..\..\libnet\includes\network\interface.hpp" />
+    <ClInclude Include="..\..\libnet\includes\network\types.hpp" />
+    <ClInclude Include="..\..\libnet\includes\network\udp.hpp" />
+    <ClInclude Include="..\..\libnet\includes\ssdp\ssdp.hpp" />
+    <ClInclude Include="..\..\libnet\includes\ssdp\device.hpp" />
+    <ClInclude Include="..\..\libnet\includes\ssdp\media_server.hpp" />
     <ClInclude Include="..\..\libnet\pch\pch.h" />
   </ItemGroup>
 </Project>
