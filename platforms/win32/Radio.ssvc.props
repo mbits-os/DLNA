@@ -1,0 +1,20 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ImportGroup Label="PropertySheets">
+    <Import Project="$(SolutionDir)\libnet-inc.props" Condition="exists('$(SolutionDir)\libnet-inc.props')" />
+    <Import Project="libdom-inc.props" />
+  </ImportGroup>
+  <PropertyGroup>
+    <_PropertySheetDisplayName>SSDP Service Compiler</_PropertySheetDisplayName>
+    <LibraryPath>$(SolutionDir)..\..\bin\$(PlatformName)\$(Configuration)\;$(LibraryPath)</LibraryPath>
+  </PropertyGroup>
+  <PropertyGroup Label="UserMacros" />
+  <ItemDefinitionGroup>
+    <Link>
+      <AdditionalDependencies>libnet.lib;libdom.lib</AdditionalDependencies>
+      <SubSystem>Console</SubSystem>
+      <ProgramDatabaseFile>$(TargetDir)$(TargetName).pdb</ProgramDatabaseFile>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemGroup />
+</Project>
