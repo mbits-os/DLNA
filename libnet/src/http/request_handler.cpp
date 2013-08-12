@@ -44,6 +44,9 @@ namespace net
 				if (!rest)
 					return 0;
 
+				if (chunk > rest)
+					chunk = rest;
+
 				auto tmp = data->read(buffer, chunk);
 				rest -= tmp;
 
