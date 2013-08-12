@@ -61,6 +61,8 @@ void help(Args&& ... args)
 		;
 }
 
+inline bool is_file(const fs::path& p) { return fs::is_regular_file(p) || fs::is_symlink(p); }
+
 int main(int argc, char* argv [])
 {
 	try
@@ -74,6 +76,10 @@ int main(int argc, char* argv [])
 		}
 		fs::path in(argv[1]);
 		fs::path out(argv[2]);
+
+		if (is_file(in) && is_file(out) && fs::last_write_time(in) < fs::last_write_time(out))
+			return 0;
+
 		fs::ifstream in_f(in);
 
 		if (!in_f)
