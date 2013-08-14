@@ -51,13 +51,15 @@
     <ClCompile Include="..\..\libmediaserver\pch\pch.cpp">
       <PrecompiledHeader>Create</PrecompiledHeader>
     </ClCompile>
+    <ClCompile Include="..\..\libmediaserver\src\media_server.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\libmediaserver\includes\directory.hpp" />
     <ClInclude Include="..\..\libmediaserver\includes\manager.hpp" />
+    <ClInclude Include="..\..\libmediaserver\includes\media_server.hpp" />
     <ClInclude Include="..\..\libmediaserver\pch\pch.h" />
-    <ClInclude Include="..\..\libmediaserver\includes\directory.ipp"/>
-    <ClInclude Include="..\..\libmediaserver\includes\manager.ipp"/>
+    <ClInclude Include="..\..\libmediaserver\includes\directory.ipp" />
+    <ClInclude Include="..\..\libmediaserver\includes\manager.ipp" />
   </ItemGroup>
   <ItemGroup>
     <CustomBuild Include="..\..\libmediaserver\configs\directory.spcd">

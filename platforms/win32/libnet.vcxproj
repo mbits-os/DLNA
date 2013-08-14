@@ -61,7 +61,6 @@
     <ClCompile Include="..\..\libnet\src\network\net_win32.cpp" />
     <ClCompile Include="..\..\libnet\src\network\udp.cpp" />
     <ClCompile Include="..\..\libnet\src\ssdp\device.cpp" />
-    <ClCompile Include="..\..\libnet\src\ssdp\media_server.cpp" />
     <ClCompile Include="..\..\libnet\src\ssdp\ssdp.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -79,7 +78,6 @@
     <ClInclude Include="..\..\libnet\includes\ssdp\service_impl.hpp" />
     <ClInclude Include="..\..\libnet\includes\ssdp\ssdp.hpp" />
     <ClInclude Include="..\..\libnet\includes\ssdp\device.hpp" />
-    <ClInclude Include="..\..\libnet\includes\ssdp\media_server.hpp" />
     <ClInclude Include="..\..\libnet\pch\pch.h" />
   </ItemGroup>
 </Project>

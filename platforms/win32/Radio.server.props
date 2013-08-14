@@ -2,6 +2,7 @@
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ImportGroup Label="PropertySheets">
     <Import Project="$(SolutionDir)\libnet-inc.props" Condition="exists('$(SolutionDir)\libnet-inc.props')" />
+    <Import Project="$(SolutionDir)\libmediaserver-inc.props" Condition="exists('$(SolutionDir)\libmediaserver-inc.props')" />
   </ImportGroup>
   <PropertyGroup>
     <_PropertySheetDisplayName>Radio Server App</_PropertySheetDisplayName>

@@ -3,11 +3,11 @@
   <ImportGroup Label="PropertySheets">
     <Import Project="$(SolutionDir)\libnet-inc.props" Condition="exists('$(SolutionDir)\libnet-inc.props')" />
     <Import Project="$(SolutionDir)\libdom-inc.props" Condition="exists('$(SolutionDir)\libdom-inc.props')" />
+    <Import Project="$(SolutionDir)\libmediaserver-inc.props" Condition="exists('$(SolutionDir)\libmediaserver-inc.props')" />
   </ImportGroup>
   <PropertyGroup>
     <_PropertySheetDisplayName>SSDP MediaServer:1 Library</_PropertySheetDisplayName>
     <LibraryPath>$(SolutionDir)..\..\bin\$(PlatformName)\$(Configuration)\;$(LibraryPath)</LibraryPath>
-    <IncludePath>$(SolutionDir)..\..\libmediaserver\includes;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Label="UserMacros" />
   <ItemDefinitionGroup>

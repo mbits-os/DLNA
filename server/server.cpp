@@ -28,7 +28,7 @@
 #include <http/http.hpp>
 #include <http/server.hpp>
 #include <ssdp/ssdp.hpp>
-#include <ssdp/media_server.hpp>
+#include <media_server.hpp>
 #include <boost/filesystem.hpp>
 
 namespace fs = boost::filesystem;

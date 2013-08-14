@@ -18,6 +18,9 @@
     <ClCompile Include="..\..\libmediaserver\pch\pch.cpp">
       <Filter>pch</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\libmediaserver\src\media_server.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\libmediaserver\pch\pch.h">
@@ -33,6 +36,9 @@
       <Filter>includes</Filter>
     </ClInclude>
     <ClInclude Include="..\..\libmediaserver\includes\manager.ipp">
+      <Filter>includes</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\libmediaserver\includes\media_server.hpp">
       <Filter>includes</Filter>
     </ClInclude>
   </ItemGroup>

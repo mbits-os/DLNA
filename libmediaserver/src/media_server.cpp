@@ -23,7 +23,7 @@
  */
 
 #include "pch.h"
-#include <ssdp/media_server.hpp>
+#include <media_server.hpp>
 #include <http/response.hpp>
 #include <dom.hpp>
 #include <algorithm>
