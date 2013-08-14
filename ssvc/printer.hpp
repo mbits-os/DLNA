@@ -51,7 +51,7 @@ struct printer
 
 		header(const fs::path& name)
 			: o(name)
-			, guard("__" + name.string() + "__")
+			, guard("__" + name.filename().string() + "__")
 		{
 			for (auto&& c : guard)
 			{
@@ -365,7 +365,7 @@ struct printer
 		{
 			o << 
 				"\n"
-				"			add_method(\"" << action.m_name << "\", &" << class_name << "Proxy::raw_" << action.m_name << ")";
+				"			add_method(\"" << action.m_name << "\", &" << class_name << "ServerProxy::raw_" << action.m_name << ")";
 			for (auto && arg : action.m_args)
 			{
 				o <<
@@ -407,7 +407,7 @@ struct printer
 	{
 		o <<
 			"#include <string>\n"
-			"#include <service_impl.hpp>\n"
+			"#include <ssdp/service_impl.hpp>\n"
 			"#include \"" << out.filename().string() << "\"\n"
 			"\n"
 			"namespace net { namespace ssdp { namespace import { namespace " << safe_name << " {\n";
@@ -465,7 +465,7 @@ struct printer
 
 		o <<
 			"#include <string>\n"
-			"#include \"service_impl.hpp\"\n"
+			"#include <ssdp/service_impl.hpp>\n"
 			"\n"
 			"namespace net { namespace ssdp { namespace import { namespace " << safe_name << " {\n";
 
@@ -483,7 +483,7 @@ struct printer
 		o <<
 			"}}}} // net::ssdp::import::" << safe_name << "\n"
 			"\n"
-			"#include \"" << impl.filename().string() << "\"";
+			"#include \"" << proxy.filename().string() << "\"";
 	}
 
 	void print_proxy()
