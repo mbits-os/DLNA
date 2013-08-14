@@ -10,6 +10,9 @@
     <Filter Include="pch">
       <UniqueIdentifier>{4d4076c9-832d-401a-b58c-0d94f6af340c}</UniqueIdentifier>
     </Filter>
+    <Filter Include="configs">
+      <UniqueIdentifier>{a42900d5-d21f-4b32-9b3a-0385e009c013}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\libmediaserver\pch\pch.cpp">
@@ -20,5 +23,25 @@
     <ClInclude Include="..\..\libmediaserver\pch\pch.h">
       <Filter>pch</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\libmediaserver\includes\directory.hpp">
+      <Filter>includes</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\libmediaserver\includes\manager.hpp">
+      <Filter>includes</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\libmediaserver\includes\directory.ipp">
+      <Filter>includes</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\libmediaserver\includes\manager.ipp">
+      <Filter>includes</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="..\..\libmediaserver\configs\directory.spcd">
+      <Filter>configs</Filter>
+    </CustomBuild>
+    <CustomBuild Include="..\..\libmediaserver\configs\manager.spcd">
+      <Filter>configs</Filter>
+    </CustomBuild>
   </ItemGroup>
 </Project>

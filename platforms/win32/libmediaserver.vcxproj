@@ -53,6 +53,24 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\..\libmediaserver\includes\directory.hpp" />
+    <ClInclude Include="..\..\libmediaserver\includes\manager.hpp" />
     <ClInclude Include="..\..\libmediaserver\pch\pch.h" />
+    <ClInclude Include="..\..\libmediaserver\includes\directory.ipp"/>
+    <ClInclude Include="..\..\libmediaserver\includes\manager.ipp"/>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="..\..\libmediaserver\configs\directory.spcd">
+      <FileType>Document</FileType>
+      <Command>"$(OutDir)svcc" "%(Identity)" "%(RootDir)%(Directory)..\includes\%(Filename).hpp"</Command>
+      <Message>Compiling SPCD</Message>
+      <Outputs>%(RootDir)%(Directory)..\includes\%(Filename).hpp;%(RootDir)%(Directory)..\includes\%(Filename).ipp;%(Outputs)</Outputs>
+    </CustomBuild>
+    <CustomBuild Include="..\..\libmediaserver\configs\manager.spcd">
+      <FileType>Document</FileType>
+      <Command>"$(OutDir)svcc" "%(Identity)" "%(RootDir)%(Directory)..\includes\%(Filename).hpp"</Command>
+      <Message>Compiling SPCD</Message>
+      <Outputs>%(RootDir)%(Directory)..\includes\%(Filename).hpp;%(RootDir)%(Directory)..\includes\%(Filename).ipp;%(Outputs)</Outputs>
+    </CustomBuild>
   </ItemGroup>
 </Project>
