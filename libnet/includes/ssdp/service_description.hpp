@@ -65,6 +65,39 @@ namespace net
 			std::vector<std::string> m_values;
 
 			std::string getType() const { return m_values.empty() ? m_type : m_event ? m_name + "_Values" : m_name; }
+			std::string getCType(bool input) const
+			{
+				if (input)
+				{
+					if (m_values.empty())
+					{
+						if (m_type == "string") return "const std::string&";
+						return m_type;
+					}
+					else
+						return m_event ? m_name + "_Values" : m_name;
+				}
+				else
+				{
+					if (m_values.empty())
+					{
+						if (m_type == "string") return "std::string&";
+						return m_type + "&";
+					}
+					else
+						return (m_event ? m_name + "_Values" : m_name) + "&";
+				}
+			}
+			std::string getCType() const
+			{
+				if (m_values.empty())
+				{
+					if (m_type == "string") return "std::string";
+					return m_type;
+				}
+				else
+					return m_event ? m_name + "_Values" : m_name;
+			}
 
 			bool read_xml(const dom::XmlNodePtr& variable)
 			{
@@ -123,6 +156,26 @@ namespace net
 				{
 					if (m_type_ref == ref.m_name)
 						return ref.getType();
+				}
+				return m_type_ref;
+			}
+			std::string getCType(const std::vector<state_variable>& refs, bool input) const
+			{
+				for (auto && ref : refs)
+				{
+					if (m_type_ref == ref.m_name)
+						return ref.getCType(input);
+				}
+				if (input)
+					return m_type_ref;
+				return m_type_ref + "&";
+			}
+			std::string getCType(const std::vector<state_variable>& refs) const
+			{
+				for (auto && ref : refs)
+				{
+					if (m_type_ref == ref.m_name)
+						return ref.getCType();
 				}
 				return m_type_ref;
 			}

@@ -113,5 +113,8 @@
     <ClInclude Include="..\..\libnet\includes\ssdp\media_server.hpp">
       <Filter>includes\ssdp</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\libnet\includes\ssdp\service_description.hpp">
+      <Filter>includes\ssdp</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

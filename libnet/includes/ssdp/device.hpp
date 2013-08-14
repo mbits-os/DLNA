@@ -231,6 +231,8 @@ namespace net
 			enum error_code
 			{
 				no_error                               = 0,
+				not_implemented,
+				internal_error,
 				invalid_action                         = 401,
 				invalid_args                           = 402,
 				action_failed                          = 501,

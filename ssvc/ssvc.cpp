@@ -25,6 +25,8 @@
 #include <sdkddkver.h>
 #endif
 
+#include "printer.hpp"
+
 #include <dom.hpp>
 #include <http/http.hpp>
 #include <http/server.hpp>
@@ -55,79 +57,17 @@ void help(Args&& ... args)
 
 	std::cerr <<
 		"\nusage:\n"
-		"	ssvc INFILE OUTFILE\n"
-		"e.g.\n"
-		"	ssvc service.xml service.idl\n"
-		"	ssvc service.idl service.hpp\n"
-		;
+		"	ssvc service.xml service_definition.hpp\n"
+		"\n"
+		"Will also generate service_definition.ipp and service_definition_example.cpp\n";
 }
 
 inline bool is_file(const fs::path& p) { return fs::is_regular_file(p) || fs::is_symlink(p); }
-
-void print_idl(std::ostream& o, const net::ssdp::service_description& descr, const std::string& type_name)
-{
-	size_t events = 0;
-	for (auto&& var : descr.m_variables)
-	{
-		if (var.m_values.empty())
-		{
-			++events;
-			continue;
-		}
-
-		o << "enum " << var.getType() << " { // " << var.m_type << "\n";
-		for (auto&& val : var.m_values)
-		{
-			o << "    " << val << ";\n";
-		}
-		o << "};\n\n";
-	}
-
-	o << "[version(" << descr.m_version.m_major << "." << descr.m_version.m_minor << ")] interface " << type_name << " {\n";
-
-	for (auto&& action : descr.m_actions)
-	{
-		bool first = true;
-		o << "    void " << action.m_name << "(";
-
-		size_t  out_count = 0;
-		for (auto&& arg : action.m_args)
-		{
-			if (!arg.m_input)
-				++out_count;
-		}
-
-		for (auto&& arg : action.m_args)
-		{
-			if (first) first = false;
-			else o << ", ";
-			o << (arg.m_input ? "[in] " : out_count == 1 ? "[retval] " : "[out] ") << arg.getType(descr.m_variables) << " " << arg.m_name;
-		}
-		o << ");\n";
-	}
-
-	if (!descr.m_variables.empty() && events > 0)
-		o << "\n";
-
-	for (auto&& var : descr.m_variables)
-	{
-		if (!var.m_event)
-			continue;
-
-		o << "    ";
-		o << var.getType() << " " << var.m_name << ";\n";
-	}
-
-	o << "};\n";
-
-}
 
 int main(int argc, char* argv [])
 {
 	try
 	{
-		std::cout << fs::current_path().string() << std::endl;
-
 		if (argc != 3)
 		{
 			if (argc < 3)
@@ -139,37 +79,67 @@ int main(int argc, char* argv [])
 		fs::path in(argv[1]);
 		fs::path out(argv[2]);
 
-		if (is_file(in) && is_file(out) && fs::last_write_time(in) < fs::last_write_time(out))
-			return 0;
-
 		fs::ifstream in_f(in);
 
 		if (!in_f)
 		{
-			help("File `", in, "` could not be read.");
+			help("File `", in.string(), "` could not be read.");
 			return 1;
 		}
 
 		std::cout << in.filename().string() << std::endl;
 
-		auto doc = dom::XmlDocument::fromDataSource([&](void* buffer, size_t size) { return (size_t)in_f.read((char*)buffer, size).gcount(); });
-		if (doc)
-		{
-			net::ssdp::service_description descr;
+		auto doc = dom::XmlDocument::fromDataSource([&](void* buffer, size_t size) { return (size_t) in_f.read((char*) buffer, size).gcount(); });
 
-			if (!descr.read_xml(doc))
+		if (!doc)
+		{
+			help("File `", in.string(), "` is not an XML.");
+			return 1;
+		}
+
+		net::ssdp::service_description descr;
+		if (!descr.read_xml(doc))
+		{
+			help("The XML document does not describe SSDP service.");
+			return 1;
+		}
+
+		std::string class_name;
+		std::string class_type;
+		std::string class_id;
+
+		{
+			static dom::NSData ns [] = { {"svc", "urn:schemas-upnp-org:service-1-0"}, { "idl", "urn:schemas-mbits-com:idl-info" } };
+			auto info = doc->find("/svc:scpd/idl:info", ns);
+			if (info)
 			{
-				help("The XML document does not describe SSDP service.");
-				return 1;
-			}
+				auto name = info->find("idl:name", ns);
+				auto type = info->find("idl:type", ns);
+				auto id = info->find("idl:id", ns);
 
-			auto stem = in.stem().string();
-			print_idl(std::cout, descr, stem + "_service");
+				if (name)
+					class_name = name->stringValue();
+				if (type)
+					class_type = type->stringValue();
+				if (id)
+					class_id = id->stringValue();
+			}
 		}
-		else
+
+		if (class_name.empty())
 		{
-			// try IDL -> HPP
+			std::cerr << "Warning: Service name missing, inventing `Service`...\n";
+			class_name = "Service";
 		}
+		if (class_type.empty())
+			class_type = "urn:schemas-upnp-org:service:" + class_name + ":1";
+		if (class_id.empty())
+			class_id = "urn:upnp-org:serviceId:" + class_name;
+
+		printer print(descr, out, class_name, class_type, class_id);
+		print.print_interface();
+		print.print_proxy();
+		print.print_implementation();
 	}
 	catch (std::exception& e)
 	{

@@ -75,6 +75,7 @@
     <ClInclude Include="..\..\libnet\includes\network\interface.hpp" />
     <ClInclude Include="..\..\libnet\includes\network\types.hpp" />
     <ClInclude Include="..\..\libnet\includes\network\udp.hpp" />
+    <ClInclude Include="..\..\libnet\includes\ssdp\service_description.hpp" />
     <ClInclude Include="..\..\libnet\includes\ssdp\ssdp.hpp" />
     <ClInclude Include="..\..\libnet\includes\ssdp\device.hpp" />
     <ClInclude Include="..\..\libnet\includes\ssdp\media_server.hpp" />
