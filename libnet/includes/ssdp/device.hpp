@@ -60,108 +60,24 @@ namespace net
 			} m_manufacturer;
 		};
 
-		struct service
+		struct ServiceInterface
 		{
-			virtual ~service() {}
+			virtual ~ServiceInterface() {}
 			virtual const char* get_type() const = 0;
 			virtual const char* get_id() const = 0;
-			virtual const char* get_config() const = 0;
-			virtual const char* get_uri() const = 0;
-
-			virtual bool control_call_by_name(const std::string& name, const http::http_request& req, const dom::XmlDocumentPtr& doc, http::response& response) = 0;
-			virtual bool event_call_by_name(const std::string& name, const http::http_request& req, const dom::XmlDocumentPtr& doc, http::response& response) = 0;
+			virtual bool answer(const std::string& name, const http::http_request& req, const dom::XmlDocumentPtr& doc, http::response& response) { return false; }
+			virtual std::string get_configuration() const { return std::string(); };
 		};
-		typedef std::shared_ptr<service> service_ptr;
+		typedef std::shared_ptr<ServiceInterface> service_ptr;
 
-		struct service_impl: service
+		struct Device : std::enable_shared_from_this<Device>
 		{
-			bool control_call_by_name(const std::string& name, const http::http_request& req, const dom::XmlDocumentPtr& doc, http::response& response) override
-			{
-				return call_by_name(controls, name, req, doc, response);
-			}
-			bool event_call_by_name(const std::string& name, const http::http_request& req, const dom::XmlDocumentPtr& doc, http::response& response) override
-			{
-				return call_by_name(events, name, req, doc, response);
-			}
-		protected:
-#define ADD_(type, PRE_CLASS, FIRST_ARG) \
-	template <typename Klass> \
-	void add_##type(const char* name, void (PRE_CLASS* call)(FIRST_ARG const http::http_request& req, const dom::XmlDocumentPtr& doc, http::response& response)) { type##s.emplace_back(name, make_call(call)); }
-
-#define KLASS_ Klass*,
-#define ADD_METHOD_(type) ADD_(type, Klass::, )
-#define ADD_FUNC_(type) ADD_(type, , KLASS_)
-#define ADD_METHOD ADD_METHOD_(control) ADD_METHOD_(event)
-#define ADD_FUNC ADD_FUNC_(control) ADD_FUNC_(event)
-
-			ADD_METHOD
-			ADD_FUNC
-
-#undef KLASS_
-#undef ADD_METHOD
-#undef ADD_METHOD_
-#undef ADD_FUNC
-#undef ADD_FUNC_
-#undef ADD_
-
-		private:
-			typedef std::function<void (service*, const http::http_request&, const dom::XmlDocumentPtr&, http::response&)> call;
-			typedef std::vector<std::pair<const char*, call>> events_t;
-			events_t controls;
-			events_t events;
-
-			template <typename Klass>
-			call make_call(void (Klass::* method)(const http::http_request&, const dom::XmlDocumentPtr&, http::response&))
-			{
-				return [method](service* self, const http::http_request& req, const dom::XmlDocumentPtr& doc, http::response& response)
-				{
-					(static_cast<Klass*>(self)->*method)(req, doc, response);
-				};
-			}
-
-			template <typename Klass>
-			call make_call(void (*function) (Klass* self, const http::http_request&, const dom::XmlDocumentPtr&, http::response&))
-			{
-				return [function](service* self, const http::http_request& req, const dom::XmlDocumentPtr& doc, http::response& response)
-				{
-					(*function)(static_cast<Klass*>(self), req, doc, response);
-				};
-			}
-
-			bool call_by_name(events_t& collection, const std::string& name, const http::http_request& req, const dom::XmlDocumentPtr& doc, http::response& response)
-			{
-				auto call = by_name(collection, name);
-				if (!call)
-					return false;
-
-				call(this, req, doc, response);
-				return true;
-			}
-
-			call by_name(events_t& collection, const std::string& name)
-			{
-				for (auto&& call: collection)
-				{
-					if (name == call.first)
-						return call.second;
-				}
-				return nullptr;
-			}
-		};
-
-#define SSDP_ADD_CONTROL(name) add_control(#name, &service_t::control_##name);
-#define SSDP_ADD_EVENT(name) add_event(#name, &service_t::event_##name);
-#define SSDP_ADD_CONTROL_F(name) add_control<service_t>(#name, control_##name);
-#define SSDP_ADD_EVENT_F(name) add_event<service_t>(#name, event_##name);
-
-		struct device: std::enable_shared_from_this<device>
-		{
-			device(const device_info& info)
+			Device(const device_info& info)
 				: m_info(info)
 				, m_usn("uuid:" + net::create_uuid())
 			{
 			}
-			virtual ~device() {}
+			virtual ~Device() {}
 
 			virtual const net::http::module_version& server() const { return m_info.m_server; }
 			virtual const std::string& usn() const { return m_usn; }
@@ -183,8 +99,8 @@ namespace net
 			const device_info m_info;
 			const std::string m_usn;
 		};
-		typedef std::shared_ptr<device> device_ptr;
-		
+		typedef std::shared_ptr<Device> device_ptr;
+
 		struct services
 		{
 			struct const_iterator

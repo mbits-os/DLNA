@@ -43,6 +43,7 @@ namespace net { namespace ssdp { namespace import {
 		{
 			return uri(rhs);
 		};
+		static void get_config(std::ostream& o) { o << "			<dataType>uri</dataType>\n"; }
 	};
 
 	template <>
@@ -58,6 +59,7 @@ namespace net { namespace ssdp { namespace import {
 		{
 			return std::string(rhs);
 		};
+		static void get_config(std::ostream& o) { o << "			<dataType>string</dataType>\n"; }
 	};
 
 	template <typename T>
@@ -79,10 +81,16 @@ namespace net { namespace ssdp { namespace import {
 	};
 
 	template <>
-	struct type_info<i4>: type_info_int<i4> {};
+	struct type_info<i4>: type_info_int<i4>
+	{
+		static void get_config(std::ostream& o) { o << "			<dataType>i4</dataType>\n"; }
+	};
 
 	template <>
-	struct type_info<ui4>: type_info_int<ui4> {};
+	struct type_info<ui4>: type_info_int<ui4>
+	{
+		static void get_config(std::ostream& o) { o << "			<dataType>ui4</dataType>\n"; }
+	};
 
 	struct SOAP
 	{
@@ -117,21 +125,18 @@ namespace net { namespace ssdp { namespace import {
 		static void quick404(http::response& response)
 		{
 			auto & header = response.header();
-			header.clear({ "-", 0, 0 });
 			header.m_status = 404;
 		}
 
 		static void quick500(http::response& response)
 		{
 			auto & header = response.header();
-			header.clear({ "-", 0, 0 });
 			header.m_status = 500;
 		}
 
 		static void upnp_error(http::response& response, const ssdp::service_error& e)
 		{
 			auto & header = response.header();
-			header.clear({ "-", 0, 0 });
 			header.m_status = 500;
 			header.append("content-type", "text/xml; charset=\"utf-8\"");
 			std::ostringstream o;
@@ -156,6 +161,7 @@ namespace net { namespace ssdp { namespace import {
 	struct variable_base
 	{
 		virtual ~variable_base() {}
+		virtual void get_config(std::ostream& o) = 0;
 	};
 	typedef std::shared_ptr<variable_base> variable_ptr;
 
@@ -165,6 +171,16 @@ namespace net { namespace ssdp { namespace import {
 		std::string m_name;
 		bool m_signalable;
 		variable(const std::string& name, bool signalable) : m_name(name), m_signalable(signalable) {}
+
+		void get_config(std::ostream& o) override
+		{
+			o <<
+				"		<stateVariable sendEvents=\"" << (m_signalable ? "yes" : "no") << "\">\n"
+				"			<name>" << m_name << "</name>\n";
+			type_info<T>::get_config(o);
+			o <<
+				"		</stateVariable>\n";
+		}
 	};
 
 	template <typename Proxy>
@@ -174,7 +190,8 @@ namespace net { namespace ssdp { namespace import {
 		virtual ~method_base() {}
 
 		virtual const std::string& name() const = 0;
-		virtual void call(proxy_t* self, const http::http_request& req, const dom::XmlDocumentPtr& doc, http::response& response) = 0;
+		virtual bool call(proxy_t* self, const http::http_request& req, const dom::XmlDocumentPtr& doc, http::response& response) = 0;
+		virtual void get_config(std::ostream& o) = 0;
 	};
 
 	template <typename Proxy, typename Request, typename Response>
@@ -192,6 +209,17 @@ namespace net { namespace ssdp { namespace import {
 			virtual void load(const dom::XmlNodePtr& src, request_t& dst) = 0;
 			virtual void clean(response_t& dst) = 0;
 			virtual void store(const response_t& src, std::ostream& out) = 0;
+			virtual void get_config(std::ostream& o) = 0;
+
+			void get_config(std::ostream& o, const char* name, const char* dir, const char* ref)
+			{
+				o <<
+					"				<argument>\n"
+					"					<name>" << name << "</name>\n"
+					"					<direction>" << dir << "</direction>\n"
+					"					<relatedStateVariable>" << ref << "</relatedStateVariable>\n"
+					"				</argument>\n";
+			}
 		};
 
 		template <typename T>
@@ -216,6 +244,10 @@ namespace net { namespace ssdp { namespace import {
 				else
 					dst.*m_field = type_info<field_t>::from_string(node->stringValue());
 			}
+			void get_config(std::ostream& o) override
+			{
+				accessor_base::get_config(o, m_name.c_str(), "in", m_ref.m_name.c_str());
+			}
 		};
 
 		template <typename T>
@@ -238,6 +270,10 @@ namespace net { namespace ssdp { namespace import {
 			void store(const response_t& src, std::ostream& out) override
 			{
 				out << "<" << m_name << ">" << type_info<field_t>::to_string(src.*m_field) << "</" << m_name << ">";
+			}
+			void get_config(std::ostream& o) override
+			{
+				accessor_base::get_config(o, m_name.c_str(), "out", m_ref.m_name.c_str());
 			}
 		};
 
@@ -283,7 +319,7 @@ namespace net { namespace ssdp { namespace import {
 
 		const std::string& name() const override { return m_name; }
 
-		void call(proxy_t* self, const http::http_request& req, const dom::XmlDocumentPtr& doc, http::response& response) override
+		bool call(proxy_t* self, const http::http_request& req, const dom::XmlDocumentPtr& doc, http::response& response) override
 		{
 			request_t call_req;
 			response_t call_resp;
@@ -302,28 +338,36 @@ namespace net { namespace ssdp { namespace import {
 					std::ostringstream out;
 					store(call_resp, out);
 					SOAP::soap_answer(m_name.c_str(), self->get_type(), response, out.str());
-					return;
 				}
 				else if (result == error::not_implemented)
 				{
-					SOAP::quick404(response);
+					return false;
 				}
 				else if (result == error::internal_error)
 				{
 					SOAP::quick500(response);
 				}
+				return true;
 			}
 
 			SOAP::upnp_error(response, result);
+			return true;
 		}
-	};
 
-	struct ServiceInterface
-	{
-		virtual ~ServiceInterface() {}
-		virtual const char* get_type() const = 0;
-		virtual const char* get_id() const = 0;
-		virtual void answer(const std::string& name, const http::http_request& req, const dom::XmlDocumentPtr& doc, http::response& response) {}
+		void get_config(std::ostream& o) override
+		{
+			o <<
+				"		<action>\n"
+				"			<name>" << m_name << "</name>\n"
+				"			<argumentList>\n";
+
+			for (auto && accessor : m_accessors)
+				accessor->get_config(o);
+
+			o <<
+				"			</argumentList>\n"
+				"		</action>\n";
+		}
 	};
 
 	template <typename Proxy, typename Interface, size_t major_val, size_t minor_val>
@@ -337,7 +381,7 @@ namespace net { namespace ssdp { namespace import {
 		methods_t m_methods;
 		variables_t m_variables;
 
-		void answer(const std::string& name, const http::http_request& req, const dom::XmlDocumentPtr& doc, http::response& response) override
+		bool answer(const std::string& name, const http::http_request& req, const dom::XmlDocumentPtr& doc, http::response& response) override
 		{
 			for (auto&& method: m_methods)
 			{
@@ -345,10 +389,7 @@ namespace net { namespace ssdp { namespace import {
 					return method->call(static_cast<Proxy*>(this), req, doc, response);
 			}
 
-			auto& header = response.header();
-			header.clear({"-", 0, 0});
-			header.m_status = 404;
-			header.append("Content-Length", "0");
+			return false;
 		}
 		template <typename Request, typename Response>
 		method_info<Proxy, Request, Response>& add_method(const std::string& name, error_code (Proxy::* method)(const http::http_request&, const Request&, Response&))
@@ -372,6 +413,36 @@ namespace net { namespace ssdp { namespace import {
 			auto var = std::make_shared<variable<T>>(name, true);
 			m_variables.push_back(var);
 			return *var.get();
+		}
+
+		std::string x();
+		std::string get_configuration() const override
+		{
+			std::ostringstream o;
+			o
+				<< "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
+				"<scpd xmlns=\"urn:schemas-upnp-org:service-1-0\">\n"
+				"	<specVersion>\n"
+				"		<major>" << major_val << "</major>\n"
+				"		<minor>" << minor_val << "</minor>\n"
+				"	</specVersion>\n"
+				"	<actionList>\n";
+
+			for (auto&& m: m_methods)
+				m->get_config(o);
+
+			o <<
+				"	</actionList>\n"
+				"	<serviceStateTable>\n";
+
+			for (auto && v : m_variables)
+				v->get_config(o);
+
+			o <<
+				"	</serviceStateTable>\n"
+				"</spcd>\n";
+
+			return o.str();
 		}
 	};
 }}}

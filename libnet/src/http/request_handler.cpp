@@ -274,7 +274,17 @@ namespace net
 				{
 					if (rest == "device.xml")
 						return make_device_xml(resp);
+					else if (rest.string().substr(0, 7) == "service")
+					{
+						auto id = rest.string().substr(7);
 
+						size_t int_id = 0;
+						for (auto&& service: ssdp::services(m_device))
+						{
+							if (id == std::to_string(int_id++))
+								return make_service_xml(resp, service);
+						}
+					}
 					return make_file(boost::filesystem::path("data") / root / rest, resp);
 				}
 				if (root == "images")
@@ -289,6 +299,7 @@ namespace net
 					std::tie(soap_type, soap_method) = break_action(SOAPAction);
 
 					ssdp::service_ptr service;
+					size_t int_id = 0;
 					for (auto&& candidate: ssdp::services(m_device))
 					{
 						if (soap_type == candidate->get_type())
@@ -296,6 +307,7 @@ namespace net
 							service = candidate;
 							break;
 						}
+						++int_id;
 					}
 
 					if (!service)
@@ -304,19 +316,10 @@ namespace net
 					std::tie(root, rest) = pop(rest);
 					if (root == "control")
 					{
-						if (rest == service->get_uri()) try
+						if (rest == "service" + std::to_string(int_id)) try
 						{
-							if (service->control_call_by_name(soap_method, req, doc, resp))
-								return;
-						}
-						catch (...) { return make_500(resp); }
-					}
-
-					if (root == "event")
-					{
-						if (rest == service->get_uri()) try
-						{
-							if (service->event_call_by_name(soap_method, req, doc, resp))
+							resp.header().clear(m_device->server());
+							if (service->answer(soap_method, req, doc, resp))
 								return;
 						}
 						catch (...) { return make_500(resp); }
@@ -341,6 +344,14 @@ namespace net
 			header.clear(m_device->server());
 			header.append("content-type", "text/xml; charset=\"utf-8\"");
 			resp.content(content::from_string(m_device->get_configuration(to_string(iface::get_default_interface()) + ":" + std::to_string(m_port))));
+		}
+
+		void request_handler::make_service_xml(response& resp, const ssdp::service_ptr& service)
+		{
+			auto & header = resp.header();
+			header.clear(m_device->server());
+			header.append("content-type", "text/xml; charset=\"utf-8\"");
+			resp.content(content::from_string(service->get_configuration()));
 		}
 
 		static struct

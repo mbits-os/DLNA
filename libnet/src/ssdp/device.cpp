@@ -58,7 +58,7 @@ namespace net
 			}
 		};
 
-		std::string device::get_configuration(const std::string& host) const
+		std::string Device::get_configuration(const std::string& host) const
 		{
 			std::ostringstream o;
 			o
@@ -100,18 +100,20 @@ namespace net
 			o
 				<< prop("presentationURL", "http://" + host + "/console/index.html");
 
-			auto shared = ((device*) this)->shared_from_this();
+			auto shared = ((Device*) this)->shared_from_this();
+			size_t int_id = 0;
 			for (auto&& service: services(shared))
 			{
+				auto id = "service" + std::to_string(int_id++);
 				o
 					<< R"(<service>
 )";
 				o
 					<< prop("serviceType", service->get_type())
 					<< prop("serviceId", service->get_id())
-					<< prop("SCPDURL", std::string("/config/") + service->get_config())
-					<< prop("controlURL", std::string("/upnp/control/") + service->get_uri())
-					<< prop("eventSubURL", std::string("/upnp/event/") + service->get_uri());
+					<< prop("SCPDURL", "/config/" + id)
+					<< prop("controlURL", "/upnp/control/" + id)
+					<< prop("eventSubURL", "/upnp/event/" + id);
 				o
 					<< R"(</service>
 )";

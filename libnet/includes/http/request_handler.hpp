@@ -47,6 +47,7 @@ namespace net
 
 			void make_templated(const char* tmplt, const char* content_type, response& resp);
 			void make_device_xml(response& resp);
+			void make_service_xml(response& resp, const ssdp::service_ptr& service);
 			void make_file(const boost::filesystem::path& path, response& resp);
 		public:
 			request_handler(const ssdp::device_ptr& device, net::ushort port);
