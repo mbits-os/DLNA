@@ -160,6 +160,7 @@ namespace net
 			auto socket = std::make_shared<udp::multicast_socket>(m_service, ipv4_multicast_endpoint());
 
 			printf("Sending %s...\n", nts == ALIVE ? "ALIVE" : "BYEBYE"); fflush(stdout);
+			log::info() << "Sending " << (nts == ALIVE ? "ALIVE" : "BYEBYE") << "...";
 
 			socket->send(build_msg("upnp:rootdevice", nts));
 			socket->send(build_msg(m_device->usn(), nts));
@@ -250,6 +251,7 @@ namespace net
 		void receiver::discovery(const std::string& st)
 		{
 			printf("Replying to DISCOVER...\n");
+			log::info() << "Replying to DISCOVER...";
 			auto datagram = std::make_shared<udp::unicast_socket>(m_service, m_impl.remote());
 			datagram->send(build_discovery_msg(st));
 		}
