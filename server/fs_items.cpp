@@ -27,7 +27,7 @@ namespace lan
 {
 	namespace item
 	{
-		av::media_item_ptr from_path(const fs::path& path)
+		av::items::media_item_ptr from_path(const fs::path& path)
 		{
 			if (fs::is_directory(path))
 			{
@@ -40,11 +40,11 @@ namespace lan
 
 #pragma region container_file
 
-		std::vector<av::media_item_ptr> container_file::list(net::ulong start_from, net::ulong max_count, const av::search_criteria& sort)
+		std::vector<av::items::media_item_ptr> container_file::list(net::ulong start_from, net::ulong max_count, const av::items::search_criteria& sort)
 		{
 			rescan_if_needed();
 
-			std::vector<av::media_item_ptr> out;
+			std::vector<av::items::media_item_ptr> out;
 			if (start_from > m_children.size())
 				start_from = m_children.size();
 
@@ -64,9 +64,9 @@ namespace lan
 			return out;
 		}
 
-		av::media_item_ptr container_file::get_item(const std::string& id)
+		av::items::media_item_ptr container_file::get_item(const std::string& id)
 		{
-			av::media_item_ptr candidate;
+			av::items::media_item_ptr candidate;
 			std::string rest_of_id;
 
 			std::tie(candidate, rest_of_id) = av::items::find_item(m_children, id);
@@ -86,7 +86,7 @@ namespace lan
 			output_close(o, filter);
 		}
 
-		void container_file::add_child(av::media_item_ptr child)
+		void container_file::add_child(av::items::media_item_ptr child)
 		{
 			remove_child(child);
 			m_children.push_back(child);
@@ -95,7 +95,7 @@ namespace lan
 			child->set_objectId_attr(get_objectId_attr() + av::items::SEP + std::to_string(id));
 		}
 
-		void container_file::remove_child(av::media_item_ptr child)
+		void container_file::remove_child(av::items::media_item_ptr child)
 		{
 			folder_changed();
 
@@ -117,13 +117,13 @@ namespace lan
 			for (auto && file : contents(m_path))
 				entries.emplace_back(file.path(), 1);
 
-			std::vector<std::pair<fs::path, av::media_item_ptr>> current;
+			std::vector<std::pair<fs::path, av::items::media_item_ptr>> current;
 			for (auto && ptr : m_children)
 				current.emplace_back(get_path(ptr), ptr);
 			auto update = m_update_id + 1;
 
 			std::sort(entries.begin(), entries.end(), [](const std::pair<fs::path, int>& lhs, const std::pair<fs::path, int>& rhs) { return lhs.first < rhs.first; });
-			std::sort(current.begin(), current.end(), [](const std::pair<fs::path, av::media_item_ptr>& lhs, const std::pair<fs::path, av::media_item_ptr>& rhs) { return lhs.first < rhs.first; });
+			std::sort(current.begin(), current.end(), [](const std::pair<fs::path, av::items::media_item_ptr>& lhs, const std::pair<fs::path, av::items::media_item_ptr>& rhs) { return lhs.first < rhs.first; });
 
 			auto entry = entries.begin();
 			auto curr = current.begin();

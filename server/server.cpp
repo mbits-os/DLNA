@@ -32,7 +32,7 @@
 #include <boost/filesystem.hpp>
 
 namespace fs = boost::filesystem;
-namespace av = net::ssdp::av;
+namespace av = net::ssdp::import::av;
 
 
 namespace lan
@@ -41,7 +41,7 @@ namespace lan
 
 	namespace item
 	{
-		av::media_item_ptr from_path(const fs::path& path);
+		av::items::media_item_ptr from_path(const fs::path& path);
 	}
 
 	struct radio
@@ -82,7 +82,7 @@ int main(int argc, char* argv [])
 			{ "midnightBITS", "http://www.midnightbits.com" }
 		};
 
-		auto server = std::make_shared<av::media_server>(info);
+		auto server = std::make_shared<av::MediaServer>(info);
 
 		for (int arg = 1; arg < argc; ++arg)
 		{

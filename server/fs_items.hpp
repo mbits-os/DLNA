@@ -33,7 +33,7 @@
 #include <boost/filesystem.hpp>
 
 namespace fs = boost::filesystem;
-namespace av = net::ssdp::av;
+namespace av = net::ssdp::import::av;
 
 
 namespace lan
@@ -59,10 +59,10 @@ namespace lan
 
 		struct common_file : path_item
 		{
-			std::vector<av::media_item_ptr> list(net::ulong start_from, net::ulong max_count, const av::search_criteria& sort) override { return std::vector<av::media_item_ptr>(); }
+			std::vector<av::items::media_item_ptr> list(net::ulong start_from, net::ulong max_count, const av::items::search_criteria& sort) override { return std::vector<av::items::media_item_ptr>(); }
 			net::ulong predict_count(net::ulong served) const override { return served; }
 			net::ulong update_id() const override { return 0; }
-			av::media_item_ptr get_item(const std::string& id) override { return nullptr; }
+			av::items::media_item_ptr get_item(const std::string& id) override { return nullptr; }
 			bool is_folder() const override { return false; }
 		};
 
@@ -90,24 +90,24 @@ namespace lan
 			{
 			}
 
-			std::vector<av::media_item_ptr> list(net::ulong start_from, net::ulong max_count, const av::search_criteria& sort) override;
+			std::vector<av::items::media_item_ptr> list(net::ulong start_from, net::ulong max_count, const av::items::search_criteria& sort) override;
 			net::ulong predict_count(net::ulong served) const override { return m_children.size(); }
 			net::ulong update_id() const override { return m_update_id; }
-			av::media_item_ptr get_item(const std::string& id) override;
+			av::items::media_item_ptr get_item(const std::string& id) override;
 			bool is_folder() const override { return true; }
 			void output(std::ostream& o, const std::vector<std::string>& filter) const override;
 			const char* get_upnp_class() const override { return "object.container.storageFolder"; }
 
 			virtual void rescan_if_needed() {}
 			virtual void folder_changed() { m_update_id++; /*notify?*/ }
-			virtual void add_child(av::media_item_ptr);
-			virtual void remove_child(av::media_item_ptr);
+			virtual void add_child(av::items::media_item_ptr);
+			virtual void remove_child(av::items::media_item_ptr);
 
 		private:
 			net::ulong m_current_max;
 
 		protected:
-			std::vector<av::media_item_ptr> m_children;
+			std::vector<av::items::media_item_ptr> m_children;
 			net::ulong m_update_id;
 		};
 
@@ -135,7 +135,7 @@ namespace lan
 				fs::directory_iterator end() const { return fs::directory_iterator(); }
 			};
 
-			static fs::path get_path(const av::media_item_ptr& ptr)
+			static fs::path get_path(const av::items::media_item_ptr& ptr)
 			{
 				if (!ptr)
 					return fs::path();
@@ -146,7 +146,7 @@ namespace lan
 			time_t m_last_scan;
 		};
 
-		av::media_item_ptr from_path(const fs::path& path);
+		av::items::media_item_ptr from_path(const fs::path& path);
 	}
 }
 
