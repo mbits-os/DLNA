@@ -32,17 +32,17 @@ namespace fs = boost::filesystem;
 
 namespace Log
 {
-	Module Module::HTTP("WWW");
+	Module Module::HTTP("HOST");
 	Module Module::SSDP("SSDP");
 
 	std::ostream& operator << (std::ostream& o, Severity sev)
 	{
 		switch (sev)
 		{
-		case Severity::Debug:   return o << "DEBUG";
-		case Severity::Info:    return o << "INFO";
-		case Severity::Warning: return o << "WARNING";
-		case Severity::Error:   return o << "ERROR";
+		case Severity::Debug:   return o << "DBG";
+		case Severity::Info:    return o << "INF";
+		case Severity::Warning: return o << "WRN";
+		case Severity::Error:   return o << "ERR";
 		}
 		throw std::runtime_error("Severity value " + std::to_string((int)sev) + " unknown");
 	}

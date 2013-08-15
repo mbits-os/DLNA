@@ -131,7 +131,18 @@ namespace Log
 		{
 			sev_line(): line_stream(sev, T::module()) {}
 		};
+		template <Log::Severity sev>
+		struct mute_line : line_stream
+		{
+			mute_line() : line_stream(sev, T::module()) {}
+			~mute_line() { reset_state(); }
+		};
+
+#ifdef LOG_DEBUG
 		typedef sev_line<Log::Severity::Debug> debug;
+#else
+		typedef mute_line<Log::Severity::Debug> debug;
+#endif
 		typedef sev_line<Log::Severity::Info> info;
 		typedef sev_line<Log::Severity::Warning> warning;
 		typedef sev_line<Log::Severity::Error> error;
