@@ -228,9 +228,11 @@ struct printer
 				"\n"
 				"			case " << safe_name << "::VALUE_" << val << ": return \"" << val << "\";";
 
-			o << 
+			o <<
 				"\n"
 				"			};\n"
+				"\n"
+				"			return \"" << var.getType() << "(\" + std::to_string(rhs) + \")\";\n"
 				"		};\n"
 				"\n"
 				"		static " << type << " from_string(const std::string& rhs)\n"
@@ -246,6 +248,18 @@ struct printer
 				"\n"
 				"			return " << type << "_UNKNOWN;\n"
 				"		};\n"
+				"\n"
+				"		static void get_config(std::ostream& o)\n"
+				"		{\n"
+				"			o <<\n"
+				"				\"			<dataType>string</dataType>\\n\"\n"
+				"				\"			<allowedValueList>\\n\"\n";
+			for (auto && val : var.m_values)
+				o <<
+				"				\"				<allowedValue>" << val << "</allowedValue>\\n\"\n";
+			o <<
+				"				\"			</allowedValueList>\\n\";\n"
+				"		}\n"
 				"	};\n";
 
 		}
