@@ -54,6 +54,34 @@ namespace net
 			return multicast_endpoint;
 		}
 
+		static inline std::string replace_alive(const std::string& type, const std::string& location)
+		{
+			if (type == "ssdp:alive" && !location.empty())
+				return location;
+
+			return type;
+		}
+
+		static inline bool join_analogs(Log::line_stream& line, const std::string& left, const std::string& right)
+		{
+			bool has_any = !left.empty() || !right.empty();
+
+			if (has_any)
+				line << " \"";
+
+			line << left;
+
+			if (!left.empty() && !right.empty())
+				line << "\"/\"";
+
+			line << right;
+
+			if (has_any)
+				line << "\"";
+
+			return has_any;
+		}
+
 		static void log_request(const net::http::http_request& header)
 		{
 			std::string ssdp_ST = header.ssdp_ST();
@@ -61,32 +89,18 @@ namespace net
 			if (ssdp_ST == "urn:schemas-upnp-org:device:InternetGatewayDevice:1")
 				return;
 
-			log::info o;
-			o << header.m_method << " " << header.m_resource << " " << header.m_protocol << " [" << to_string(header.m_remote_address) << ":" << header.m_remote_port << "]";
+			log::info info;
+			info << to_string(header.m_remote_address) << " \"" << header.m_method << " " << header.m_resource << " " << header.m_protocol << "\"";
 
-			if (!ssdp_ST.empty())
-				o << " [" << ssdp_ST << "]";
+			auto location = header.simple("location");
 
-			auto ssdp_MAN = header.ssdp_MAN();
-			if (!ssdp_MAN.empty())
-				o << " [" << ssdp_MAN << "]";
+			bool has_MAN_NTS = join_analogs(info, replace_alive(header.ssdp_MAN(), location), replace_alive(header.quoted("nts"), location));
+			bool has_ST_NT = join_analogs(info, ssdp_ST, header.quoted("nt"));
 
-			auto ssdp_NTS = header.quoted("nts");
-			if (!ssdp_NTS.empty())
-			{
-				auto location = header.simple("location");
-				if (ssdp_NTS == "ssdp:alive" && !location.empty())
-					o << " [" << location << "]";
-				else
-					o << " [" << ssdp_NTS << "]";
-			}
+			if (has_MAN_NTS || has_ST_NT)
+				return;
 
-			auto ssdp_NT = header.quoted("nt");
-			if (!ssdp_NT.empty())
-				o << " [" << ssdp_NT << "]";
-
-			if (ssdp_ST.empty() && ssdp_MAN.empty() && ssdp_NT.empty() && ssdp_NTS.empty())
-				o << "\n" << header;
+			info << "\n" << header;
 		}
 
 		ticker::ticker(boost::asio::io_service& io_service, const device_ptr& device, long seconds, net::ushort port)
