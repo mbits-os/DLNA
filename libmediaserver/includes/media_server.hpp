@@ -195,8 +195,8 @@ namespace net { namespace ssdp { namespace import { namespace av {
 
 	struct MediaServer : Device
 	{
-		MediaServer(const device_info& info)
-			: Device(info)
+		MediaServer(const device_info& info, const config::config_ptr& config)
+			: Device(info, config)
 			, m_root_item(create_root_item())
 			, m_directory(std::make_shared<ContentDirectory>(this))
 			, m_manager(std::make_shared<ConnectionManager>(this))

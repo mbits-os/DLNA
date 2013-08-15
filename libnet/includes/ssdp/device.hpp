@@ -25,6 +25,8 @@
 #define __SSDP_DEVICE_HPP__
 
 #include <http/http.hpp>
+#include <config.hpp>
+#include <log.hpp>
 
 namespace dom
 {
@@ -72,9 +74,10 @@ namespace net
 
 		struct Device : std::enable_shared_from_this<Device>
 		{
-			Device(const device_info& info)
+			Device(const device_info& info, const config::config_ptr& config)
 				: m_info(info)
-				, m_usn("uuid:" + net::create_uuid())
+				, m_config(config)
+				, m_usn(get_usn(config))
 			{
 			}
 			virtual ~Device() {}
@@ -86,6 +89,8 @@ namespace net
 			virtual size_t get_service_count() const { return m_services.size(); }
 			virtual service_ptr get_service(size_t i) const { return m_services[i]; }
 			virtual std::string get_configuration(const std::string& host) const;
+
+			config::config_ptr config() const { return m_config; }
 		protected:
 			void add(const service_ptr& service)
 			{
@@ -95,9 +100,28 @@ namespace net
 			}
 
 		private:
+			config::config_ptr m_config;
 			std::vector<service_ptr> m_services;
 			const device_info m_info;
 			const std::string m_usn;
+
+			static std::string get_usn(const config::config_ptr& config)
+			{
+				if (config)
+				{
+					bool was_set = config->uuid.is_set();
+					auto uuid = was_set ? config->uuid.val() : net::create_uuid();
+					if (!was_set)
+					{
+						Log::line_stream(Log::Severity::Info, Log::Module::SSDP)
+							<< "Creating new device identifier: " << uuid;
+						config->uuid.val(uuid);
+					}
+
+					return "uuid:" + uuid;
+				}
+				return "uuid:" + net::create_uuid();
+			}
 		};
 		typedef std::shared_ptr<Device> device_ptr;
 
