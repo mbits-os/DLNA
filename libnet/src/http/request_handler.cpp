@@ -185,55 +185,6 @@ namespace net
 			return body ? body->childNodes() : nullptr;
 		}
 
-		static void print_debug(const http_request& header, const std::string& SOAPAction, dom::XmlDocumentPtr& doc)
-		{
-			return;
-			std::ostringstream o;
-			o << header.m_method << " ";
-			if (header.m_resource != "*")
-			{
-				auto it = header.find("host");
-				if (it != header.end())
-					o << it->value();
-			}
-			o << header.m_resource << " " << header.m_protocol;
-			o << " [" << to_string(header.m_remote_address) << ":" << header.m_remote_port << "]";
-
-			auto ua = header.user_agent();
-			if (!ua.empty())
-			{
-				o << " " << ua;
-				auto pui = header.simple("x-av-physical-unit-info");
-				auto ci = header.simple("x-av-client-info");
-				if (!pui.empty() || !ci.empty())
-				{
-					o << " | " << pui;
-					if (!pui.empty() && !ci.empty())
-						o << " ";
-					o << ci;
-				}
-			}
-			o << "\n";
-
-			if (!SOAPAction.empty())
-			{
-				if (doc)
-				{
-					o << "\n[" << SOAPAction << "]:\n";
-					auto children = env_body(doc);
-					if (children)
-						dom::Print(o, children, false, 1);
-					else
-						dom::Print(o, doc->documentElement(), false, 1);
-					o << "\n";
-				}
-				else
-					o << "    [" << SOAPAction << "]\n";
-			}
-
-			std::cout << o.str();
-		}
-
 		static void log_request(const http_request& header, const std::string& SOAPAction, dom::XmlDocumentPtr& doc)
 		{
 			log::info o;
@@ -271,9 +222,9 @@ namespace net
 					o << ":\n";
 					auto children = env_body(doc);
 					if (children)
-						dom::Print(o.stream(), children, false, 1);
+						dom::Print(o, children, false, 1);
 					else
-						dom::Print(o.stream(), doc->documentElement(), false, 1);
+						dom::Print(o, doc->documentElement(), false, 1);
 				}
 			}
 		}
@@ -315,7 +266,6 @@ namespace net
 				doc = create_from_socket(req.request_data());
 			}
 
-			print_debug(req, SOAPAction, doc);
 			log_request(req, SOAPAction, doc);
 
 			fs::path root, rest;

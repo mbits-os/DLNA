@@ -52,18 +52,20 @@ namespace Log
 		static void log(const std::string& msg);
 	};
 
-	line::line(Severity sev, const Module& mod)
-		: called(false)
+	namespace detail
 	{
-		out << net::to_iso8601(net::time::now()) << " " << mod << "/" << sev << " ";
-	}
-
-	line::~line()
-	{
-		if (called)
+		void init_stream(line_stream& s, Severity sev, const Module& mod)
 		{
-			out << std::endl;
-			sink::log(out.str());
+			s << net::to_iso8601(net::time::now()) << " " << mod << "/" << sev << " ";
+			s.reset_state();
+		}
+		void finalize_stream(line_stream& s)
+		{
+			if (s.has_written())
+			{
+				s << std::endl;
+				sink::log(s.str());
+			}
 		}
 	}
 

@@ -54,50 +54,6 @@ namespace net
 			return multicast_endpoint;
 		}
 
-		static void print_debug(bool ignoring, const net::http::http_request& header)
-		{
-			return;
-			std::string ssdp_ST = header.ssdp_ST();
-
-			if (ssdp_ST == "urn:schemas-upnp-org:device:InternetGatewayDevice:1")
-				return;
-
-			std::ostringstream o;
-			if (ignoring)
-				o << "[...] ";
-			else
-				o << "[SSDP] ";
-			o << header.m_method << " " << header.m_resource << " " << header.m_protocol << " [" << to_string(header.m_remote_address) << ":" << header.m_remote_port << "]";
-
-			if (!ssdp_ST.empty())
-				o << " [" << ssdp_ST << "]";
-
-			auto ssdp_MAN = header.ssdp_MAN();
-			if (!ssdp_MAN.empty())
-				o << " [" << ssdp_MAN << "]";
-
-			auto ssdp_NTS = header.quoted("nts");
-			if (!ssdp_NTS.empty())
-			{
-				auto location = header.simple("location");
-				if (ssdp_NTS == "ssdp:alive" && !location.empty())
-					o << " [" << location << "]";
-				else
-					o << " [" << ssdp_NTS << "]";
-			}
-
-			auto ssdp_NT = header.quoted("nt");
-			if (!ssdp_NT.empty())
-				o << " [" << ssdp_NT << "]";
-
-			o << "\n";
-
-			if (ssdp_ST.empty() && ssdp_MAN.empty() && ssdp_NT.empty() && ssdp_NTS.empty())
-				o << header;
-
-			std::cout << o.str();
-		}
-
 		static void log_request(const net::http::http_request& header)
 		{
 			std::string ssdp_ST = header.ssdp_ST();
@@ -234,8 +190,6 @@ namespace net
 
 					log_request(header);
 
-					bool printed = false;
-
 					if (header.m_method == "M-SEARCH")
 					{
 						std::string st = header.ssdp_ST();
@@ -254,9 +208,6 @@ namespace net
 
 							if (interesting)
 							{
-								print_debug(false, header);
-								printed = true;
-
 								if (st == "ssdp:all")
 									st = m_device->get_type();
 
@@ -264,17 +215,13 @@ namespace net
 							}
 						}
 					}
-
-					if (!printed)
-					{
-						print_debug(true, header);
-					}
 				}
 				else
 				{
-					std::cout << "[ " << m_impl.remote().address() << ":" << m_impl.remote().port() << " ]\n";
-					std::cout.write(m_impl.data(), m_impl.received());
-					std::cout << "\n";
+					log::debug dbg;
+					dbg << "[ " << m_impl.remote().address() << ":" << m_impl.remote().port() << " ]\n";
+					dbg.write(m_impl.data(), m_impl.received());
+					dbg << "\n";
 				}
 
 				return true;

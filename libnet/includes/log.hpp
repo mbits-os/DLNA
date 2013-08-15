@@ -49,23 +49,77 @@ namespace Log
 		static Module SSDP;
 	};
 
-	class line: public boost::noncopyable
+	template<class Elem, class Traits, class Alloc>
+	class basic_linebuf : public std::basic_stringbuf<Elem, Traits, Alloc>, public boost::noncopyable
 	{
-		std::ostringstream out;
-		bool called;
+		bool m_written;
 	public:
-		line(Severity sev, const Module& mod);
-		~line();
+		typedef basic_linebuf<Elem, Traits, Alloc> my_t;
+		typedef std::basic_stringbuf<Elem, Traits, Alloc> mybase_t;
+		typedef std::basic_string<Elem, Traits, Alloc> string_t;
 
-		template <typename T>
-		line& operator << (const T& o)
+		basic_linebuf()
+			: mybase_t(std::ios_base::out)
+			, m_written(false)
 		{
-			called = true;
-			out << o;
-			return *this;
 		}
 
-		std::ostream& stream() { return out; }
+		bool has_written() const { return m_written; }
+		void reset_state() { m_written = false; }
+
+	protected:
+		virtual int_type overflow(int_type c = Traits::eof())
+		{
+			int_type ret = mybase_t::overflow(c);
+			if (Traits::eq_int_type(ret, c))
+				m_written = true;
+			return ret;
+		}
+	};
+
+	template<class Elem, class Traits, class Alloc>
+	class basic_line_stream;
+
+	typedef basic_line_stream<char, std::char_traits<char>, std::allocator<char>> line_stream;
+
+	namespace detail
+	{
+		void init_stream(line_stream&, Severity sev, const Module& mod);
+		void finalize_stream(line_stream&);
+	}
+
+	template<class Elem, class Traits, class Alloc>
+	class basic_line_stream : public std::basic_ostream<Elem, Traits>, public boost::noncopyable
+	{
+	public:
+		typedef Alloc allocator_type;
+
+		typedef basic_line_stream<Elem, Traits, Alloc> my_t;
+		typedef std::basic_ostream<Elem, Traits> mybase_t;
+		typedef basic_linebuf<Elem, Traits, Alloc> mysb_t;
+		typedef std::basic_string<Elem, Traits, Alloc> string_t;
+
+		basic_line_stream(Severity sev, const Module& mod)
+			: mybase_t(&m_linebuf)
+		{
+			detail::init_stream(*this, sev, mod);
+		}
+		~basic_line_stream()
+		{
+			detail::finalize_stream(*this);
+		}
+
+		bool has_written() const { return m_linebuf.has_written(); }
+		void reset_state() { m_linebuf.reset_state(); }
+		string_t str() const { return m_linebuf.str(); }
+
+		mysb_t *rdbuf() const
+		{
+			// return pointer to buffer
+			return ((mysb_t *) &m_linebuf);
+		}
+	private:
+		mysb_t m_linebuf;
 	};
 
 	template <typename T>
@@ -73,9 +127,9 @@ namespace Log
 	{
 	public:
 		template <Log::Severity sev>
-		struct sev_line: line
+		struct sev_line: line_stream
 		{
-			sev_line(): line(sev, T::module()) {}
+			sev_line(): line_stream(sev, T::module()) {}
 		};
 		typedef sev_line<Log::Severity::Debug> debug;
 		typedef sev_line<Log::Severity::Info> info;
