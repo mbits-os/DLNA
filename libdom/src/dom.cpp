@@ -553,7 +553,10 @@ namespace dom
 		std::fstream in(path, std::ios::binary | std::ios::in);
 		if (!in)
 			return nullptr;
-		return fromDataSource([&in](void* ptr, size_t size) { return (size_t)in.read((char*) ptr, size).gcount(); });
+		return fromDataSource([&in](void* ptr, size_t size)
+		{
+			return (size_t)in.read((char*) ptr, size).gcount();
+		});
 	}
 
 	XmlDocumentPtr XmlDocument::fromDataSource(const DataSource& source)
