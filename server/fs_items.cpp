@@ -25,6 +25,8 @@
 
 namespace lan
 {
+	Log::Module APP { "APPL" };
+
 	namespace item
 	{
 		av::items::media_item_ptr from_path(const fs::path& path)
@@ -110,6 +112,8 @@ namespace lan
 			auto curr_t = fs::last_write_time(m_path);
 			if (m_last_scan == curr_t)
 				return;
+
+			log::debug() << "Rescanning " << m_path;
 
 			m_last_scan = curr_t;
 

@@ -27,8 +27,15 @@
 #include <http/response.hpp>
 #include <dom.hpp>
 #include <algorithm>
+#include <log.hpp>
 
 namespace net { namespace ssdp { namespace import { namespace av {
+
+	extern Log::Module Multimedia {"AVMS"};
+	struct log : public Log::basic_log<log>
+	{
+		static const Log::Module& module() { return Multimedia; }
+	};
 
 	template <typename T, typename Node>
 	T extract(const Node& node, const std::string& xpath, const T& def = T())
@@ -64,6 +71,7 @@ namespace net { namespace ssdp { namespace import { namespace av {
 	                                               /* OUT */ ui4& Id)
 	{
 		Id = m_device->system_update_id();
+		log::debug() << "GetSystemUpdateID() = " << Id;
 		return error::no_error;
 	}
 
@@ -85,7 +93,8 @@ namespace net { namespace ssdp { namespace import { namespace av {
 	error_code ContentDirectory::GetSearchCapabilities(const http::http_request& http_request,
 	                                                   /* OUT */ std::string& SearchCaps)
 	{
-		return error::not_implemented;
+		SearchCaps = "*";
+		return error::no_error;
 	}
 
 	error_code ContentDirectory::GetSortCapabilities(const http::http_request& http_request,
@@ -120,6 +129,11 @@ namespace net { namespace ssdp { namespace import { namespace av {
 			auto item = m_device->get_item(ObjectID);
 
 			if (item)
+				log::debug() << type_info<A_ARG_TYPE_BrowseFlag>::to_string(BrowseFlag) << " [" << ObjectID << "] \"" << item->get_title() << "\"";
+			else
+				log::warning() << type_info<A_ARG_TYPE_BrowseFlag>::to_string(BrowseFlag) << " [" << ObjectID << "] failed";
+
+			if (item)
 			{
 				auto filter = parse_filter(Filter);
 
@@ -127,7 +141,10 @@ namespace net { namespace ssdp { namespace import { namespace av {
 				{
 					auto children = item->list(StartingIndex, RequestedCount, parse_sort(SortCriteria));
 					for (auto && child : children)
+					{
+						log::debug() << "    [" << child->get_objectId_attr() << "] \"" << child->get_title() << "\"";
 						child->output(value, filter);
+					}
 
 					NumberReturned = children.size();
 					TotalMatches = item->predict_count(StartingIndex + NumberReturned);
@@ -147,6 +164,7 @@ namespace net { namespace ssdp { namespace import { namespace av {
 			value << "&lt;/DIDL-Lite&gt;";
 		}
 
+		Result = std::move(value.str());
 		return error::no_error;
 	}
 
@@ -309,6 +327,7 @@ namespace net { namespace ssdp { namespace import { namespace av {
 
 		std::vector<media_item_ptr> container_item::list(ulong start_from, ulong max_count, const search_criteria& sort)
 		{
+			log::info() << "[" << get_objectId_attr() << "]->list(" << start_from << ", " << max_count << ")";
 			rescan_if_needed();
 
 			std::vector<media_item_ptr> out;
@@ -320,6 +339,7 @@ namespace net { namespace ssdp { namespace import { namespace av {
 				end_at = max_count;
 			end_at += start_from;
 
+			log::info() << "    revised<" << start_from << ", " << end_at << ">";
 			for (auto i = start_from; i < end_at; ++i)
 				out.push_back(m_children.at(i));
 

@@ -30,13 +30,19 @@
 #include <ssdp/ssdp.hpp>
 #include <media_server.hpp>
 #include <boost/filesystem.hpp>
+#include <log.hpp>
 
 namespace fs = boost::filesystem;
 namespace av = net::ssdp::import::av;
 
-
 namespace lan
 {
+	extern Log::Module APP;
+	struct log : public Log::basic_log<log>
+	{
+		static const Log::Module& module() { return APP; }
+	};
+
 	static const net::ushort PORT = 6001;
 
 	namespace item
@@ -94,7 +100,10 @@ int main(int argc, char* argv [])
 				path = path.parent_path();
 			auto item = lan::item::from_path(path);
 			if (item)
+			{
+				lan::log::info() << "Adding " << path;
 				server->add_root_element(item);
+			}
 		}
 
 		lan::radio lanRadio(server);

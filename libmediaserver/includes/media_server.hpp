@@ -69,7 +69,7 @@ namespace net { namespace ssdp { namespace import { namespace av {
 			std::string m_title;
 		};
 
-		static const char SEP = '-';
+		static const char SEP = '.';
 		static const ulong INVALID_ID = (ulong) - 1;
 
 		struct root_item;

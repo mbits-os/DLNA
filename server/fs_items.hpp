@@ -31,13 +31,19 @@
 
 #include <media_server.hpp>
 #include <boost/filesystem.hpp>
-
+#include <log.hpp>
 namespace fs = boost::filesystem;
 namespace av = net::ssdp::import::av;
 
 
 namespace lan
 {
+	extern Log::Module APP;
+	struct log : public Log::basic_log<log>
+	{
+		static const Log::Module& module() { return APP; }
+	};
+
 	namespace item
 	{
 		struct path_item: av::items::common_props_item
