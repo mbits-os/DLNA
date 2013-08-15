@@ -26,6 +26,7 @@
 #include <http/connection.hpp>
 #include <network/types.hpp>
 #include <iostream>
+#include <log.hpp>
 
 namespace net
 {
@@ -58,6 +59,28 @@ namespace net
 		{
 		}
 
+		struct log : public Log::basic_log<log>
+		{
+			static const Log::Module& module() { return Log::Module::HTTP; }
+		};
+
+		struct buffer
+		{
+			const char* data;
+			size_t len;
+			buffer(const char* data, size_t len) : data(data), len(len) {}
+		};
+
+		std::ostream& operator << (std::ostream& o, const buffer& b)
+		{
+			const char* c = b.data;
+			const char* e = c + b.len;
+			for (; c != e; ++c)
+				o.put(*c >= ' ' && *c <= 127 ? *c : '.');
+
+			return o;
+		};
+
 		void connection::read_some_more()
 		{
 			auto self(shared_from_this());
@@ -69,6 +92,7 @@ namespace net
 					const char* data = m_buffer.data();
 					auto end = data + bytes_transferred;
 					auto ret = m_parser.parse(data, end);
+					m_pos += bytes_transferred;
 
 					if (ret == parser::finished)
 					{
@@ -84,6 +108,8 @@ namespace net
 					}
 					else if (ret == parser::error)
 					{
+						log::error()
+							<< "[CONNECTION] Parse error: " << buffer(m_buffer.data(), std::min(bytes_transferred, (size_t)100)) << " (starting at " << (m_pos - bytes_transferred) << " bytes)";
 						m_handler.make_404(m_response);
 						send_reply();
 					}
