@@ -220,3 +220,4 @@ libmediaserver/includes/*.ipp
 libmediaserver/includes/*.cpp
 libmediaserver/includes/directory.hpp
 libmediaserver/includes/manager.hpp
+lanradio.conf

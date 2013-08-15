@@ -31,6 +31,7 @@
 #include <media_server.hpp>
 #include <boost/filesystem.hpp>
 #include <log.hpp>
+#include <config.hpp>
 
 namespace fs = boost::filesystem;
 namespace av = net::ssdp::import::av;
@@ -88,7 +89,8 @@ int main(int argc, char* argv [])
 			{ "midnightBITS", "http://www.midnightbits.com" }
 		};
 
-		auto server = std::make_shared<av::MediaServer>(info);
+		auto config = net::config::file_config("lanradio.conf");
+		auto server = std::make_shared<av::MediaServer>(info, config);
 
 		for (int arg = 1; arg < argc; ++arg)
 		{
