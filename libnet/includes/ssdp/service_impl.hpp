@@ -440,7 +440,7 @@ namespace net { namespace ssdp { namespace import {
 
 			o <<
 				"	</serviceStateTable>\n"
-				"</spcd>\n";
+				"</scpd>\n";
 
 			return o.str();
 		}
