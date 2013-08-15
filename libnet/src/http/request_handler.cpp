@@ -28,11 +28,17 @@
 #include <regex>
 #include <network/interface.hpp>
 #include <dom.hpp>
+#include <log.hpp>
 
 namespace net
 {
 	namespace http
 	{
+		struct log : public Log::basic_log<log>
+		{
+			static const Log::Module& module() { return Log::Module::HTTP; }
+		};
+
 		dom::XmlDocumentPtr create_from_socket(request_data_ptr data)
 		{
 			if (!data || !data->content_length())
@@ -50,8 +56,11 @@ namespace net
 				auto tmp = data->read(buffer, chunk);
 				rest -= tmp;
 
+				std::cout.write((char*) buffer, tmp);
+
 				return tmp;
 			});
+			std::cout << "\n\n";
 		}
 
 		struct tmplt_chunk
@@ -225,6 +234,50 @@ namespace net
 			std::cout << o.str();
 		}
 
+		static void log_request(const http_request& header, const std::string& SOAPAction, dom::XmlDocumentPtr& doc)
+		{
+			log::info o;
+
+			o << header.m_method << " ";
+			if (header.m_resource != "*")
+			{
+				auto it = header.find("host");
+				if (it != header.end())
+					o << it->value();
+			}
+			o << header.m_resource << " " << header.m_protocol;
+			o << " [" << to_string(header.m_remote_address) << ":" << header.m_remote_port << "]";
+
+			auto ua = header.user_agent();
+			if (!ua.empty())
+			{
+				o << " " << ua;
+				auto pui = header.simple("x-av-physical-unit-info");
+				auto ci = header.simple("x-av-client-info");
+				if (!pui.empty() || !ci.empty())
+				{
+					o << " | " << pui;
+					if (!pui.empty() && !ci.empty())
+						o << " ";
+					o << ci;
+				}
+			}
+
+			if (!SOAPAction.empty())
+			{
+				o << " [" << SOAPAction << "]";
+				if (doc)
+				{
+					o << ":\n";
+					auto children = env_body(doc);
+					if (children)
+						dom::Print(o.stream(), children, false, 1);
+					else
+						dom::Print(o.stream(), doc->documentElement(), false, 1);
+				}
+			}
+		}
+
 		std::pair<fs::path, fs::path> pop(const fs::path& p)
 		{
 			if (p.empty())
@@ -263,6 +316,7 @@ namespace net
 			}
 
 			print_debug(req, SOAPAction, doc);
+			log_request(req, SOAPAction, doc);
 
 			fs::path root, rest;
 			std::tie(root, rest) = pop(res); // pop leading slash

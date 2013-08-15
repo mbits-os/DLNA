@@ -66,6 +66,9 @@
     <ClCompile Include="..\..\libnet\pch\pch.cpp">
       <Filter>pch</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\libnet\src\log.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\libnet\pch\pch.h">
@@ -112,6 +115,9 @@
     </ClInclude>
     <ClInclude Include="..\..\libnet\includes\ssdp\service_impl.hpp">
       <Filter>includes\ssdp</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\libnet\includes\log.hpp">
+      <Filter>includes</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

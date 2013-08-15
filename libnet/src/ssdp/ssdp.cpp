@@ -27,11 +27,17 @@
 #include <thread>
 #include <http/http.hpp>
 #include <http/header_parser.hpp>
+#include <log.hpp>
 
 namespace net
 {
 	namespace ssdp
 	{
+		struct log: public Log::basic_log<log>
+		{
+			static const Log::Module& module() { return Log::Module::SSDP; }
+		};
+
 		const boost::asio::ip::address & ipv4_multicast()
 		{
 			using boost::asio::ip::address;
@@ -90,6 +96,41 @@ namespace net
 				o << header;
 
 			std::cout << o.str();
+		}
+
+		static void log_request(const net::http::http_request& header)
+		{
+			std::string ssdp_ST = header.ssdp_ST();
+
+			if (ssdp_ST == "urn:schemas-upnp-org:device:InternetGatewayDevice:1")
+				return;
+
+			log::info o;
+			o << header.m_method << " " << header.m_resource << " " << header.m_protocol << " [" << to_string(header.m_remote_address) << ":" << header.m_remote_port << "]";
+
+			if (!ssdp_ST.empty())
+				o << " [" << ssdp_ST << "]";
+
+			auto ssdp_MAN = header.ssdp_MAN();
+			if (!ssdp_MAN.empty())
+				o << " [" << ssdp_MAN << "]";
+
+			auto ssdp_NTS = header.quoted("nts");
+			if (!ssdp_NTS.empty())
+			{
+				auto location = header.simple("location");
+				if (ssdp_NTS == "ssdp:alive" && !location.empty())
+					o << " [" << location << "]";
+				else
+					o << " [" << ssdp_NTS << "]";
+			}
+
+			auto ssdp_NT = header.quoted("nt");
+			if (!ssdp_NT.empty())
+				o << " [" << ssdp_NT << "]";
+
+			if (ssdp_ST.empty() && ssdp_MAN.empty() && ssdp_NT.empty() && ssdp_NTS.empty())
+				o << "\n" << header;
 		}
 
 		ticker::ticker(boost::asio::io_service& io_service, const device_ptr& device, long seconds, net::ushort port)
@@ -190,6 +231,8 @@ namespace net
 				{
 					auto&& header = parser.header();
 					header.remote_endpoint(m_impl.remote());
+
+					log_request(header);
 
 					bool printed = false;
 

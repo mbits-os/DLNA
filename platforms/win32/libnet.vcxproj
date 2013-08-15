@@ -57,6 +57,7 @@
     <ClCompile Include="..\..\libnet\src\http\request_handler.cpp" />
     <ClCompile Include="..\..\libnet\src\http\response.cpp" />
     <ClCompile Include="..\..\libnet\src\http\server.cpp" />
+    <ClCompile Include="..\..\libnet\src\log.cpp" />
     <ClCompile Include="..\..\libnet\src\network\interface_win32.cpp" />
     <ClCompile Include="..\..\libnet\src\network\net_win32.cpp" />
     <ClCompile Include="..\..\libnet\src\network\udp.cpp" />
@@ -71,6 +72,7 @@
     <ClInclude Include="..\..\libnet\includes\http\request_handler.hpp" />
     <ClInclude Include="..\..\libnet\includes\http\response.hpp" />
     <ClInclude Include="..\..\libnet\includes\http\server.hpp" />
+    <ClInclude Include="..\..\libnet\includes\log.hpp" />
     <ClInclude Include="..\..\libnet\includes\network\interface.hpp" />
     <ClInclude Include="..\..\libnet\includes\network\types.hpp" />
     <ClInclude Include="..\..\libnet\includes\network\udp.hpp" />
