@@ -204,7 +204,9 @@ namespace net
 				info << to_string(header.m_remote_address) << " \"" << header.m_method << " " << header.m_resource << " " << header.m_protocol << "\"";
 
 				if (!SOAPAction.empty())
-					info << " \"" << SOAPAction << "\" " << resp.header().m_status;
+					info << " \"" << SOAPAction << "\"";
+
+				info << " " << resp.header().m_status;
 
 				auto ua = header.user_agent();
 				if (!ua.empty())
@@ -256,9 +258,7 @@ namespace net
 			dom::XmlDocumentPtr doc;
 
 			if (method == http_method::post && !SOAPAction.empty())
-			{
 				doc = create_from_socket(req.request_data());
-			}
 
 			log_request __{ resp, req, SOAPAction, doc };
 
@@ -283,7 +283,6 @@ namespace net
 								return make_service_xml(resp, service);
 						}
 					}
-					return make_file(boost::filesystem::path("data") / root / rest, resp);
 				}
 				if (root == "images")
 					return make_file(boost::filesystem::path("data") / root / rest, resp);
