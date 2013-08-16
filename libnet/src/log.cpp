@@ -27,6 +27,9 @@
 #include <boost/date_time.hpp>
 #include <boost/filesystem.hpp>
 #include <network/types.hpp>
+#include <clocale>
+#include <locale>
+#include <vector>
 
 namespace fs = boost::filesystem;
 
@@ -35,7 +38,8 @@ namespace Log
 	Module Module::HTTP("HOST");
 	Module Module::SSDP("SSDP");
 
-	std::ostream& operator << (std::ostream& o, Severity sev)
+	template <class Elem, class Traits>
+	std::basic_ostream<Elem, Traits>& operator << (std::basic_ostream<Elem, Traits>& o, Severity sev)
 	{
 		switch (sev)
 		{
@@ -50,6 +54,7 @@ namespace Log
 	struct sink
 	{
 		static void log(const std::string& msg);
+		static void log(const std::wstring& msg);
 	};
 
 	namespace detail
@@ -67,11 +72,45 @@ namespace Log
 				sink::log(s.str());
 			}
 		}
+		void init_stream(line_wstream& s, Severity sev, const Module& mod)
+		{
+			s << net::to_iso8601(net::time::now()).c_str() << " " << mod << "/" << sev << " ";
+			s.reset_state();
+		}
+		void finalize_stream(line_wstream& s)
+		{
+			if (s.has_written())
+			{
+				s << std::endl;
+				sink::log(s.str());
+			}
+		}
 	}
 
 	void sink::log(const std::string& msg)
 	{
 		std::ofstream out("libnet.log", std::ios::app | std::ios::out);
 		out << msg;
+	}
+
+	void sink::log(const std::wstring& wmsg)
+	{
+		std::setlocale(LC_ALL, "");
+		const std::locale locale("");
+		typedef std::codecvt<wchar_t, char, std::mbstate_t> converter_type;
+
+		const auto& converter = std::use_facet<converter_type>(locale);
+
+		std::vector<char> data(wmsg.length() * converter.max_length());
+		std::mbstate_t state;
+		const wchar_t* from_next;
+		char* to_next;
+
+		auto result = converter.out(state, wmsg.data(), wmsg.data() + wmsg.length(), from_next, &data[0], &data[0] + data.size(), to_next);
+
+		if (result == converter_type::ok || result == converter_type::noconv) {
+			std::ofstream out("libnet.log", std::ios::app | std::ios::out);
+			out << std::string(data.data(), to_next);
+		}
 	}
 }

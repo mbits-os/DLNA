@@ -44,7 +44,9 @@ namespace Log
 	public:
 		Module(const std::string& name) : m_name(name) {}
 
-		friend std::ostream& operator << (std::ostream& o, const Module& mod) { return o << mod.m_name; }
+		template <class Elem, class Traits>
+		friend std::basic_ostream<Elem, Traits>& operator << (std::basic_ostream<Elem, Traits>& o, const Module& mod) { return o << mod.m_name.c_str(); }
+
 		static Module HTTP;
 		static Module SSDP;
 	};
@@ -81,11 +83,14 @@ namespace Log
 	class basic_line_stream;
 
 	typedef basic_line_stream<char, std::char_traits<char>, std::allocator<char>> line_stream;
+	typedef basic_line_stream<wchar_t, std::char_traits<wchar_t>, std::allocator<wchar_t>> line_wstream;
 
 	namespace detail
 	{
 		void init_stream(line_stream&, Severity sev, const Module& mod);
 		void finalize_stream(line_stream&);
+		void init_stream(line_wstream&, Severity sev, const Module& mod);
+		void finalize_stream(line_wstream&);
 	}
 
 	template<class Elem, class Traits, class Alloc>
@@ -137,6 +142,17 @@ namespace Log
 			mute_line() : line_stream(sev, T::module()) {}
 			~mute_line() { reset_state(); }
 		};
+		template <Log::Severity sev>
+		struct sev_wline: line_wstream
+		{
+			sev_wline() : line_wstream(sev, T::module()) {}
+		};
+		template <Log::Severity sev>
+		struct mute_wline : line_wstream
+		{
+			mute_wline() : line_wstream(sev, T::module()) {}
+			~mute_wline() { reset_state(); }
+		};
 
 #ifdef LOG_DEBUG
 		typedef sev_line<Log::Severity::Debug> debug;
@@ -146,6 +162,14 @@ namespace Log
 		typedef sev_line<Log::Severity::Info> info;
 		typedef sev_line<Log::Severity::Warning> warning;
 		typedef sev_line<Log::Severity::Error> error;
+#ifdef LOG_DEBUG
+		typedef sev_wline<Log::Severity::Debug> wdebug;
+#else
+		typedef mute_wline<Log::Severity::Debug> wdebug;
+#endif
+		typedef sev_wline<Log::Severity::Info> winfo;
+		typedef sev_wline<Log::Severity::Warning> wwarning;
+		typedef sev_wline<Log::Severity::Error> werror;
 	};
 }
 
