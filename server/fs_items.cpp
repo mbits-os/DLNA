@@ -22,10 +22,55 @@
  * SOFTWARE.
  */
 #include "fs_items.hpp"
+#include <MediaInfo/MediaInfo.h>
+#include <regex>
+
+namespace mi = MediaInfoLib;
 
 namespace lan
 {
 	Log::Module APP { "APPL" };
+
+	struct MI
+	{
+		struct Open
+		{
+			bool opened;
+			Open(const fs::path& file)
+			{
+				opened = get()->Open(fs::absolute(file).native()) != 0;
+			}
+			~Open()
+			{
+				if (opened)
+					get()->Close();
+			}
+
+			operator bool() const { return opened; }
+		};
+
+		static std::wstring inform(const fs::path& file)
+		{
+
+			Open session(file);
+			if (!session)
+				return std::wstring();
+			return get()->Inform();
+		}
+	private:
+		static std::shared_ptr<mi::MediaInfo> get()
+		{
+			static auto s_mi = std::make_shared<mi::MediaInfo>();
+			static bool s_inited = false;
+			if (!s_inited)
+			{
+				s_inited = true;
+				s_mi->Option(L"Complete", L"1");
+				s_mi->Option(L"Language", L"raw");
+			}
+			return s_mi;
+		}
+	};
 
 	namespace item
 	{
@@ -37,6 +82,9 @@ namespace lan
 					return nullptr;
 				return std::make_shared<directory_item>(path);
 			}
+			auto text = MI::inform(path);
+			log::wwarning() << path << "\n" << std::regex_replace(text, std::wregex(L"\r\n"), L"\n");
+			std::cout << path << "\n";
 			return nullptr;
 		}
 
