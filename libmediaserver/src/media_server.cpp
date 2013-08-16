@@ -327,7 +327,7 @@ namespace net { namespace ssdp { namespace import { namespace av {
 
 		std::vector<media_item_ptr> container_item::list(ulong start_from, ulong max_count, const search_criteria& sort)
 		{
-			log::info() << "[" << get_objectId_attr() << "]->list(" << start_from << ", " << max_count << ")";
+			log::debug() << "[" << get_objectId_attr() << "]->list(" << start_from << ", " << max_count << ")";
 			rescan_if_needed();
 
 			std::vector<media_item_ptr> out;
@@ -339,7 +339,7 @@ namespace net { namespace ssdp { namespace import { namespace av {
 				end_at = max_count;
 			end_at += start_from;
 
-			log::info() << "    revised<" << start_from << ", " << end_at << ">";
+			log::debug() << "    revised<" << start_from << ", " << end_at << ">";
 			for (auto i = start_from; i < end_at; ++i)
 				out.push_back(m_children.at(i));
 
