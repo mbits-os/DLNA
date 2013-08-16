@@ -11,32 +11,11 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\libdom\expat\inc\amigaconfig.h" />
-    <ClInclude Include="..\..\libdom\expat\inc\ascii.h" />
-    <ClInclude Include="..\..\libdom\expat\inc\asciitab.h" />
-    <ClInclude Include="..\..\libdom\expat\inc\expat.h" />
-    <ClInclude Include="..\..\libdom\expat\inc\expat_config.h" />
-    <ClInclude Include="..\..\libdom\expat\inc\expat_external.h" />
-    <ClInclude Include="..\..\libdom\expat\inc\iasciitab.h" />
-    <ClInclude Include="..\..\libdom\expat\inc\internal.h" />
-    <ClInclude Include="..\..\libdom\expat\inc\latin1tab.h" />
-    <ClInclude Include="..\..\libdom\expat\inc\macconfig.h" />
-    <ClInclude Include="..\..\libdom\expat\inc\nametab.h" />
-    <ClInclude Include="..\..\libdom\expat\inc\utf8tab.h" />
-    <ClInclude Include="..\..\libdom\expat\inc\winconfig.h" />
-    <ClInclude Include="..\..\libdom\expat\inc\xmlrole.h" />
-    <ClInclude Include="..\..\libdom\expat\inc\xmltok.h" />
-    <ClInclude Include="..\..\libdom\expat\inc\xmltok_impl.h" />
     <ClInclude Include="..\..\libdom\includes\dom.hpp" />
     <ClInclude Include="..\..\libdom\includes\dom_xpath.hpp" />
     <ClInclude Include="..\..\libdom\includes\expat.hpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\libdom\expat\src\xmlparse.c" />
-    <ClCompile Include="..\..\libdom\expat\src\xmlrole.c" />
-    <ClCompile Include="..\..\libdom\expat\src\xmltok.c" />
-    <ClCompile Include="..\..\libdom\expat\src\xmltok_impl.c" />
-    <ClCompile Include="..\..\libdom\expat\src\xmltok_ns.c" />
     <ClCompile Include="..\..\libdom\src\dom.cpp" />
     <ClCompile Include="..\..\libdom\src\dom_xpath.cpp" />
   </ItemGroup>

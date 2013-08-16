@@ -34,6 +34,10 @@
 #include <windows.h>
 #endif
 
+#ifdef _MSC_VER
+#pragma comment(lib, "libexpat.lib")
+#endif
+
 namespace dom
 {
 	namespace impl

@@ -1,7 +1,7 @@
 #ifndef __EXPAT_HPP__
 #define __EXPAT_HPP__
 
-#include "../expat/inc/expat.h"
+#include <expat.h>
 
 #define USER_DATA static_cast<Final*>(userData)
 
