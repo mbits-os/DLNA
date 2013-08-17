@@ -32,6 +32,7 @@
 #include <boost/filesystem.hpp>
 #include <log.hpp>
 #include <config.hpp>
+#include <threads.hpp>
 
 namespace fs = boost::filesystem;
 namespace av = net::ssdp::import::av;
@@ -84,6 +85,10 @@ int main(int argc, char* argv [])
 {
 	try
 	{
+		threads::set_name("main");
+
+		lan::log::info() << "\nStarting...\n";
+
 		net::ssdp::device_info info = {
 			{ "lanRadio", 0, 1 },
 			{ "lanRadio", "LAN Radio [" + boost::asio::ip::host_name() + "]", "01", "http://www.midnightbits.org/lanRadio" },

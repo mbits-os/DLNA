@@ -72,6 +72,9 @@
     <ClCompile Include="..\..\libnet\src\config.cpp">
       <Filter>src</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\libnet\src\threads.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\libnet\pch\pch.h">
@@ -123,6 +126,9 @@
       <Filter>includes</Filter>
     </ClInclude>
     <ClInclude Include="..\..\libnet\includes\config.hpp">
+      <Filter>includes</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\libnet\includes\threads.hpp">
       <Filter>includes</Filter>
     </ClInclude>
   </ItemGroup>

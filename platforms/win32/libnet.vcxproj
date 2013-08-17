@@ -64,6 +64,7 @@
     <ClCompile Include="..\..\libnet\src\network\udp.cpp" />
     <ClCompile Include="..\..\libnet\src\ssdp\device.cpp" />
     <ClCompile Include="..\..\libnet\src\ssdp\ssdp.cpp" />
+    <ClCompile Include="..\..\libnet\src\threads.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\libnet\includes\config.hpp" />
@@ -82,6 +83,7 @@
     <ClInclude Include="..\..\libnet\includes\ssdp\service_impl.hpp" />
     <ClInclude Include="..\..\libnet\includes\ssdp\ssdp.hpp" />
     <ClInclude Include="..\..\libnet\includes\ssdp\device.hpp" />
+    <ClInclude Include="..\..\libnet\includes\threads.hpp" />
     <ClInclude Include="..\..\libnet\pch\pch.h" />
   </ItemGroup>
 </Project>

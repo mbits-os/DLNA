@@ -30,6 +30,8 @@
 #include <clocale>
 #include <locale>
 #include <vector>
+#include <threads.hpp>
+#include <mutex>
 
 namespace fs = boost::filesystem;
 
@@ -53,47 +55,61 @@ namespace Log
 
 	struct sink
 	{
-		static void log(const std::string& msg);
-		static void log(const std::wstring& msg);
+		static void log(const std::string& pre, const std::string& msg);
+		static void log(const std::string& pre, const std::wstring& msg);
 	};
 
 	namespace detail
 	{
+		std::string make_prefix(Severity sev, const Module& mod)
+		{
+			std::ostringstream o;
+			o << net::to_iso8601(net::time::now()) << " " << mod << "/" << sev << " [" << threads::get_name() << "] ";
+			return o.str();
+		}
 		void init_stream(line_stream& s, Severity sev, const Module& mod)
 		{
-			s << net::to_iso8601(net::time::now()) << " " << mod << "/" << sev << " ";
+			s.prefix = std::move(make_prefix(sev, mod));
 			s.reset_state();
 		}
 		void finalize_stream(line_stream& s)
 		{
 			if (s.has_written())
-			{
-				s << std::endl;
-				sink::log(s.str());
-			}
+				sink::log(s.prefix, s.str());
 		}
 		void init_stream(line_wstream& s, Severity sev, const Module& mod)
 		{
-			s << net::to_iso8601(net::time::now()).c_str() << " " << mod << "/" << sev << " ";
+			s.prefix = std::move(make_prefix(sev, mod));
 			s.reset_state();
 		}
 		void finalize_stream(line_wstream& s)
 		{
 			if (s.has_written())
-			{
-				s << std::endl;
-				sink::log(s.str());
-			}
+				sink::log(s.prefix, s.str());
 		}
 	}
 
-	void sink::log(const std::string& msg)
+	void sink::log(const std::string& pre, const std::string& msg)
 	{
+		static std::mutex sink_mtx;
+		std::lock_guard<std::mutex> lock(sink_mtx);
+
 		std::ofstream out("libnet.log", std::ios::app | std::ios::out);
-		out << msg;
+		const char* c = msg.c_str();
+		const char* e = c + msg.length();
+		while (true)
+		{
+			auto save = c;
+			while (c != e && *c != '\n') ++c;
+			out << pre;
+			out.write(save, c - save);
+			out << "\n";
+			if (c == e) break;
+			++c;
+		}
 	}
 
-	void sink::log(const std::wstring& wmsg)
+	void sink::log(const std::string& pre, const std::wstring& wmsg)
 	{
 		std::setlocale(LC_ALL, "");
 		const std::locale locale("");
@@ -109,8 +125,7 @@ namespace Log
 		auto result = converter.out(state, wmsg.data(), wmsg.data() + wmsg.length(), from_next, &data[0], &data[0] + data.size(), to_next);
 
 		if (result == converter_type::ok || result == converter_type::noconv) {
-			std::ofstream out("libnet.log", std::ios::app | std::ios::out);
-			out << std::string(data.data(), to_next);
+			log(pre, std::string(data.data(), to_next));
 		}
 	}
 }

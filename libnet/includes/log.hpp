@@ -70,12 +70,19 @@ namespace Log
 		void reset_state() { m_written = false; }
 
 	protected:
-		virtual int_type overflow(int_type c = Traits::eof())
+		int_type overflow(int_type c = Traits::eof()) override
 		{
 			int_type ret = mybase_t::overflow(c);
 			if (Traits::eq_int_type(ret, c))
 				m_written = true;
 			return ret;
+		}
+
+		std::streamsize xsputn(const char_type* s, std::streamsize n) override
+		{
+			if (n)
+				m_written = true;
+			return mybase_t::xsputn(s, n);
 		}
 	};
 
@@ -123,6 +130,8 @@ namespace Log
 			// return pointer to buffer
 			return ((mysb_t *) &m_linebuf);
 		}
+
+		std::string prefix;
 	private:
 		mysb_t m_linebuf;
 	};
