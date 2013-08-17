@@ -33,13 +33,6 @@
 #include <log.hpp>
 #include <config.hpp>
 
-#ifdef _MSC_VER
-#pragma comment(lib, "libz.lib")
-#pragma comment(lib, "libzen.lib")
-#pragma comment(lib, "mediainfo.lib")
-#pragma comment(lib, "curl.lib")
-#endif
-
 namespace fs = boost::filesystem;
 namespace av = net::ssdp::import::av;
 
@@ -86,6 +79,7 @@ namespace lan
 		net::ssdp::server       m_upnp;
 	};
 }
+
 int main(int argc, char* argv [])
 {
 	try

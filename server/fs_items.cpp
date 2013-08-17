@@ -22,10 +22,12 @@
  * SOFTWARE.
  */
 #include "fs_items.hpp"
-#include <MediaInfo/MediaInfo.h>
+#include <MediaInfo.h>
 #include <regex>
 
-namespace mi = MediaInfoLib;
+#pragma comment(lib, "mi.lib")
+
+namespace mi = MediaInfo;
 
 namespace lan
 {
@@ -33,48 +35,89 @@ namespace lan
 
 	struct MI
 	{
-		struct Open
+		static bool extract(const fs::path& file, mi::IEnvelope* env)
 		{
-			bool opened;
-			Open(const fs::path& file)
-			{
-				opened = get()->Open(fs::absolute(file).native()) != 0;
-			}
-			~Open()
-			{
-				if (opened)
-					get()->Close();
-			}
-
-			operator bool() const { return opened; }
-		};
-
-		static std::wstring inform(const fs::path& file)
-		{
-
-			Open session(file);
-			if (!session)
-				return std::wstring();
-			return get()->Inform();
+			return get()->extract(fs::absolute(file).native(), env);
 		}
 	private:
-		static std::shared_ptr<mi::MediaInfo> get()
+		static std::shared_ptr<mi::API> get()
 		{
-			static auto s_mi = std::make_shared<mi::MediaInfo>();
-			static bool s_inited = false;
-			if (!s_inited)
-			{
-				s_inited = true;
-				s_mi->Option(L"Complete", L"1");
-				s_mi->Option(L"Language", L"raw");
-				s_mi->Option(L"Output", L"XML");
-			}
+			static auto s_mi = std::make_shared<mi::API>();
 			return s_mi;
 		}
 	};
 
 	namespace item
 	{
+		namespace Media
+		{
+			enum class Class
+			{
+				Other,
+				Image,
+				Audio,
+				Video
+			};
+			struct MediaTrack : mi::ITrack
+			{
+				mi::TrackType m_type;
+				int m_id;
+				MediaTrack(mi::TrackType type, int id)
+				{
+				}
+				mi::TrackType get_type() const override { return m_type; }
+				int get_id() const override { return m_id; }
+			};
+			typedef std::shared_ptr<MediaTrack> track_ptr;
+
+			struct MediaEnvelope : mi::IEnvelope, mi::ITrack
+			{
+				Class m_class;
+				std::vector<track_ptr> m_tracks;
+				MediaEnvelope()
+					: m_class(Class::Other)
+				{
+				}
+
+				Class fileClass() const { return m_class; }
+
+				mi::ITrack* create_track(mi::TrackType type, int id) override
+				{
+					switch (type)
+					{
+					case mi::TrackType::Image:
+					case mi::TrackType::Audio:
+					case mi::TrackType::Video:
+						break;
+					case mi::TrackType::General:
+						return this;
+					default:
+						return nullptr;
+					}
+
+					auto ptr = std::make_shared<MediaTrack>(type, id);
+					if (!ptr)
+						return nullptr;
+
+					m_tracks.push_back(ptr);
+
+					if (type == mi::TrackType::Image && m_class == Class::Other)
+						m_class = Class::Image;
+
+					if (type == mi::TrackType::Audio && m_class != Class::Video)
+						m_class = Class::Audio;
+
+					if (type == mi::TrackType::Video)
+						m_class = Class::Video;
+
+					return ptr.get();
+				}
+
+				mi::TrackType get_type() const override { return mi::TrackType::General; }
+				int get_id() const override { return 0; }
+			};
+		}
+
 		av::items::media_item_ptr from_path(const fs::path& path)
 		{
 			if (fs::is_directory(path))
@@ -83,9 +126,20 @@ namespace lan
 					return nullptr;
 				return std::make_shared<directory_item>(path);
 			}
-			auto text = MI::inform(path);
-			log::wwarning() << path << "\n" << std::regex_replace(text, std::wregex(L"\r\n"), L"\n");
+
+			Media::MediaEnvelope env;
 			std::cout << path << "\n";
+			if (!MI::extract(path, &env))
+			{
+				log::error() << "Could not extract metadata from " << path;
+			}
+
+			switch (env.fileClass())
+			{
+			case Media::Class::Video: log::info() << "Would create video file from " << path; return nullptr;
+			case Media::Class::Audio: log::info() << "Would create audio file from " << path; return nullptr;
+			case Media::Class::Image: log::info() << "Would create image file from " << path; return nullptr;
+			}
 			return nullptr;
 		}
 

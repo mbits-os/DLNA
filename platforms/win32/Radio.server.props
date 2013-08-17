@@ -7,7 +7,9 @@
   </ImportGroup>
   <PropertyGroup>
     <_PropertySheetDisplayName>Radio Server App</_PropertySheetDisplayName>
-    <LibraryPath>$(SolutionDir)..\..\bin\$(PlatformName)\$(Configuration)\;$(LibraryPath)</LibraryPath>
+    <LibraryPath>$(SolutionDir)..\..;$(LibraryPath)</LibraryPath>
+    <IncludePath>$(SolutionDir)MediaInfo;$(IncludePath)</IncludePath>
+    <ExecutablePath>$(SolutionDir)..\..;$(ExecutablePath)</ExecutablePath>
   </PropertyGroup>
   <PropertyGroup Label="UserMacros" />
   <ItemDefinitionGroup>
@@ -19,6 +21,11 @@
       <SubSystem>Console</SubSystem>
       <ProgramDatabaseFile>$(TargetDir)$(TargetName).pdb</ProgramDatabaseFile>
     </Link>
+    <CustomBuildStep>
+      <Command>copy $(SolutionDir)..\..\mi.dll $(SolutionDir)..\..\bin\$(PlatformName)\$(Configuration)\</Command>
+      <Outputs>$(SolutionDir)..\..\bin\$(PlatformName)\$(Configuration)\mi.dll</Outputs>
+      <Inputs>$(SolutionDir)..\..\mi.dll</Inputs>
+    </CustomBuildStep>
   </ItemDefinitionGroup>
   <ItemGroup />
 </Project>
