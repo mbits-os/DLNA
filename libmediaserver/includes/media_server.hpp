@@ -30,6 +30,8 @@
 
 namespace net { namespace ssdp { namespace import { namespace av {
 
+	struct MediaServer;
+
 	namespace items
 	{
 		struct sort_criterion
@@ -47,7 +49,8 @@ namespace net { namespace ssdp { namespace import { namespace av {
 			typedef av::items::media_item_ptr item_ptr;
 			typedef std::vector<item_ptr> container_type;
 
-			media_item() : m_id(0) {}
+			MediaServer* m_device;
+			explicit media_item(MediaServer* device) : m_device(device), m_id(0) {}
 			virtual ~media_item() {}
 			virtual container_type list(ulong start_from, ulong max_count, const sort_criteria& sort) = 0;
 			virtual ulong predict_count(ulong served) const = 0;
@@ -82,6 +85,7 @@ namespace net { namespace ssdp { namespace import { namespace av {
 
 		struct common_props_item : media_item
 		{
+			common_props_item(MediaServer* device) : media_item(device) {}
 			virtual const char* get_upnp_class() const = 0;
 			virtual time_t get_last_write_time() const { return 0; }
 		protected:
@@ -89,34 +93,11 @@ namespace net { namespace ssdp { namespace import { namespace av {
 			void output_close(std::ostream& o, const std::vector<std::string>& filter) const;
 		};
 
-		struct common_item : common_props_item
-		{
-			std::vector<media_item_ptr> list(ulong start_from, ulong max_count, const sort_criteria& sort) override { return std::vector<media_item_ptr>(); }
-			ulong predict_count(ulong served) const override { return served; }
-			ulong update_id() const override { return 0; }
-			media_item_ptr get_item(const std::string& id) override { return nullptr; }
-			bool is_folder() const override { return false; }
-		};
-
-		struct photo_item : common_item
-		{
-			const char* get_upnp_class() const override { return "object.item.imageItem.photo"; }
-		};
-
-		struct video_item : common_item
-		{
-			const char* get_upnp_class() const override { return "object.item.videoItem"; }
-		};
-
-		struct audio_item : common_item
-		{
-			const char* get_upnp_class() const override { return "object.item.audioItem.musicTrack"; }
-		};
-
 		struct container_item : common_props_item
 		{
-			container_item()
-				: m_update_id(1)
+			container_item(MediaServer* device)
+				: common_props_item(device)
+				, m_update_id(1)
 				, m_current_max(0)
 			{
 			}
@@ -130,7 +111,7 @@ namespace net { namespace ssdp { namespace import { namespace av {
 			const char* get_upnp_class() const override { return "object.container.storageFolder"; }
 
 			virtual void rescan_if_needed() {}
-			virtual void folder_changed() { m_update_id++; /*notify?*/ }
+			virtual void folder_changed();
 			virtual void add_child(media_item_ptr);
 			virtual void remove_child(media_item_ptr);
 
@@ -143,8 +124,6 @@ namespace net { namespace ssdp { namespace import { namespace av {
 
 	using namespace import::directory;
 	using namespace import::manager;
-
-	struct MediaServer;
 
 	struct ContentDirectory: ContentDirectoryServerProxy
 	{
@@ -217,6 +196,7 @@ namespace net { namespace ssdp { namespace import { namespace av {
 		items::media_item_ptr get_item(const std::string& id);
 		void add_root_element(items::media_item_ptr);
 		void remove_root_element(items::media_item_ptr);
+		void object_changed();
 
 	private:
 		items::root_item_ptr m_root_item;

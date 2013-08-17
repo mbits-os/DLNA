@@ -51,8 +51,9 @@ namespace lan
 	{
 		struct path_item: av::items::common_props_item
 		{
-			path_item(const fs::path& path)
-				: m_path(path)
+			path_item(av::MediaServer* device, const fs::path& path)
+				: av::items::common_props_item(device)
+				, m_path(path)
 			{
 				set_title(m_path.filename().string());
 				m_last_write = fs::last_write_time(m_path);
@@ -68,8 +69,8 @@ namespace lan
 
 		struct common_file : path_item
 		{
-			common_file(const fs::path& path)
-				: path_item(path)
+			common_file(av::MediaServer* device, const fs::path& path)
+				: path_item(device, path)
 			{
 			}
 			std::vector<av::items::media_item_ptr> list(net::ulong start_from, net::ulong max_count, const av::items::sort_criteria& sort) override { return std::vector<av::items::media_item_ptr>(); }
@@ -82,8 +83,8 @@ namespace lan
 
 		struct photo_file : common_file
 		{
-			photo_file(const fs::path& path)
-				: common_file(path)
+			photo_file(av::MediaServer* device, const fs::path& path)
+				: common_file(device, path)
 			{
 			}
 			const char* get_upnp_class() const override { return "object.item.imageItem.photo"; }
@@ -91,8 +92,8 @@ namespace lan
 
 		struct video_file : common_file
 		{
-			video_file(const fs::path& path)
-				: common_file(path)
+			video_file(av::MediaServer* device, const fs::path& path)
+				: common_file(device, path)
 			{
 			}
 			const char* get_upnp_class() const override { return "object.item.videoItem"; }
@@ -100,8 +101,8 @@ namespace lan
 
 		struct audio_file : common_file
 		{
-			audio_file(const fs::path& path)
-				: common_file(path)
+			audio_file(av::MediaServer* device, const fs::path& path)
+				: common_file(device, path)
 			{
 			}
 			const char* get_upnp_class() const override { return "object.item.audioItem.musicTrack"; }
@@ -125,8 +126,8 @@ namespace lan
 				}
 			};
 
-			container_file(const fs::path& path)
-				: path_item(path)
+			container_file(av::MediaServer* device, const fs::path& path)
+				: path_item(device, path)
 				, m_update_id(1)
 				, m_current_max(0)
 				, m_running(false)
@@ -181,8 +182,8 @@ namespace lan
 
 		struct directory_item : container_file
 		{
-			directory_item(const fs::path& path)
-				: container_file(path)
+			directory_item(av::MediaServer* device, const fs::path& path)
+				: container_file(device, path)
 				, m_last_scan(0)
 			{
 			}

@@ -373,6 +373,12 @@ namespace net { namespace ssdp { namespace import { namespace av {
 			output_close(o, filter);
 		}
 
+		void container_item::folder_changed()
+		{
+			m_update_id++;
+			m_device->object_changed();
+		}
+
 		void container_item::add_child(media_item_ptr child)
 		{
 			remove_child(child);
@@ -396,11 +402,11 @@ namespace net { namespace ssdp { namespace import { namespace av {
 
 		struct root_item : container_item
 		{
-			MediaServer* m_device;
-			root_item(MediaServer* device) : m_device(device) {}
+			root_item(MediaServer* device) : container_item(device) {}
 
 			// If the ObjectID is zero, then the UpdateID returned is SystemUpdateID
 			ulong update_id() const override { return m_device->system_update_id(); }
+			void folder_changed() override { m_device->object_changed(); }
 
 			std::string get_parent_attr() const override {
 				static std::string parent_id { "-1" };
@@ -443,6 +449,11 @@ namespace net { namespace ssdp { namespace import { namespace av {
 		root->set_title("root");
 		root->set_objectId_attr("0");
 		return root;
+	}
+
+	void MediaServer::object_changed()
+	{
+		++m_system_update_id;
 	}
 
 	void MediaServer::add_root_element(items::media_item_ptr ptr)

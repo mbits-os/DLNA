@@ -120,13 +120,13 @@ namespace lan
 			};
 		}
 
-		av::items::media_item_ptr from_path(const fs::path& path)
+		av::items::media_item_ptr from_path(av::MediaServer* device, const fs::path& path)
 		{
 			if (fs::is_directory(path))
 			{
 				if (path.filename() == ".")
 					return nullptr;
-				return std::make_shared<directory_item>(path);
+				return std::make_shared<directory_item>(device, path);
 			}
 
 			Media::MediaEnvelope env;
@@ -137,9 +137,9 @@ namespace lan
 
 			switch (env.fileClass())
 			{
-			case Media::Class::Video: return std::make_shared<video_file>(path);
-			case Media::Class::Audio: return std::make_shared<audio_file>(path);
-			case Media::Class::Image: return std::make_shared<photo_file>(path);
+			case Media::Class::Video: return std::make_shared<video_file>(device, path);
+			case Media::Class::Audio: return std::make_shared<audio_file>(device, path);
+			case Media::Class::Image: return std::make_shared<photo_file>(device, path);
 			}
 			return nullptr;
 		}
@@ -365,7 +365,7 @@ namespace lan
 			for (auto && entry : entries)
 				if (entry.second)
 				{
-					auto item = from_path(entry.first);
+					auto item = from_path(m_device, entry.first);
 					if (item)
 						add_child(item);
 				}

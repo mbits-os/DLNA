@@ -49,7 +49,7 @@ namespace lan
 
 	namespace item
 	{
-		av::items::media_item_ptr from_path(const fs::path& path);
+		av::items::media_item_ptr from_path(av::MediaServer* device, const fs::path& path);
 	}
 
 	struct radio
@@ -106,7 +106,7 @@ int main(int argc, char* argv [])
 
 			if (fs::is_directory(path) && path.filename() == ".")
 				path = path.parent_path();
-			auto item = lan::item::from_path(path);
+			auto item = lan::item::from_path(server.get(), path);
 			if (item)
 			{
 				lan::log::info() << "Adding " << path;
