@@ -107,6 +107,7 @@ namespace dom
 		virtual XmlNodePtr find(const std::string& path, const Namespaces& ns) = 0;
 		virtual XmlNodePtr find(const std::string& path) { return find(path, nullptr); }
 		virtual XmlNodeListPtr findall(const std::string& path, const Namespaces& ns) = 0;
+		virtual XmlNodeListPtr findall(const std::string& path) { return findall(path, nullptr); }
 	};
 
 	struct XmlDocument: XmlNode
