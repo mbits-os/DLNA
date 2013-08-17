@@ -67,7 +67,7 @@ namespace MediaInfo
 		virtual int get_id() const = 0;
 	};
 
-	struct IEnvelope
+	struct IContainer
 	{
 		virtual ITrack* create_track(TrackType type, int id) = 0;
 	};
@@ -79,7 +79,7 @@ namespace MediaInfo
 	MEDIAINFO_API void __stdcall DestroyApi(HMEDIAINFOAPI hApi);
 	MEDIAINFO_API HMEDIAINFO __stdcall CreateMediaInfo(HMEDIAINFOAPI hApi, LPCWSTR path);
 	MEDIAINFO_API LPCWSTR __stdcall GetText(HMEDIAINFO hMediaInfo);
-	MEDIAINFO_API bool __stdcall ExtractEnvelopeDescription(HMEDIAINFO hMediaInfo, IEnvelope* env);
+	MEDIAINFO_API bool __stdcall ExtractContainerDescription(HMEDIAINFO hMediaInfo, IContainer* env);
 	MEDIAINFO_API void __stdcall DestroyMediaInfo(HMEDIAINFO hMediaInfo);
 
 	struct API
@@ -102,8 +102,8 @@ namespace MediaInfo
 
 			return out;
 		}
-		bool extract(const std::wstring& path, IEnvelope* env) { return extract(path.c_str(), env); }
-		bool extract(LPCWSTR path, IEnvelope* env)
+		bool extract(const std::wstring& path, IContainer* env) { return extract(path.c_str(), env); }
+		bool extract(LPCWSTR path, IContainer* env)
 		{
 			if (!m_hApi)
 				return false;
@@ -112,7 +112,7 @@ namespace MediaInfo
 			if (!info)
 				return false;
 
-			bool out { ExtractEnvelopeDescription(info, env) };
+			bool out { ExtractContainerDescription(info, env) };
 			DestroyMediaInfo(info);
 
 			return out;

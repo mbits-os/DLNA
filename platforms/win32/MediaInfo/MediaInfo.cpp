@@ -95,7 +95,7 @@ namespace MediaInfo
 					);
 			}
 
-			bool extract(IEnvelope* env)
+			bool extract(IContainer* env)
 			{
 				if (!opened || !env)
 					return false;
@@ -126,12 +126,17 @@ namespace MediaInfo
 				{
 					auto attrs = readTrackType(track);
 					auto dst = env->create_track(attrs.first, attrs.second);
+					//if (attrs.first == TrackType::Unknown)
+					//{
+					//	auto type = get(track, "@type", std::string());
+					//	std::cout << "UNKNOWN TRACK: " << type << "\n";
+					//}
 					if (!dst)
 						continue;
 					if (!extract_track(dst, track))
 						return false;
 				}
-				std::cout << "\n";
+				//std::cout << "\n";
 
 				return true;
 			}
@@ -191,8 +196,8 @@ namespace MediaInfo
 
 	bool MediaInfoAPI::Session::extract_track(ITrack* dst, const dom::XmlNodePtr& src)
 	{
-		std::ostringstream msg;
-		msg << "    " << dst->get_type() << "[" << dst->get_id() << "] ";
+		//std::ostringstream msg;
+		//msg << "    " << dst->get_type() << "[" << dst->get_id() << "] ";
 		for (auto && field : src->childNodes())
 		{
 			std::string name = field->nodeName();
@@ -217,10 +222,10 @@ namespace MediaInfo
 			if (!show)
 				continue;
 
-			msg << " " << name << "=\"" << field->stringValue() << "\"";
+			//msg << " " << name << "=\"" << field->stringValue() << "\"";
 		}
-		msg << "\n";
-		std::cout << msg.str();
+		//msg << "\n";
+		//std::cout << msg.str();
 
 		return true;
 	}
@@ -241,7 +246,7 @@ namespace MediaInfo
 	{
 		return static_cast<MediaInfoAPI::Session*>(hMediaInfo)->text();
 	}
-	MEDIAINFO_API bool __stdcall ExtractEnvelopeDescription(HMEDIAINFO hMediaInfo, IEnvelope* env)
+	MEDIAINFO_API bool __stdcall ExtractContainerDescription(HMEDIAINFO hMediaInfo, IContainer* env)
 	{
 		return static_cast<MediaInfoAPI::Session*>(hMediaInfo)->extract(env);
 	}

@@ -37,7 +37,7 @@ namespace lan
 
 	struct MI
 	{
-		static bool extract(const fs::path& file, mi::IEnvelope* env)
+		static bool extract(const fs::path& file, mi::IContainer* env)
 		{
 			return get()->extract(fs::absolute(file).native(), env);
 		}
@@ -72,7 +72,7 @@ namespace lan
 			};
 			typedef std::shared_ptr<MediaTrack> track_ptr;
 
-			struct MediaEnvelope : mi::IEnvelope, mi::ITrack
+			struct MediaEnvelope : mi::IContainer, mi::ITrack
 			{
 				Class m_class;
 				std::vector<track_ptr> m_tracks;
