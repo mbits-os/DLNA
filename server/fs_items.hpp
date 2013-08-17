@@ -32,6 +32,9 @@
 #include <media_server.hpp>
 #include <boost/filesystem.hpp>
 #include <log.hpp>
+#include <mutex>
+#include <future>
+
 namespace fs = boost::filesystem;
 namespace av = net::ssdp::import::av;
 
@@ -65,7 +68,7 @@ namespace lan
 
 		struct common_file : path_item
 		{
-			std::vector<av::items::media_item_ptr> list(net::ulong start_from, net::ulong max_count, const av::items::search_criteria& sort) override { return std::vector<av::items::media_item_ptr>(); }
+			std::vector<av::items::media_item_ptr> list(net::ulong start_from, net::ulong max_count, const av::items::sort_criteria& sort) override { return std::vector<av::items::media_item_ptr>(); }
 			net::ulong predict_count(net::ulong served) const override { return served; }
 			net::ulong update_id() const override { return 0; }
 			av::items::media_item_ptr get_item(const std::string& id) override { return nullptr; }
@@ -87,16 +90,33 @@ namespace lan
 			const char* get_upnp_class() const override { return "object.item.audioItem.musicTrack"; }
 		};
 
-		struct container_file : path_item
+		struct container_file : path_item, std::enable_shared_from_this<container_file>
 		{
+			typedef std::promise<container_type> async_promise_type;
+			typedef std::future<container_type> future_type;
+
+			struct container_task
+			{
+				async_promise_type m_promise;
+				net::ulong m_start_from;
+				net::ulong m_max_count;
+				container_task(async_promise_type promise, net::ulong start_from, net::ulong max_count)
+					: m_promise(std::move(promise))
+					, m_start_from(start_from)
+					, m_max_count(max_count)
+				{
+				}
+			};
+
 			container_file(const fs::path& path)
 				: path_item(path)
 				, m_update_id(1)
 				, m_current_max(0)
+				, m_running(false)
 			{
 			}
 
-			std::vector<av::items::media_item_ptr> list(net::ulong start_from, net::ulong max_count, const av::items::search_criteria& sort) override;
+			container_type list(net::ulong start_from, net::ulong max_count, const av::items::sort_criteria& sort) override;
 			net::ulong predict_count(net::ulong served) const override { return m_children.size(); }
 			net::ulong update_id() const override { return m_update_id; }
 			av::items::media_item_ptr get_item(const std::string& id) override;
@@ -104,7 +124,9 @@ namespace lan
 			void output(std::ostream& o, const std::vector<std::string>& filter) const override;
 			const char* get_upnp_class() const override { return "object.container.storageFolder"; }
 
-			virtual void rescan_if_needed() {}
+			void rescan_if_needed();
+			virtual bool rescan_is_needed() { return false; }
+			virtual void rescan() {}
 			virtual void folder_changed() { m_update_id++; /*notify?*/ }
 			virtual void add_child(av::items::media_item_ptr);
 			virtual void remove_child(av::items::media_item_ptr);
@@ -115,6 +137,29 @@ namespace lan
 		protected:
 			std::vector<av::items::media_item_ptr> m_children;
 			net::ulong m_update_id;
+			std::list<container_task> m_tasks;
+			bool m_running;
+			mutable std::mutex m_guard;
+
+			bool mark_start()
+			{
+				std::lock_guard<std::mutex> lock(m_guard);
+				if (m_running)
+					return false;
+				m_running = true;
+				return true;
+			}
+			void mark_stop()
+			{
+				std::lock_guard<std::mutex> lock(m_guard);
+				m_running = false;
+				fulfill_promises(true);
+			}
+			bool is_running() const { return m_running; }
+
+			future_type async_list(net::ulong start_from, net::ulong max_count, const av::items::sort_criteria& sort);
+			void fill_request(async_promise_type promise, net::ulong start_from, net::ulong max_count);
+			void fulfill_promises(bool forced);
 		};
 
 		struct directory_item : container_file
@@ -131,7 +176,8 @@ namespace lan
 				//	folder_changed();
 			}
 
-			void rescan_if_needed() override;
+			bool rescan_is_needed() override;
+			void rescan() override;
 
 			struct contents
 			{

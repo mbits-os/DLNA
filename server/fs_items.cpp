@@ -24,6 +24,8 @@
 #include "fs_items.hpp"
 #include <MediaInfo.h>
 #include <regex>
+#include <future>
+#include <threads.hpp>
 
 #pragma comment(lib, "mi.lib")
 
@@ -145,28 +147,101 @@ namespace lan
 
 #pragma region container_file
 
-		std::vector<av::items::media_item_ptr> container_file::list(net::ulong start_from, net::ulong max_count, const av::items::search_criteria& sort)
+		container_file::container_type container_file::list(net::ulong start_from, net::ulong max_count, const av::items::sort_criteria& sort)
 		{
 			rescan_if_needed();
+			return async_list(start_from, max_count, sort).get();
+		}
 
-			std::vector<av::items::media_item_ptr> out;
-			if (start_from > m_children.size())
-				start_from = m_children.size();
-
-			auto end_at = m_children.size() - start_from;
-			if (end_at > max_count)
-				end_at = max_count;
-			end_at += start_from;
-
-			for (auto i = start_from; i < end_at; ++i)
-				out.push_back(m_children.at(i));
-
-			if (!sort.empty())
+		void container_file::rescan_if_needed()
+		{
 			{
-				// TODO: sort the result
+				std::lock_guard<std::mutex> lock(m_guard);
+				if (is_running())
+					return;
+			}
+			if (!mark_start())
+				return; // someone was quicker...
+
+			auto shared = shared_from_this();
+			auto thread = std::thread([shared, this]{
+				static std::atomic<int> count;
+				threads::set_name("I/O Thread #" + std::to_string(count++));
+
+				rescan();
+				fulfill_promises(true); // release all remaining futures
+
+				mark_stop();
+			});
+
+			thread.detach();
+		}
+
+		container_file::future_type container_file::async_list(net::ulong start_from, net::ulong max_count, const av::items::sort_criteria& sort)
+		{
+			async_promise_type promise;
+			auto ret = promise.get_future();
+
+			{
+				std::lock_guard<std::mutex> lock(m_guard);
+
+				if (is_running())
+				{
+					m_tasks.emplace_back(std::move(promise), start_from, max_count);
+				}
+				else
+				{
+					fill_request(std::move(promise), start_from, max_count);
+
+					if (!sort.empty())
+					{
+						// TODO: sort the result
+					}
+				}
 			}
 
-			return out;
+			return ret;
+		}
+
+		void container_file::fill_request(async_promise_type promise, net::ulong start_from, net::ulong max_count)
+		{
+			try
+			{
+				log::info() << "Fulfilling " << get_path() << " (" << start_from << ", " << max_count << ")";
+				container_type out;
+				if (start_from > m_children.size())
+					start_from = m_children.size();
+
+				auto end_at = m_children.size() - start_from;
+				if (end_at > max_count)
+					end_at = max_count;
+				end_at += start_from;
+
+				for (auto i = start_from; i < end_at; ++i)
+					out.push_back(m_children.at(i));
+
+				promise.set_value(out);
+			}
+			catch (...)
+			{
+				promise.set_exception(std::current_exception());
+			}
+		}
+
+		void container_file::fulfill_promises(bool forced)
+		{
+			auto cur = m_tasks.begin();
+			while (cur != m_tasks.end())
+			{
+				auto rest = m_children.size() - cur->m_start_from;
+				if (forced || rest >= cur->m_max_count)
+				{
+					fill_request(std::move(cur->m_promise), cur->m_start_from, cur->m_max_count);
+					cur = m_tasks.erase(cur);
+					continue;
+				}
+				++cur;
+			}
 		}
 
 		av::items::media_item_ptr container_file::get_item(const std::string& id)
@@ -194,14 +269,21 @@ namespace lan
 		void container_file::add_child(av::items::media_item_ptr child)
 		{
 			remove_child(child);
+
+			std::lock_guard<std::mutex> lock(m_guard);
+
 			m_children.push_back(child);
 			auto id = ++m_current_max;
 			child->set_id(id);
 			child->set_objectId_attr(get_objectId_attr() + av::items::SEP + std::to_string(id));
+
+			if (is_running())
+				fulfill_promises(false);
 		}
 
 		void container_file::remove_child(av::items::media_item_ptr child)
 		{
+			std::lock_guard<std::mutex> lock(m_guard);
 			folder_changed();
 
 			auto pos = std::find(m_children.begin(), m_children.end(), child);
@@ -210,15 +292,18 @@ namespace lan
 		}
 #pragma endregion
 
-		void directory_item::rescan_if_needed()
+		bool directory_item::rescan_is_needed()
 		{
-			auto curr_t = fs::last_write_time(m_path);
-			if (m_last_scan == curr_t)
-				return;
+			bool ret = m_last_scan != fs::last_write_time(m_path);
+			if (ret)
+				log::info() << "Rescan needed in " << m_path;
+			return ret;
+		}
+		void directory_item::rescan()
+		{
+			log::info() << "Rescanning " << m_path;
 
-			log::debug() << "Rescanning " << m_path;
-
-			m_last_scan = curr_t;
+			m_last_scan = fs::last_write_time(m_path);
 
 			std::vector<std::pair<fs::path, int>> entries;
 			for (auto && file : contents(m_path))
@@ -265,7 +350,6 @@ namespace lan
 					if (item)
 						add_child(item);
 				}
-
 		}
 	}
 }
