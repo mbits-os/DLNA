@@ -54,9 +54,9 @@ namespace net { namespace ssdp { namespace import { namespace av {
 		return val;
 	}
 
-	static items::search_criteria parse_sort(const std::string& sort)
+	static items::sort_criteria parse_sort(const std::string& sort)
 	{
-		return items::search_criteria();
+		return items::sort_criteria();
 	}
 
 	static std::vector<std::string> parse_filter(const std::string& sort)
@@ -325,7 +325,7 @@ namespace net { namespace ssdp { namespace import { namespace av {
 
 #pragma region container_item
 
-		std::vector<media_item_ptr> container_item::list(ulong start_from, ulong max_count, const search_criteria& sort)
+		std::vector<media_item_ptr> container_item::list(ulong start_from, ulong max_count, const sort_criteria& sort)
 		{
 			log::debug() << "[" << get_objectId_attr() << "]->list(" << start_from << ", " << max_count << ")";
 			rescan_if_needed();

@@ -37,16 +37,19 @@ namespace net { namespace ssdp { namespace import { namespace av {
 			bool m_ascending;
 			std::string m_term;
 		};
-		typedef std::vector<sort_criterion> search_criteria;
+		typedef std::vector<sort_criterion> sort_criteria;
 
 		struct media_item;
 		typedef std::shared_ptr<media_item> media_item_ptr;
 
 		struct media_item
 		{
+			typedef av::items::media_item_ptr item_ptr;
+			typedef std::vector<item_ptr> container_type;
+
 			media_item() : m_id(0) {}
 			virtual ~media_item() {}
-			virtual std::vector<media_item_ptr> list(ulong start_from, ulong max_count, const search_criteria& sort) = 0;
+			virtual container_type list(ulong start_from, ulong max_count, const sort_criteria& sort) = 0;
 			virtual ulong predict_count(ulong served) const = 0;
 			virtual void check_updates() {}
 			virtual ulong update_id() const = 0;
@@ -88,7 +91,7 @@ namespace net { namespace ssdp { namespace import { namespace av {
 
 		struct common_item : common_props_item
 		{
-			std::vector<media_item_ptr> list(ulong start_from, ulong max_count, const search_criteria& sort) override { return std::vector<media_item_ptr>(); }
+			std::vector<media_item_ptr> list(ulong start_from, ulong max_count, const sort_criteria& sort) override { return std::vector<media_item_ptr>(); }
 			ulong predict_count(ulong served) const override { return served; }
 			ulong update_id() const override { return 0; }
 			media_item_ptr get_item(const std::string& id) override { return nullptr; }
@@ -118,7 +121,7 @@ namespace net { namespace ssdp { namespace import { namespace av {
 			{
 			}
 
-			std::vector<media_item_ptr> list(ulong start_from, ulong max_count, const search_criteria& sort) override;
+			std::vector<media_item_ptr> list(ulong start_from, ulong max_count, const sort_criteria& sort) override;
 			ulong predict_count(ulong served) const override { return m_children.size(); }
 			ulong update_id() const override { return m_update_id; }
 			media_item_ptr get_item(const std::string& id) override;
