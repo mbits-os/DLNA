@@ -319,6 +319,11 @@ namespace net
 							if (service->answer(soap_method, req, doc, resp))
 								return;
 						}
+						catch (std::exception& e)
+						{
+							log::error() << "Exception: " << e.what();
+							return make_500(resp);
+						}
 						catch (...) { return make_500(resp); }
 					}
 				}
