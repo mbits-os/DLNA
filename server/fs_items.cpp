@@ -135,13 +135,19 @@ namespace lan
 				log::error() << "Could not extract metadata from " << path;
 			}
 
-			/*switch (env.fileClass())
+			switch (env.fileClass())
 			{
-			case Media::Class::Video: log::info() << "Would create video file from " << path; return nullptr;
-			case Media::Class::Audio: log::info() << "Would create audio file from " << path; return nullptr;
-			case Media::Class::Image: log::info() << "Would create image file from " << path; return nullptr;
-			}*/
+			case Media::Class::Video: return std::make_shared<video_file>(path);
+			case Media::Class::Audio: return std::make_shared<audio_file>(path);
+			case Media::Class::Image: return std::make_shared<photo_file>(path);
+			}
 			return nullptr;
+		}
+
+		void common_file::output(std::ostream& o, const std::vector<std::string>& filter) const
+		{
+			output_open(o, filter, 0);
+			output_close(o, filter);
 		}
 
 #pragma region container_file
@@ -151,7 +157,7 @@ namespace lan
 			rescan_if_needed();
 			auto future = async_list(start_from, max_count, sort);
 			auto data = std::move(future.get());
-			log::info() << "Got slice " << get_path() << " (" << start_from << ", " << max_count << ")";
+			log::info() << "Got slice " << get_path().filename() << " (" << start_from << ", " << max_count << ")";
 			return data;
 		}
 
@@ -215,7 +221,7 @@ namespace lan
 		{
 			try
 			{
-				log::info() << "Returning slice " << get_path() << " (" << start_from << ", " << max_count << ")";
+				log::info() << "Returning slice " << get_path().filename() << " (" << start_from << ", " << max_count << ")";
 				container_type out;
 				if (start_from > m_children.size())
 					start_from = m_children.size();
@@ -300,6 +306,11 @@ namespace lan
 		}
 #pragma endregion
 
+		void directory_item::check_updates()
+		{
+			if (rescan_is_needed())
+				folder_changed();
+		}
 		bool directory_item::rescan_is_needed()
 		{
 			bool ret = m_last_scan != fs::last_write_time(m_path);

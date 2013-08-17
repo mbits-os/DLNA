@@ -68,25 +68,42 @@ namespace lan
 
 		struct common_file : path_item
 		{
+			common_file(const fs::path& path)
+				: path_item(path)
+			{
+			}
 			std::vector<av::items::media_item_ptr> list(net::ulong start_from, net::ulong max_count, const av::items::sort_criteria& sort) override { return std::vector<av::items::media_item_ptr>(); }
 			net::ulong predict_count(net::ulong served) const override { return served; }
 			net::ulong update_id() const override { return 0; }
 			av::items::media_item_ptr get_item(const std::string& id) override { return nullptr; }
 			bool is_folder() const override { return false; }
+			void output(std::ostream& o, const std::vector<std::string>& filter) const override;
 		};
 
 		struct photo_file : common_file
 		{
+			photo_file(const fs::path& path)
+				: common_file(path)
+			{
+			}
 			const char* get_upnp_class() const override { return "object.item.imageItem.photo"; }
 		};
 
 		struct video_file : common_file
 		{
+			video_file(const fs::path& path)
+				: common_file(path)
+			{
+			}
 			const char* get_upnp_class() const override { return "object.item.videoItem"; }
 		};
 
 		struct audio_file : common_file
 		{
+			audio_file(const fs::path& path)
+				: common_file(path)
+			{
+			}
 			const char* get_upnp_class() const override { return "object.item.audioItem.musicTrack"; }
 		};
 
@@ -170,12 +187,7 @@ namespace lan
 			{
 			}
 
-			void check_updates() override
-			{
-				//if (m_last_scan != fs::last_write_time(m_path))
-				//	folder_changed();
-			}
-
+			void check_updates() override;
 			bool rescan_is_needed() override;
 			void rescan() override;
 
