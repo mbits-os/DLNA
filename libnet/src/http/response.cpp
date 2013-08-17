@@ -33,7 +33,7 @@ namespace net
 
 		response_buffer::response_buffer(response& data)
 			: m_data(data)
-			, m_chunked(!data.content()->size_known())
+			, m_chunked(!(data.content() ? data.content()->size_known() : true))
 			, m_status(header)
 		{
 		}
@@ -47,7 +47,7 @@ namespace net
 				auto str = o.str();
 				out_buffer.assign(str.begin(), str.end());
 				m_status = chunks;
-				return true;
+				return m_data.content() != nullptr;
 			}
 
 			if (m_status == chunks)
