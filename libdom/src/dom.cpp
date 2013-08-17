@@ -607,7 +607,6 @@ namespace dom
 		dom::XmlNodeListPtr subs = node->childNodes();
 
 		NODE_TYPE type = node->nodeType();
-		for (size_t i = 0; i < depth; ++i) out << "    ";
 
 		if (type == TEXT_NODE)
 		{
@@ -622,6 +621,8 @@ namespace dom
 			}
 			if (val.length() > 80)
 				val = val.substr(0, 77) + "[...]";
+
+			for (size_t i = 0; i < depth; ++i) out << "    ";
 			out << "# " << val;
 		}
 		else if (type == ELEMENT_NODE)
@@ -640,6 +641,7 @@ namespace dom
 				}
 			}
 
+			for (size_t i = 0; i < depth; ++i) out << "    ";
 			if (subs && subs->length() == 1)
 			{
 				dom::XmlNodePtr sub = subs->item(0);
@@ -675,6 +677,11 @@ namespace dom
 					return;
 			}
 			out << "<" + qName(node) + sattrs + ">";
+		}
+		else if (type == DOCUMENT_NODE)
+		{
+			for (size_t i = 0; i < depth; ++i) out << "    ";
+			out << "#document";
 		}
 		out << "\n";
 
