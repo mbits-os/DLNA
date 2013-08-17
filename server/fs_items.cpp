@@ -67,6 +67,7 @@ namespace lan
 				s_inited = true;
 				s_mi->Option(L"Complete", L"1");
 				s_mi->Option(L"Language", L"raw");
+				s_mi->Option(L"Output", L"XML");
 			}
 			return s_mi;
 		}
