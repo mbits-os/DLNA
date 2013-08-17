@@ -117,7 +117,7 @@ namespace lan
 			}
 
 			container_type list(net::ulong start_from, net::ulong max_count, const av::items::sort_criteria& sort) override;
-			net::ulong predict_count(net::ulong served) const override { return m_children.size(); }
+			net::ulong predict_count(net::ulong served) const override;
 			net::ulong update_id() const override { return m_update_id; }
 			av::items::media_item_ptr get_item(const std::string& id) override;
 			bool is_folder() const override { return true; }

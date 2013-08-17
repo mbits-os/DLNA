@@ -56,6 +56,7 @@ namespace MediaInfo
 		case TrackType::Chapters: return o << "chapters";
 		case TrackType::Image:    return o << "image";
 		case TrackType::Menu:     return o << "menu";
+		case TrackType::Unknown:  return o << "unknown";
 		};
 		return o << "UNKNOWN(" << (int) type << ")";
 	}

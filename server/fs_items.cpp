@@ -130,18 +130,17 @@ namespace lan
 			}
 
 			Media::MediaEnvelope env;
-			std::cout << path << "\n";
 			if (!MI::extract(path, &env))
 			{
 				log::error() << "Could not extract metadata from " << path;
 			}
 
-			switch (env.fileClass())
+			/*switch (env.fileClass())
 			{
 			case Media::Class::Video: log::info() << "Would create video file from " << path; return nullptr;
 			case Media::Class::Audio: log::info() << "Would create audio file from " << path; return nullptr;
 			case Media::Class::Image: log::info() << "Would create image file from " << path; return nullptr;
-			}
+			}*/
 			return nullptr;
 		}
 
@@ -150,16 +149,25 @@ namespace lan
 		container_file::container_type container_file::list(net::ulong start_from, net::ulong max_count, const av::items::sort_criteria& sort)
 		{
 			rescan_if_needed();
-			return async_list(start_from, max_count, sort).get();
+			auto future = async_list(start_from, max_count, sort);
+			auto data = std::move(future.get());
+			log::info() << "Got slice " << get_path() << " (" << start_from << ", " << max_count << ")";
+			return data;
+		}
+
+		net::ulong container_file::predict_count(net::ulong served) const
+		{
+			std::lock_guard<std::mutex> lock(m_guard);
+			if (is_running())
+				return served + 1;
+			return m_children.size();
 		}
 
 		void container_file::rescan_if_needed()
 		{
-			{
-				std::lock_guard<std::mutex> lock(m_guard);
-				if (is_running())
-					return;
-			}
+			if (!rescan_is_needed())
+				return;
+
 			if (!mark_start())
 				return; // someone was quicker...
 
@@ -207,7 +215,7 @@ namespace lan
 		{
 			try
 			{
-				log::info() << "Fulfilling " << get_path() << " (" << start_from << ", " << max_count << ")";
+				log::info() << "Returning slice " << get_path() << " (" << start_from << ", " << max_count << ")";
 				container_type out;
 				if (start_from > m_children.size())
 					start_from = m_children.size();
@@ -296,12 +304,12 @@ namespace lan
 		{
 			bool ret = m_last_scan != fs::last_write_time(m_path);
 			if (ret)
-				log::info() << "Rescan needed in " << m_path;
+				log::info() << "Scan needed in " << m_path;
 			return ret;
 		}
 		void directory_item::rescan()
 		{
-			log::info() << "Rescanning " << m_path;
+			log::info() << "Scanning " << m_path;
 
 			m_last_scan = fs::last_write_time(m_path);
 
@@ -350,6 +358,8 @@ namespace lan
 					if (item)
 						add_child(item);
 				}
+
+			log::info() << "Finished scanning " << m_path;
 		}
 	}
 }
