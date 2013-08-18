@@ -106,9 +106,9 @@ namespace net
 		void multicast_socket::send(const std::string& msg)
 		{
 			auto packet = make_packet(this, msg);
-			m_socket.async_send_to(boost::asio::buffer(packet->m_msg), m_remote, [this, packet](const boost::system::error_code& ec, std::size_t received)
-			{
-			});
+			m_socket.async_send_to(boost::asio::buffer(packet->m_msg), m_remote, [packet](const boost::system::error_code& ec, std::size_t received) {});
+			m_socket.async_send_to(boost::asio::buffer(packet->m_msg), m_remote, [packet](const boost::system::error_code& ec, std::size_t received) {});
+			m_socket.async_send_to(boost::asio::buffer(packet->m_msg), m_remote, [packet](const boost::system::error_code& ec, std::size_t received) {});
 		}
 
 		unicast_socket::unicast_socket(boost::asio::io_service& io_service, const boost::asio::ip::udp::endpoint& endpoint)
@@ -125,9 +125,9 @@ namespace net
 		void unicast_socket::send(const std::string& msg)
 		{
 			auto packet = make_packet(this, msg);
-			m_socket.async_send_to(boost::asio::buffer(packet->m_msg), m_remote, [packet](const boost::system::error_code& ec, std::size_t received)
-			{
-			});
+			m_socket.async_send_to(boost::asio::buffer(packet->m_msg), m_remote, [packet](const boost::system::error_code& ec, std::size_t received) {});
+			m_socket.async_send_to(boost::asio::buffer(packet->m_msg), m_remote, [packet](const boost::system::error_code& ec, std::size_t received) {});
+			m_socket.async_send_to(boost::asio::buffer(packet->m_msg), m_remote, [packet](const boost::system::error_code& ec, std::size_t received) {});
 		}
 	}
 }
