@@ -174,14 +174,14 @@ namespace net
 						request.request_data(make_request_data(m_socket, content_length, data, end - data));
 
 						m_handler.handle(request, m_response);
-						send_reply();
+						send_reply(request.method() != http_method::head);
 					}
 					else if (ret == parser::error)
 					{
 						log::error()
 							<< "[CONNECTION] Parse error: " << buffer(m_buffer.data(), std::min(bytes_transferred, (size_t)100)) << " (starting at " << (m_pos - bytes_transferred) << " bytes)";
 						m_handler.make_404(m_response);
-						send_reply();
+						send_reply(true);
 					}
 					else
 						read_some_more();
@@ -222,8 +222,14 @@ namespace net
 			}
 		}
 
-		void connection::send_reply()
+		void connection::send_reply(bool send_body)
 		{
+			if (!send_body)
+			{
+				m_response.complete_header();
+				m_response.content(nullptr);
+			}
+
 			auto self(shared_from_this());
 			continue_sending(self, m_response.get_data(), boost::system::error_code(), 0);
 		}

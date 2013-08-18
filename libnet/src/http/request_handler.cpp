@@ -290,13 +290,13 @@ namespace net
 			if (method == http_method::post && !SOAPAction.empty())
 				doc = create_from_socket(req.request_data());
 
-			log_request __{ resp, req, SOAPAction, doc };
+			//log_request __{ resp, req, SOAPAction, doc };
 
 			fs::path root, rest;
 			std::tie(root, rest) = pop(res); // pop leading slash
 			std::tie(root, rest) = pop(rest);
 
-			if (method == http_method::get)
+			if (method == http_method::get || method == http_method::head)
 			{
 				if (root == "config")
 				{

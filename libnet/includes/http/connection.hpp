@@ -65,7 +65,7 @@ namespace net
 			void stop() { m_socket.close(); }
 		private:
 			void read_some_more();
-			void send_reply();
+			void send_reply(bool send_body);
 			static void continue_sending(connection_ptr self, response_buffer buffer, boost::system::error_code ec, std::size_t);
 
 			std::array<char, 8192> m_buffer;
