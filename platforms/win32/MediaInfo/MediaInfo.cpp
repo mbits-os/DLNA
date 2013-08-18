@@ -53,24 +53,6 @@ namespace MediaInfo
 		return defaultValue;
 	}
 
-	namespace {
-		struct Setter
-		{
-			typedef bool setter_type(ITrack* dst, const dom::XmlNodePtr& src);
-			const char* m_name;
-			bool (*m_setter)(ITrack* dst, const dom::XmlNodePtr& src);
-			static bool dummy(ITrack* dst, const dom::XmlNodePtr& src) { return true; }
-
-			Setter(const char* name, bool (*setter)(ITrack*, const dom::XmlNodePtr&) = dummy)
-				: m_name(name)
-				, m_setter(setter)
-			{
-			}
-
-			bool operator() (ITrack* dst, const dom::XmlNodePtr& src) const { return m_setter(dst, src); }
-		};
-	}
-
 	struct MediaInfoAPI : APIHandle
 	{
 		MediaInfoLib::MediaInfo m_info;
@@ -180,6 +162,22 @@ namespace MediaInfo
 	};
 
 	namespace {
+		struct Setter
+		{
+			typedef bool setter_type(ITrack* dst, const dom::XmlNodePtr& src);
+			const char* m_name;
+			bool (*m_setter)(ITrack* dst, const dom::XmlNodePtr& src);
+			static bool dummy(ITrack* dst, const dom::XmlNodePtr& src) { return true; }
+
+			Setter(const char* name, bool (*setter)(ITrack*, const dom::XmlNodePtr&) = dummy)
+				: m_name(name)
+				, m_setter(setter)
+			{
+			}
+
+			bool operator() (ITrack* dst, const dom::XmlNodePtr& src) const { return m_setter(dst, src); }
+		};
+
 		const Setter names [] =
 		{
 			Setter("Format"),
