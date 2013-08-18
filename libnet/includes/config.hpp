@@ -84,6 +84,7 @@ namespace net
 		template <typename Value>
 		struct setting: public boost::noncopyable
 		{
+			typedef setting<Value> my_type;
 			config& m_parent;
 			mutable section_ptr m_sec;
 			std::string m_section;
@@ -103,16 +104,17 @@ namespace net
 				return m_sec->has_value(m_name);
 			}
 
-			Value val() const
+			operator Value() const
 			{
 				ensure_section();
 				return get_value<Value>::helper(m_sec, m_name, m_def_val);
 			}
 
-			void val(const Value& v)
+			my_type& operator = (const Value& v)
 			{
 				ensure_section();
 				m_sec->set_value(m_name, v);
+				return *this;
 			}
 
 		private:
@@ -122,10 +124,17 @@ namespace net
 			}
 		};
 
+		template <typename Value>
+		std::ostream& operator << (std::ostream& o, const setting<Value>& rhs)
+		{
+			return o << static_cast<Value>(rhs);
+		}
+
 		template <>
 		struct setting<boost::asio::ip::address_v4> : public boost::noncopyable
 		{
 			typedef boost::asio::ip::address_v4 Value;
+			typedef setting<Value> my_type;
 			config& m_parent;
 			mutable section_ptr m_sec;
 			std::string m_section;
@@ -146,7 +155,7 @@ namespace net
 				return m_sec->has_value(m_name);
 			}
 
-			Value val() const
+			operator Value() const
 			{
 				ensure_section();
 				if (!m_set)
@@ -160,10 +169,11 @@ namespace net
 				return m_cached;
 			}
 
-			void val(const Value& v)
+			my_type& operator = (const Value& v)
 			{
 				ensure_section();
 				m_sec->set_value(m_name, v.to_string());
+				return *this;
 			}
 
 		private:

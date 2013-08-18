@@ -110,12 +110,12 @@ namespace net
 				if (config)
 				{
 					bool was_set = config->uuid.is_set();
-					auto uuid = was_set ? config->uuid.val() : net::create_uuid();
+					auto uuid = was_set ? config->uuid : net::create_uuid();
 					if (!was_set)
 					{
 						Log::line_stream(Log::Severity::Info, Log::Module::SSDP)
 							<< "Creating new device identifier: " << uuid;
-						config->uuid.val(uuid);
+						config->uuid = uuid;
 					}
 
 					return "uuid:" + uuid;

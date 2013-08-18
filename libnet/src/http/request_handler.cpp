@@ -170,8 +170,8 @@ namespace net
 			: m_device(device)
 			, m_config(config)
 		{
-			m_vars.emplace_back("host", to_string(config->iface.val()));
-			m_vars.emplace_back("port", std::to_string(config->port.val()));
+			m_vars.emplace_back("host", to_string(config->iface));
+			m_vars.emplace_back("port", std::to_string(config->port));
 			m_vars.emplace_back("uuid", m_device->usn());
 		}
 
@@ -345,7 +345,7 @@ namespace net
 			auto & header = resp.header();
 			header.clear(m_device->server());
 			header.append("content-type", "text/xml; charset=\"utf-8\"");
-			resp.content(content::from_string(m_device->get_configuration(to_string(m_config->iface.val()) + ":" + std::to_string(m_config->port.val()))));
+			resp.content(content::from_string(m_device->get_configuration(to_string(m_config->iface) + ":" + std::to_string(m_config->port))));
 		}
 
 		void request_handler::make_service_xml(response& resp, const ssdp::service_ptr& service)

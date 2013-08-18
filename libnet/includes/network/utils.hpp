@@ -35,6 +35,16 @@ namespace net
 	typedef unsigned int uint;
 	typedef unsigned long ulong;
 
+	inline std::string to_string(const boost::asio::ip::address_v4& addr)
+	{
+		return addr.to_string();
+	}
+
+	inline std::string to_string(const boost::asio::ip::address_v6& addr)
+	{
+		return "[" + addr.to_string() + "]";
+	}
+
 	inline std::string to_string(const boost::asio::ip::address& addr)
 	{
 		auto tmp = addr.to_string();

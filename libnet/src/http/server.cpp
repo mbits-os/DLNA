@@ -39,7 +39,7 @@ namespace net
 		{
 			boost::asio::ip::tcp::resolver resolver(m_io_service);
 			boost::asio::ip::tcp::endpoint endpoint = *resolver.resolve(
-				boost::asio::ip::tcp::resolver::query{ to_string(config->iface.val()), std::to_string(config->port.val()) }
+				boost::asio::ip::tcp::resolver::query{ to_string(config->iface), std::to_string(config->port) }
 			);
 			m_acceptor.open(endpoint.protocol());
 			m_acceptor.set_option(boost::asio::ip::tcp::acceptor::reuse_address(true));

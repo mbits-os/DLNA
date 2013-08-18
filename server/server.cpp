@@ -91,7 +91,7 @@ void set_terminal_title(const net::config::config_ptr& config)
 {
 #ifdef HAS_TERMINAL_API
 	std::ostringstream title;
-	title << "LAN Radio [" << boost::asio::ip::host_name() << ", " << config->iface.val() << ":" << config->port.val() << "]";
+	title << "LAN Radio [" << boost::asio::ip::host_name() << ", " << config->iface << ":" << config->port << "]";
 	set_terminal_title(title.str());
 #endif
 }

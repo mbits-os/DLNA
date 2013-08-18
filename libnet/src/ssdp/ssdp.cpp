@@ -108,7 +108,7 @@ namespace net
 			, m_device(device)
 			, m_timer(io_service, boost::posix_time::seconds(seconds / 3))
 			, m_interval(seconds)
-			, m_local(config->iface.val())
+			, m_local(config->iface)
 			, m_config(config)
 		{
 		}
@@ -145,7 +145,7 @@ namespace net
 
 			if (nts == ALIVE)
 			{
-				req.append("location")->out() << "http://" << net::to_string(m_local) << ":" << m_config->port.val() << "/config/device.xml";
+				req.append("location")->out() << "http://" << net::to_string(m_local) << ":" << (int)m_config->port << "/config/device.xml";
 				req.append("cache-control")->out() << "max-age=" << m_interval;
 				req.append("server")->out() << http::get_ssdp_server_version(m_device->server());
 			}
@@ -157,7 +157,7 @@ namespace net
 
 		void ticker::notify(notification_type nts) const
 		{
-			auto socket = std::make_shared<udp::multicast_socket>(m_service, ipv4_multicast_endpoint(), m_config->iface.val());
+			auto socket = std::make_shared<udp::multicast_socket>(m_service, ipv4_multicast_endpoint(), m_config->iface);
 
 			printf("Sending %s...\n", nts == ALIVE ? "ALIVE" : "BYEBYE"); fflush(stdout);
 			log::info() << "Sending " << (nts == ALIVE ? "ALIVE" : "BYEBYE") << "...";
@@ -181,10 +181,10 @@ namespace net
 		}
 
 		receiver::receiver(boost::asio::io_service& io_service, const device_ptr& device, const config::config_ptr& config)
-			: m_impl(io_service, boost::asio::ip::udp::endpoint(ipv4_multicast(), PORT), config->iface.val())
+			: m_impl(io_service, boost::asio::ip::udp::endpoint(ipv4_multicast(), PORT), config->iface)
 			, m_device(device)
 			, m_service(io_service)
-			, m_local(config->iface.val())
+			, m_local(config->iface)
 			, m_config(config)
 		{
 		}
@@ -260,7 +260,7 @@ namespace net
 		{
 			http::http_response resp {};
 			resp.append("date")->out() << net::to_string(net::time::now());
-			resp.append("location")->out() << "http://" << net::to_string(m_local) << ":" << m_config->port.val() << "/config/device.xml";
+			resp.append("location")->out() << "http://" << net::to_string(m_local) << ":" << (int)m_config->port << "/config/device.xml";
 			resp.append("cache-control")->out() << "max-age=1800";
 			resp.append("server")->out() << http::get_ssdp_server_version(m_device->server());
 			resp.append("st", st);
