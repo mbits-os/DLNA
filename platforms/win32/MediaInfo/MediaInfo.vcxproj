@@ -45,14 +45,14 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
-    <OutDir>$(SolutionDir)..\..</OutDir>
+    <OutDir>$(SolutionDir)..\..\bin\$(PlatformName)\MediaInfo\</OutDir>
     <IntDir>$(SolutionDir)..\..\int\$(PlatformName)\$(Configuration)\$(TargetName)$(TargetExt)\</IntDir>
     <TargetName>mi_d</TargetName>
     <LibraryPath>$(SolutionDir)..\..\bin\$(PlatformName)\$(Configuration)\;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
-    <OutDir>$(SolutionDir)..\..</OutDir>
+    <OutDir>$(SolutionDir)..\..\bin\$(PlatformName)\MediaInfo\</OutDir>
     <IntDir>$(SolutionDir)..\..\int\$(PlatformName)\$(Configuration)\$(TargetName)$(TargetExt)\</IntDir>
     <TargetName>mi</TargetName>
     <LibraryPath>$(SolutionDir)..\..\bin\$(PlatformName)\$(Configuration)\;$(LibraryPath)</LibraryPath>

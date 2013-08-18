@@ -7,9 +7,10 @@
   </ImportGroup>
   <PropertyGroup>
     <_PropertySheetDisplayName>Radio Server App</_PropertySheetDisplayName>
-    <LibraryPath>$(SolutionDir)..\..;$(LibraryPath)</LibraryPath>
+    <LibraryPath>$(SolutionDir)..\..\bin\$(PlatformName)\MediaInfo;$(LibraryPath)</LibraryPath>
     <IncludePath>$(SolutionDir)MediaInfo;$(IncludePath)</IncludePath>
     <ExecutablePath>$(SolutionDir)..\..;$(ExecutablePath)</ExecutablePath>
+    <TargetName>radio</TargetName>
   </PropertyGroup>
   <PropertyGroup Label="UserMacros" />
   <ItemDefinitionGroup>
@@ -22,9 +23,9 @@
       <ProgramDatabaseFile>$(TargetDir)$(TargetName).pdb</ProgramDatabaseFile>
     </Link>
     <CustomBuildStep>
-      <Command>copy $(SolutionDir)..\..\mi.dll $(SolutionDir)..\..\bin\$(PlatformName)\$(Configuration)\</Command>
+      <Command>copy $(SolutionDir)..\..\bin\$(PlatformName)\MediaInfo\mi.dll $(SolutionDir)..\..\bin\$(PlatformName)\$(Configuration)\</Command>
       <Outputs>$(SolutionDir)..\..\bin\$(PlatformName)\$(Configuration)\mi.dll</Outputs>
-      <Inputs>$(SolutionDir)..\..\mi.dll</Inputs>
+      <Inputs>$(SolutionDir)..\..\bin\$(PlatformName)\MediaInfo\mi.dll</Inputs>
     </CustomBuildStep>
   </ItemDefinitionGroup>
   <ItemGroup />
