@@ -96,15 +96,25 @@ namespace Log
 		std::lock_guard<std::mutex> lock(sink_mtx);
 
 		std::ofstream out("libnet.log", std::ios::app | std::ios::out);
+
 		const char* c = msg.c_str();
 		const char* e = c + msg.length();
+
+		bool line_start = true;
 		while (true)
 		{
 			auto save = c;
-			while (c != e && *c != '\n') ++c;
-			out << pre;
+			while (c != e && *c != '\n' && *c != '\r') ++c;
+
+			if (line_start)
+				out << pre;
+
 			out.write(save, c - save);
-			out << "\n";
+
+			line_start = c == e || *c == '\n';
+			if (line_start)
+				out << "\n";
+
 			if (c == e) break;
 			++c;
 		}
