@@ -62,6 +62,7 @@
     <ClCompile Include="..\..\libnet\src\network\interface_win32.cpp" />
     <ClCompile Include="..\..\libnet\src\network\net_win32.cpp" />
     <ClCompile Include="..\..\libnet\src\network\udp.cpp" />
+    <ClCompile Include="..\..\libnet\src\network\utils.cpp" />
     <ClCompile Include="..\..\libnet\src\ssdp\device.cpp" />
     <ClCompile Include="..\..\libnet\src\ssdp\ssdp.cpp" />
     <ClCompile Include="..\..\libnet\src\threads.cpp" />

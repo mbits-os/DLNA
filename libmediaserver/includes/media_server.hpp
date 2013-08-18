@@ -104,20 +104,19 @@ namespace net { namespace ssdp { namespace import { namespace av {
 
 			std::vector<media_item_ptr> list(ulong start_from, ulong max_count, const sort_criteria& sort) override;
 			ulong predict_count(ulong served) const override { return m_children.size(); }
-			ulong update_id() const override { return m_update_id; }
 			media_item_ptr get_item(const std::string& id) override;
 			bool is_folder() const override { return true; }
 			void output(std::ostream& o, const std::vector<std::string>& filter) const override;
 			const char* get_upnp_class() const override { return "object.container.storageFolder"; }
 
 			virtual void rescan_if_needed() {}
-			virtual void folder_changed();
+			virtual void folder_changed() = 0;
 			virtual void add_child(media_item_ptr);
 			virtual void remove_child(media_item_ptr);
 
 		private:
 			ulong m_current_max;
-			ulong m_update_id;
+			time_t m_update_id;
 			std::vector<media_item_ptr> m_children;
 		};
 	}
@@ -202,7 +201,7 @@ namespace net { namespace ssdp { namespace import { namespace av {
 		items::root_item_ptr m_root_item;
 		std::shared_ptr<ContentDirectory> m_directory;
 		std::shared_ptr<ConnectionManager> m_manager;
-		ulong m_system_update_id;
+		time_t m_system_update_id;
 
 		items::root_item_ptr create_root_item();
 	};

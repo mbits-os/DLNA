@@ -39,6 +39,7 @@ namespace Log
 {
 	Module Module::HTTP("HOST");
 	Module Module::SSDP("SSDP");
+	Module Module::UPnP("UPnP");
 
 	template <class Elem, class Traits>
 	std::basic_ostream<Elem, Traits>& operator << (std::basic_ostream<Elem, Traits>& o, Severity sev)

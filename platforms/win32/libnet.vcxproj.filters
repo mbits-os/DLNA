@@ -75,6 +75,9 @@
     <ClCompile Include="..\..\libnet\src\threads.cpp">
       <Filter>src</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\libnet\src\network\utils.cpp">
+      <Filter>src\network</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\libnet\pch\pch.h">

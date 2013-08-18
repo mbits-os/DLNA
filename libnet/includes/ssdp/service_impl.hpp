@@ -8,8 +8,14 @@
 #include <http/response.hpp>
 #include <ssdp/device.hpp>
 #include <dom.hpp>
+#include <log.hpp>
 
 namespace net { namespace ssdp { namespace import {
+
+	struct log : public Log::basic_log<log>
+	{
+		static const Log::Module& module() { return Log::Module::UPnP; }
+	};
 
 	template <typename T>
 	struct type_info;
@@ -210,6 +216,7 @@ namespace net { namespace ssdp { namespace import {
 			virtual void clean(response_t& dst) = 0;
 			virtual void store(const response_t& src, std::ostream& out) = 0;
 			virtual void get_config(std::ostream& o) = 0;
+			virtual void debug(const response_t& src, std::ostream& o) = 0;
 
 			void get_config(std::ostream& o, const char* name, const char* dir, const char* ref)
 			{
@@ -248,6 +255,7 @@ namespace net { namespace ssdp { namespace import {
 			{
 				accessor_base::get_config(o, m_name.c_str(), "in", m_ref.m_name.c_str());
 			}
+			void debug(const response_t& src, std::ostream& o) override {}
 		};
 
 		template <typename T>
@@ -269,11 +277,15 @@ namespace net { namespace ssdp { namespace import {
 			}
 			void store(const response_t& src, std::ostream& out) override
 			{
-				out << "<" << m_name << ">" << type_info<field_t>::to_string(src.*m_field) << "</" << m_name << ">";
+				out << "<" << m_name << ">" << xmlencode(type_info<field_t>::to_string(src.*m_field)) << "</" << m_name << ">";
 			}
 			void get_config(std::ostream& o) override
 			{
 				accessor_base::get_config(o, m_name.c_str(), "out", m_ref.m_name.c_str());
+			}
+			void debug(const response_t& src, std::ostream& out) override
+			{
+				out << m_name << ": " << type_info<field_t>::to_string(src.*m_field) << "\n";
 			}
 		};
 
@@ -317,6 +329,12 @@ namespace net { namespace ssdp { namespace import {
 				accessor->store(src, out);
 		}
 
+		void debug(response_t& src, std::ostream& out)
+		{
+			for (auto && accessor : m_accessors)
+				accessor->debug(src, out);
+		}
+
 		const std::string& name() const override { return m_name; }
 
 		bool call(proxy_t* self, const http::http_request& req, const dom::XmlDocumentPtr& doc, http::response& response) override
@@ -337,6 +355,10 @@ namespace net { namespace ssdp { namespace import {
 				{
 					std::ostringstream out;
 					store(call_resp, out);
+					{
+						log::debug dbg;
+						debug(call_resp, dbg);
+					}
 					SOAP::soap_answer(m_name.c_str(), self->get_type(), response, out.str());
 				}
 				else if (result == error::not_implemented)

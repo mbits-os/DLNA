@@ -145,7 +145,7 @@ namespace lan
 			void rescan_if_needed();
 			virtual bool rescan_is_needed() { return false; }
 			virtual void rescan() {}
-			virtual void folder_changed() { m_update_id++; /*notify?*/ }
+			virtual void folder_changed();
 			virtual void add_child(av::items::media_item_ptr);
 			virtual void remove_child(av::items::media_item_ptr);
 
@@ -154,7 +154,7 @@ namespace lan
 
 		protected:
 			std::vector<av::items::media_item_ptr> m_children;
-			net::ulong m_update_id;
+			time_t m_update_id;
 			std::list<container_task> m_tasks;
 			bool m_running;
 			mutable std::mutex m_guard;

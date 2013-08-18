@@ -125,7 +125,7 @@ namespace net { namespace ssdp { namespace import { namespace av {
 		UpdateID = m_device->system_update_id();
 
 		{
-			value << R"(&lt;DIDL-Lite xmlns="urn:schemas-upnp-org:metadata-1-0/DIDL-Lite/" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:upnp="urn:schemas-upnp-org:metadata-1-0/upnp/"&gt;)";
+			value << R"(<DIDL-Lite xmlns="urn:schemas-upnp-org:metadata-1-0/DIDL-Lite/" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:upnp="urn:schemas-upnp-org:metadata-1-0/upnp/">)" "\n";
 			auto item = m_device->get_item(ObjectID);
 
 			if (item)
@@ -161,7 +161,7 @@ namespace net { namespace ssdp { namespace import { namespace av {
 				UpdateID = item->update_id();
 			}
 
-			value << "&lt;/DIDL-Lite&gt;";
+			value << "</DIDL-Lite>";
 		}
 
 		Result = std::move(value.str());
@@ -308,10 +308,10 @@ namespace net { namespace ssdp { namespace import { namespace av {
 		void common_props_item::output_open(std::ostream& o, const std::vector<std::string>& filter, ulong child_count) const
 		{
 			const char* name = is_folder() ? "container" : "item";
-			o << "&lt;" << name << " id=\"" << get_objectId_attr() << "\"";
+			o << "  <" << name << " id=\"" << get_objectId_attr() << "\"";
 			if (is_folder() && contains(filter, "@childCount"))
 				o << " childCount=\"" << child_count << "\"";
-			o << " parentId=\"" << get_parent_attr() << "\"  restricted=\"true\"&gt;&lt;dc:title&gt;" << get_title() << "&lt;/dc:title&gt;";
+			o << " parentId=\"" << get_parent_attr() << "\" restricted=\"true\">\n    <dc:title>" << get_title() << "</dc:title>\n";
 		}
 
 		void common_props_item::output_close(std::ostream& o, const std::vector<std::string>& filter) const
@@ -319,8 +319,8 @@ namespace net { namespace ssdp { namespace import { namespace av {
 			const char* name = is_folder() ? "container" : "item";
 			auto date = get_last_write_time();
 			if (date && contains(filter, "dc:date"))
-				o << "&lt;dc:date&gt;" << to_iso8601(time::from_time_t(date)) << "&lt;/dc:date&gt;";
-			o << "&lt;upnp:class&gt;" << get_upnp_class() << "&lt;/upnp:class&gt;&lt;/" << name << "&gt;\n";
+				o << "    <dc:date>" << to_iso8601(time::from_time_t(date)) << "</dc:date>\n";
+			o << "    <upnp:class>" << get_upnp_class() << "</upnp:class>  </" << name << ">\n";
 		}
 
 #pragma region container_item
@@ -371,12 +371,6 @@ namespace net { namespace ssdp { namespace import { namespace av {
 		{
 			output_open(o, filter, m_children.size());
 			output_close(o, filter);
-		}
-
-		void container_item::folder_changed()
-		{
-			m_update_id++;
-			m_device->object_changed();
 		}
 
 		void container_item::add_child(media_item_ptr child)
@@ -453,7 +447,7 @@ namespace net { namespace ssdp { namespace import { namespace av {
 
 	void MediaServer::object_changed()
 	{
-		++m_system_update_id;
+		::time(&m_system_update_id);
 	}
 
 	void MediaServer::add_root_element(items::media_item_ptr ptr)

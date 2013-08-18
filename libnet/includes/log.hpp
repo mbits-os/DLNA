@@ -49,6 +49,7 @@ namespace Log
 
 		static Module HTTP;
 		static Module SSDP;
+		static Module UPnP;
 	};
 
 	template<class Elem, class Traits, class Alloc>

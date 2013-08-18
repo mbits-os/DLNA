@@ -280,6 +280,11 @@ namespace lan
 			output_close(o, filter);
 		}
 
+		void container_file::folder_changed()
+		{
+			::time(&m_update_id);
+			m_device->object_changed();
+		}
 		void container_file::add_child(av::items::media_item_ptr child)
 		{
 			remove_child(child);

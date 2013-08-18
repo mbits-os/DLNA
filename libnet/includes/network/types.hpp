@@ -66,6 +66,7 @@ namespace net
 	}
 
 	std::string create_uuid();
+	std::string xmlencode(const std::string& in);
 
 	namespace time
 	{
