@@ -89,11 +89,15 @@ namespace lan
 				int get_id() const override { return m_id; }
 
 				TPROPERTY(unsigned long, duration);
+				TPROPERTY(unsigned long, bitrate);
+				TPROPERTY(unsigned long, sample_freq);
+				TPROPERTY(unsigned long, channels);
 				SPROPERTY(mime);
 				SPROPERTY(title);
 				SPROPERTY(artist);
 				SPROPERTY(album);
 				SPROPERTY(genre);
+				TPROPERTY(int, track_position);
 			};
 			typedef std::shared_ptr<MediaTrack> track_ptr;
 
@@ -176,6 +180,11 @@ namespace lan
 			MOVES(album);
 			MOVES(artist);
 			MOVES(genre);
+			MOVE(track_position);
+
+			MOVE(bitrate);
+			MOVE(sample_freq);
+			MOVE(channels);
 		}
 
 		template <typename T>
@@ -196,6 +205,8 @@ namespace lan
 
 			GET(duration);
 			GETS(mime);
+			if (mime.empty())
+				mime = "video/mpeg";
 
 			auto ret = std::make_shared<T>(device, path, duration);
 
@@ -229,11 +240,19 @@ namespace lan
 			return nullptr;
 		}
 
-		void common_file::output(std::ostream& o, const std::vector<std::string>& filter) const
+		common_file::media_info common_file::get_media(bool main_resource)
+		{
+			if (main_resource)
+				return make_media_info(get_path());
+
+			return make_media_info(fs::path());
+		}
+
+		void common_file::output(std::ostream& o, const std::vector<std::string>& filter, const net::config::config_ptr& config) const
 		{
 			output_open(o, filter, 0);
-			attrs(o, filter);
-			output_close(o, filter);
+			attrs(o, filter, config);
+			output_close(o, filter, config);
 		}
 
 		bool contains(const std::vector<std::string>& filter, const char* key)
@@ -242,7 +261,7 @@ namespace lan
 			return std::find(filter.begin(), filter.end(), key) != filter.end();
 		}
 
-		void audio_file::attrs(std::ostream& o, const std::vector<std::string>& filter) const
+		void audio_file::attrs(std::ostream& o, const std::vector<std::string>& filter, const net::config::config_ptr& config) const
 		{
 #define SDISPLAY(name, item) \
 	auto name = get_##name(); \
@@ -375,10 +394,10 @@ namespace lan
 			return candidate->get_item(rest_of_id);
 		}
 
-		void container_file::output(std::ostream& o, const std::vector<std::string>& filter) const
+		void container_file::output(std::ostream& o, const std::vector<std::string>& filter, const net::config::config_ptr& config) const
 		{
 			output_open(o, filter, m_children.size());
-			output_close(o, filter);
+			output_close(o, filter, config);
 		}
 
 		void container_file::folder_changed()

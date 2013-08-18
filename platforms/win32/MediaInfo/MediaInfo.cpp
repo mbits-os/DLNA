@@ -228,7 +228,7 @@ namespace MediaInfo
 			{
 			}
 
-			Setter(const char* name, bool (ITrack::*method) (const const char*) )
+			Setter(const char* name, bool (ITrack::*method) (const char*) )
 				: m_name(name)
 				, m_setter(setter<const char*>::function(method))
 			{
@@ -248,7 +248,6 @@ namespace MediaInfo
 			Setter("MuxingMode"),
 			Setter("CodecID"),
 			Setter("Language"),
-			Setter("Language.String"),
 			Setter("Title",            &ITrack::set_title),
 			Setter("Width"),
 			Setter("Encryption"),
@@ -257,10 +256,10 @@ namespace MediaInfo
 			Setter("DisplayAspectRatio_Original.Stri"),
 			Setter("FrameRate"),
 			Setter("FrameRateMode"),
-			Setter("OverallBitRate"),
-			Setter("Channels"),
-			Setter("BitRate"),
-			Setter("SamplingRate"),
+			Setter("OverallBitRate",   &ITrack::set_bitrate),
+			Setter("Channels",         &ITrack::set_channels),
+			Setter("BitRate",          &ITrack::set_bitrate),
+			Setter("SamplingRate",     &ITrack::set_sample_freq),
 			Setter("ID"),
 			Setter("Cover_Data"),
 			Setter("Track",            &ITrack::set_title),
@@ -268,7 +267,7 @@ namespace MediaInfo
 			Setter("Performer",        &ITrack::set_artist),
 			Setter("Genre",            &ITrack::set_genre),
 			Setter("Recorded_Date"),
-			Setter("Track.Position"),
+			Setter("Track.Position",   &ITrack::set_track_position),
 			Setter("BitDepth"),
 			Setter("Video_Delay")
 		};

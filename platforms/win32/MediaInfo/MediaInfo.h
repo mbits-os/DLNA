@@ -75,11 +75,15 @@ namespace MediaInfo
 		virtual int get_id() const = 0;
 
 		TRACK_PROP(unsigned long, duration);
+		TRACK_PROP(unsigned long, bitrate);
+		TRACK_PROP(unsigned long, sample_freq);
+		TRACK_PROP(unsigned long, channels);
 		TRACK_SPROP(mime);
 		TRACK_SPROP(title);
 		TRACK_SPROP(artist);
 		TRACK_SPROP(album);
 		TRACK_SPROP(genre);
+		TRACK_PROP(int, track_position);
 	};
 
 	struct IContainer

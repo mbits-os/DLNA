@@ -55,6 +55,12 @@ namespace lan
 	public: \
 	type get_##name() const { return m_ ## name; }\
 	bool set_##name(type val) { m_ ## name = val; return true; }
+#define ITEM_PROP_V(type, name) \
+	private: \
+	type m_##name; \
+	public: \
+	type get_##name() const override { return m_ ## name; }\
+	bool set_##name(type val) { m_ ## name = val; return true; }
 #define ITEM_SPROP(name) \
 	private: \
 	std::string m_##name; \
@@ -74,6 +80,7 @@ namespace lan
 			}
 			time_t     get_last_write_time() const override { return m_last_write; }
 			net::ulong get_duration() const        override { return m_duration; }
+			net::ulong get_size() const            override { return fs::is_directory(m_path) ? 0 : fs::file_size(m_path); }
 			fs::path   get_path() const                     { return m_path; }
 
 		protected:
@@ -89,13 +96,17 @@ namespace lan
 				: path_item(device, path, duration)
 			{
 			}
-			container_type list(net::ulong start_from, net::ulong max_count)                     override { return container_type(); }
-			net::ulong     predict_count(net::ulong served) const                                override { return served; }
-			net::ulong     update_id() const                                                     override { return 0; }
-			item_ptr       get_item(const std::string& id)                                       override { return nullptr; }
-			bool           is_folder() const                                                     override { return false; }
-			void           output(std::ostream& o, const std::vector<std::string>& filter) const override;
-			virtual void   attrs(std::ostream& o, const std::vector<std::string>& filter) const           {};
+			container_type list(net::ulong start_from, net::ulong max_count)               override { return container_type(); }
+			net::ulong     predict_count(net::ulong served) const                          override { return served; }
+			net::ulong     update_id() const                                               override { return 0; }
+			item_ptr       get_item(const std::string& id)                                 override { return nullptr; }
+			bool           is_folder() const                                               override { return false; }
+			media_info     get_media(bool main_resource)                                   override;
+			void           output(std::ostream& o, const std::vector<std::string>& filter,
+			                      const net::config::config_ptr& config) const             override;
+			virtual void   attrs(std::ostream& o, const std::vector<std::string>& filter,
+			                      const net::config::config_ptr& config) const                      {};
+
 		};
 
 		struct photo_file : common_file
@@ -123,11 +134,15 @@ namespace lan
 			{
 			}
 			const char* get_upnp_class() const override { return "object.item.audioItem.musicTrack"; }
-			void attrs(std::ostream& o, const std::vector<std::string>& filter) const override;
+			void attrs(std::ostream& o, const std::vector<std::string>& filter, const net::config::config_ptr& config) const override;
 
 			ITEM_SPROP(artist);
 			ITEM_SPROP(album);
 			ITEM_SPROP(genre);
+			ITEM_PROP(int, track_position);
+			ITEM_PROP_V(net::ulong, bitrate);
+			ITEM_PROP_V(net::ulong, sample_freq);
+			ITEM_PROP_V(net::ulong, channels);
 		};
 
 		struct container_file : path_item, std::enable_shared_from_this<container_file>
@@ -156,13 +171,14 @@ namespace lan
 			{
 			}
 
-			container_type list(net::ulong start_from, net::ulong max_count)                     override;
-			net::ulong     predict_count(net::ulong served) const                                override;
-			net::ulong     update_id() const                                                     override { return m_update_id; }
-			item_ptr       get_item(const std::string& id)                                       override;
-			bool           is_folder() const                                                     override { return true; }
-			void           output(std::ostream& o, const std::vector<std::string>& filter) const override;
-			const char*    get_upnp_class() const                                                override { return "object.container.storageFolder"; }
+			container_type list(net::ulong start_from, net::ulong max_count)               override;
+			net::ulong     predict_count(net::ulong served) const                          override;
+			net::ulong     update_id() const                                               override { return m_update_id; }
+			item_ptr       get_item(const std::string& id)                                 override;
+			bool           is_folder() const                                               override { return true; }
+			void           output(std::ostream& o, const std::vector<std::string>& filter,
+			                      const net::config::config_ptr& config) const             override;
+			const char*    get_upnp_class() const                                          override { return "object.container.storageFolder"; }
 
 			void           rescan_if_needed();
 			virtual bool   rescan_needed()         { return false; }
