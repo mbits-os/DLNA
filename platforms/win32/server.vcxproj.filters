@@ -6,9 +6,23 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\server\fs_items.hpp" />
-    <ClInclude Include="RadioRC.h" />
+    <ClInclude Include="Radio.rc.h">
+      <Filter>res</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <ResourceCompile Include="Radio.rc" />
+    <Filter Include="res">
+      <UniqueIdentifier>{d81701ba-d988-431e-863f-0d472b7eaaa3}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="Radio.ico">
+      <Filter>res</Filter>
+    </Image>
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="Radio.rc">
+      <Filter>res</Filter>
+    </ResourceCompile>
   </ItemGroup>
 </Project>
