@@ -107,9 +107,6 @@
     <ClInclude Include="..\..\libnet\includes\network\interface.hpp">
       <Filter>includes\network</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\libnet\includes\network\types.hpp">
-      <Filter>includes\network</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\libnet\includes\network\udp.hpp">
       <Filter>includes\network</Filter>
     </ClInclude>
@@ -133,6 +130,9 @@
     </ClInclude>
     <ClInclude Include="..\..\libnet\includes\threads.hpp">
       <Filter>includes</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\libnet\includes\network\utils.hpp">
+      <Filter>includes\network</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

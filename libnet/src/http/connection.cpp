@@ -24,7 +24,7 @@
 
 #include "pch.h"
 #include <http/connection.hpp>
-#include <network/types.hpp>
+#include <network/utils.hpp>
 #include <iostream>
 #include <log.hpp>
 

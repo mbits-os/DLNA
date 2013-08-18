@@ -78,8 +78,8 @@
     <ClInclude Include="..\..\libnet\includes\http\server.hpp" />
     <ClInclude Include="..\..\libnet\includes\log.hpp" />
     <ClInclude Include="..\..\libnet\includes\network\interface.hpp" />
-    <ClInclude Include="..\..\libnet\includes\network\types.hpp" />
     <ClInclude Include="..\..\libnet\includes\network\udp.hpp" />
+    <ClInclude Include="..\..\libnet\includes\network\utils.hpp" />
     <ClInclude Include="..\..\libnet\includes\ssdp\service_description.hpp" />
     <ClInclude Include="..\..\libnet\includes\ssdp\service_impl.hpp" />
     <ClInclude Include="..\..\libnet\includes\ssdp\ssdp.hpp" />
