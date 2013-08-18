@@ -61,10 +61,25 @@ namespace MediaInfo
 		return o << "UNKNOWN(" << (int) type << ")";
 	}
 
+#define TRACK_PROP(type, name) \
+	virtual bool set_##name(type val) = 0; \
+	virtual type get_##name() const = 0
+
+#define TRACK_SPROP(name) \
+	virtual bool set_##name(const char* val) = 0; \
+	virtual std::string get_##name() const = 0
+
 	struct ITrack
 	{
 		virtual TrackType get_type() const = 0;
 		virtual int get_id() const = 0;
+
+		TRACK_PROP(unsigned long, duration);
+		TRACK_SPROP(mime);
+		TRACK_SPROP(title);
+		TRACK_SPROP(artist);
+		TRACK_SPROP(album);
+		TRACK_SPROP(genre);
 	};
 
 	struct IContainer

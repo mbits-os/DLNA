@@ -18,7 +18,7 @@
 namespace MediaInfo
 {
 	template <typename T>
-	bool ref_get(dom::XmlNodePtr& val, T& out)
+	bool ref_get(const dom::XmlNodePtr& val, T& out)
 	{
 		if (!val)
 			return false;
@@ -27,7 +27,7 @@ namespace MediaInfo
 		return true;
 	}
 
-	bool ref_get(dom::XmlNodePtr& val, std::string& out)
+	bool ref_get(const dom::XmlNodePtr& val, std::string& out)
 	{
 		if (!val)
 			return false;
@@ -36,7 +36,7 @@ namespace MediaInfo
 	}
 
 	template <typename T>
-	T get(dom::XmlNodePtr& node, const std::string& xpath, const T& defaultValue)
+	T get(const dom::XmlNodePtr& node, const std::string& xpath, const T& defaultValue)
 	{
 		T out;
 		if (node && ref_get(node->find(xpath), out))
@@ -45,7 +45,7 @@ namespace MediaInfo
 	}
 
 	template <typename T>
-	T get(dom::XmlNodePtr& node, const T& defaultValue)
+	T get(const dom::XmlNodePtr& node, const T& defaultValue)
 	{
 		T out;
 		if (ref_get(node, out))
@@ -162,16 +162,75 @@ namespace MediaInfo
 	};
 
 	namespace {
+		template <typename Value>
+		struct setter
+		{
+			static std::function<bool (ITrack* dst, const dom::XmlNodePtr& src)> function(bool (ITrack::*method)(Value))
+			{
+				return [method](ITrack* dst, const dom::XmlNodePtr& src) -> bool
+				{
+					Value val;
+					if (!ref_get(src, val))
+						return false;
+					return (dst->*method)(val);
+				};
+			}
+			static std::function<bool (ITrack* dst, const dom::XmlNodePtr& src)> function(bool (ITrack::*method)(const Value&))
+			{
+				return [method](ITrack* dst, const dom::XmlNodePtr& src) -> bool
+				{
+					Value val;
+					if (!ref_get(src, val))
+						return false;
+					return (dst->*method)(val);
+				};
+			}
+		};
+		template <>
+		struct setter<const char*>
+		{
+			static std::function<bool (ITrack* dst, const dom::XmlNodePtr& src)> function(bool (ITrack::*method)(const char*))
+			{
+				return [method](ITrack* dst, const dom::XmlNodePtr& src) -> bool
+				{
+					std::string val;
+					if (!ref_get(src, val))
+						return false;
+					return (dst->*method)(val.c_str());
+				};
+			}
+		};
+
 		struct Setter
 		{
-			typedef bool setter_type(ITrack* dst, const dom::XmlNodePtr& src);
+			typedef std::function<bool (ITrack* dst, const dom::XmlNodePtr& src)> function_type;
 			const char* m_name;
-			bool (*m_setter)(ITrack* dst, const dom::XmlNodePtr& src);
+			function_type m_setter;
 			static bool dummy(ITrack* dst, const dom::XmlNodePtr& src) { return true; }
 
-			Setter(const char* name, bool (*setter)(ITrack*, const dom::XmlNodePtr&) = dummy)
+			Setter(const char* name)
 				: m_name(name)
-				, m_setter(setter)
+				, m_setter(dummy)
+			{
+			}
+
+			template <typename Value>
+			Setter(const char* name, bool (ITrack::*method)(Value) )
+				: m_name(name)
+				, m_setter(setter<Value>::function(method))
+			{
+			}
+
+			template <typename Value>
+			Setter(const char* name, bool (ITrack::*method) (const Value&))
+				: m_name(name)
+				, m_setter(setter<Value>::function(method))
+			{
+			}
+
+			Setter(const char* name, bool (ITrack::*method) (const const char*) )
+				: m_name(name)
+				, m_setter(setter<const char*>::function(method))
 			{
 			}
 
@@ -181,7 +240,8 @@ namespace MediaInfo
 		const Setter names [] =
 		{
 			Setter("Format"),
-			Setter("Duration"),
+			Setter("Duration",          &ITrack::set_duration),
+			Setter("InternetMediaType", &ITrack::set_mime),
 			Setter("Format_Settings_RefFrames.String"),
 			Setter("Format_Settings_QPel"),
 			Setter("Format_Settings_GMC"),
@@ -189,7 +249,7 @@ namespace MediaInfo
 			Setter("CodecID"),
 			Setter("Language"),
 			Setter("Language.String"),
-			Setter("Title"),
+			Setter("Title",            &ITrack::set_title),
 			Setter("Width"),
 			Setter("Encryption"),
 			Setter("Height"),
@@ -203,10 +263,10 @@ namespace MediaInfo
 			Setter("SamplingRate"),
 			Setter("ID"),
 			Setter("Cover_Data"),
-			Setter("Track"),
-			Setter("Album"),
-			Setter("Performer"),
-			Setter("Genre"),
+			Setter("Track",            &ITrack::set_title),
+			Setter("Album",            &ITrack::set_album),
+			Setter("Performer",        &ITrack::set_artist),
+			Setter("Genre",            &ITrack::set_genre),
 			Setter("Recorded_Date"),
 			Setter("Track.Position"),
 			Setter("BitDepth"),
@@ -216,10 +276,13 @@ namespace MediaInfo
 
 	bool MediaInfoAPI::Session::extract_track(ITrack* dst, const dom::XmlNodePtr& src)
 	{
-		//std::ostringstream msg;
-		//bool printed = false;
+		std::ostringstream msg;
+		bool printed = false;
 		for (auto && field : src->childNodes())
 		{
+			if (field->nodeType() != dom::ELEMENT_NODE)
+				continue;
+
 			std::string name = field->nodeName();
 			auto len = name.length();
 			bool show = false;
@@ -228,7 +291,7 @@ namespace MediaInfo
 			{
 				if (name == known.m_name)
 				{
-					if (!known(dst, src))
+					if (!known(dst, field))
 						return false;
 					show = true;
 					break;
@@ -247,7 +310,9 @@ namespace MediaInfo
 			//if (!m_printed)
 			//{
 			//	m_printed = true;
-			//	msg << m_path << "\n";
+			//	char buffer[1024];
+			//	WideCharToMultiByte(CP_ACP, 0, m_path, -1, buffer, sizeof(buffer), nullptr, nullptr);
+			//	msg << buffer << "\n";
 			//}
 
 			//if (!printed)
