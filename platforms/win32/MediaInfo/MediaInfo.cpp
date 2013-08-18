@@ -53,6 +53,24 @@ namespace MediaInfo
 		return defaultValue;
 	}
 
+	namespace {
+		struct Setter
+		{
+			typedef bool setter_type(ITrack* dst, const dom::XmlNodePtr& src);
+			const char* m_name;
+			bool (*m_setter)(ITrack* dst, const dom::XmlNodePtr& src);
+			static bool dummy(ITrack* dst, const dom::XmlNodePtr& src) { return true; }
+
+			Setter(const char* name, bool (*setter)(ITrack*, const dom::XmlNodePtr&) = dummy)
+				: m_name(name)
+				, m_setter(setter)
+			{
+			}
+
+			bool operator() (ITrack* dst, const dom::XmlNodePtr& src) const { return m_setter(dst, src); }
+		};
+	}
+
 	struct MediaInfoAPI : APIHandle
 	{
 		MediaInfoLib::MediaInfo m_info;
@@ -62,9 +80,13 @@ namespace MediaInfo
 			bool opened;
 			std::wstring m_text;
 			dom::XmlDocumentPtr m_doc;
+			LPCWSTR m_path;
+			bool m_printed;
 
 			Session(MediaInfoLib::MediaInfo& info, LPCWSTR path)
 				: m_info(info)
+				, m_path(path)
+				, m_printed(false)
 			{
 				opened = m_info.Open(path) != 0;
 			}
@@ -158,46 +180,46 @@ namespace MediaInfo
 	};
 
 	namespace {
-		const char* names [] =
+		const Setter names [] =
 		{
-			"Format",
-			"Duration",
-			"Format_Settings_RefFrames.String",
-			"Format_Settings_QPel",
-			"Format_Settings_GMC",
-			"MuxingMode",
-			"CodecID",
-			"Language",
-			"Language.String",
-			"Title",
-			"Width",
-			"Encryption",
-			"Height",
-			"DisplayAspectRatio.String",
-			"DisplayAspectRatio_Original.Stri",
-			"FrameRate",
-			"FrameRateMode",
-			"OverallBitRate",
-			"Channels",
-			"BitRate",
-			"SamplingRate",
-			"ID",
-			"Cover_Data",
-			"Track",
-			"Album",
-			"Performer",
-			"Genre",
-			"Recorded_Date",
-			"Track.Position",
-			"BitDepth",
-			"Video_Delay"
+			Setter("Format"),
+			Setter("Duration"),
+			Setter("Format_Settings_RefFrames.String"),
+			Setter("Format_Settings_QPel"),
+			Setter("Format_Settings_GMC"),
+			Setter("MuxingMode"),
+			Setter("CodecID"),
+			Setter("Language"),
+			Setter("Language.String"),
+			Setter("Title"),
+			Setter("Width"),
+			Setter("Encryption"),
+			Setter("Height"),
+			Setter("DisplayAspectRatio.String"),
+			Setter("DisplayAspectRatio_Original.Stri"),
+			Setter("FrameRate"),
+			Setter("FrameRateMode"),
+			Setter("OverallBitRate"),
+			Setter("Channels"),
+			Setter("BitRate"),
+			Setter("SamplingRate"),
+			Setter("ID"),
+			Setter("Cover_Data"),
+			Setter("Track"),
+			Setter("Album"),
+			Setter("Performer"),
+			Setter("Genre"),
+			Setter("Recorded_Date"),
+			Setter("Track.Position"),
+			Setter("BitDepth"),
+			Setter("Video_Delay")
 		};
 	}
 
 	bool MediaInfoAPI::Session::extract_track(ITrack* dst, const dom::XmlNodePtr& src)
 	{
 		//std::ostringstream msg;
-		//msg << "    " << dst->get_type() << "[" << dst->get_id() << "] ";
+		//bool printed = false;
 		for (auto && field : src->childNodes())
 		{
 			std::string name = field->nodeName();
@@ -206,8 +228,10 @@ namespace MediaInfo
 
 			for (auto && known : names)
 			{
-				if (name == known)
+				if (name == known.m_name)
 				{
+					if (!known(dst, src))
+						return false;
 					show = true;
 					break;
 				}
@@ -222,10 +246,21 @@ namespace MediaInfo
 			if (!show)
 				continue;
 
+			//if (!m_printed)
+			//{
+			//	m_printed = true;
+			//	msg << m_path << "\n";
+			//}
+
+			//if (!printed)
+			//{
+			//	printed = true;
+			//	msg << "    " << dst->get_type() << "[" << dst->get_id() << "] ";
+			//}
 			//msg << " " << name << "=\"" << field->stringValue() << "\"";
 		}
 		//msg << "\n";
-		//std::cout << msg.str();
+		//if (printed) std::cout << msg.str();
 
 		return true;
 	}
