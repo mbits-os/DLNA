@@ -82,15 +82,22 @@ namespace net
 			return false;
 		}
 
-		response_buffer response::get_data()
+		void response::complete_header()
 		{
-			if (m_content)
+			if (!m_completed && m_content)
 			{
+				m_completed = true;
+
 				if (m_content->size_known())
 					m_response.append("content-size")->out() << m_content->get_size();
 				else
 					m_response.append("transfer-encoding")->out() << "chunked";
 			}
+		}
+
+		response_buffer response::get_data()
+		{
+			complete_header();
 			return response_buffer(*this);
 		}
 	}

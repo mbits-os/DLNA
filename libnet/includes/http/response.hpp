@@ -45,8 +45,10 @@ namespace net
 		public:
 			virtual ~content() {}
 
+			virtual bool can_skip() = 0;
 			virtual bool size_known() = 0;
 			virtual std::size_t get_size() = 0;
+			virtual std::size_t skip(std::size_t size) = 0;
 			virtual std::size_t read(void* buffer, std::size_t size) = 0;
 			template <std::size_t size>
 			std::size_t read(char (&buffer)[size]) { return read(buffer, size); }
@@ -61,8 +63,18 @@ namespace net
 			std::size_t m_pointer;
 		public:
 			string_content(const std::string& text) : m_text(text), m_pointer(0) {}
+			bool can_skip() override { return true; }
 			bool size_known() override { return true; }
 			std::size_t get_size() override { return m_text.size(); }
+			std::size_t skip(std::size_t size)
+			{
+				auto rest = m_text.size() - m_pointer;
+				if (size > rest)
+					size = rest;
+
+				m_pointer += size;
+				return size;
+			}
 			std::size_t read(void* buffer, std::size_t size) override
 			{
 				auto rest = m_text.size() - m_pointer;
@@ -90,8 +102,15 @@ namespace net
 				if (size > max) size = max;
 				m_size = (std::size_t)size;
 			}
+			bool can_skip() override { return true; }
 			bool size_known() override { return true; }
 			std::size_t get_size() override { return m_size; }
+			std::size_t skip(std::size_t size) override
+			{
+				auto pos = m_stream.tellg();
+				m_stream.seekg(pos + (std::streamoff)size);
+				return (std::size_t)(m_stream.tellg() - pos);
+			}
 			std::size_t read(void* buffer, std::size_t size) override
 			{
 				return (std::size_t)m_stream.read((char*) buffer, size).gcount();
@@ -135,11 +154,25 @@ namespace net
 		{
 			http_response m_response;
 			content_ptr m_content;
+			bool m_completed;
 		public:
+			response() : m_completed(false) {}
+
 			http_response& header() { return m_response; }
 			content_ptr content() { return m_content; }
 			void content(content_ptr c) { m_content = c; }
+			void complete_header();
 			response_buffer get_data();
+		};
+
+		struct complete
+		{
+			response& resp;
+			complete(response& resp) : resp(resp) {}
+			~complete()
+			{
+				resp.complete_header();
+			}
 		};
 	}
 }

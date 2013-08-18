@@ -112,8 +112,10 @@ namespace net
 				m_ptr = 0;
 			}
 
+			bool can_skip() override { return false; }
 			bool size_known() override { return false; }
 			std::size_t get_size() override { return 0; }
+			std::size_t skip(std::size_t) { return 0; }
 			std::size_t read(void* buffer, std::size_t size)
 			{
 				if (m_cur == m_chunks.end())
@@ -205,7 +207,10 @@ namespace net
 			{
 				print(true);
 				if (with_header)
+				{
+					resp.complete_header();
 					log::info() << resp.header();
+				}
 			}
 
 			log_request& withHeader() { with_header = true; return *this; }
@@ -315,6 +320,7 @@ namespace net
 				if (root == "upnp")
 				{
 					__.withHeader().print();
+
 					std::tie(root, rest) = pop(rest);
 					if (m_device->call_http(req, root, rest, resp))
 						return;
