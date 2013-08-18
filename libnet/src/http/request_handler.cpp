@@ -188,16 +188,33 @@ namespace net
 			const http_request& header;
 			const std::string& SOAPAction;
 			dom::XmlDocumentPtr doc;
+			bool with_header;
+			bool printed;
+
 			log_request(response& resp, const http_request& header, const std::string& SOAPAction, dom::XmlDocumentPtr& doc)
 				: resp(resp)
 				, header(header)
 				, SOAPAction(SOAPAction)
 				, doc(doc)
+				, with_header(false)
+				, printed(false)
 			{
 			}
 
 			~log_request()
 			{
+				print(true);
+				if (with_header)
+					log::info() << resp.header();
+			}
+
+			log_request& withHeader() { with_header = true; return *this; }
+			log_request& print(bool finished = false)
+			{
+				if (printed)
+					return *this;
+				printed = true;
+
 				log::debug dbg;
 				log::info info;
 
@@ -206,7 +223,10 @@ namespace net
 				if (!SOAPAction.empty())
 					info << " \"" << SOAPAction << "\"";
 
-				info << " " << resp.header().m_status;
+				if (finished)
+					info << " " << resp.header().m_status;
+				else
+					info << " -";
 
 				auto ua = header.user_agent();
 				if (!ua.empty())
@@ -222,6 +242,11 @@ namespace net
 						dbg << ci;
 					}
 				}
+
+				if (with_header)
+					info << "\n" << header;
+
+				return *this;
 			}
 		};
 
@@ -286,6 +311,14 @@ namespace net
 				}
 				if (root == "images")
 					return make_file(boost::filesystem::path("data") / root / rest, resp);
+
+				if (root == "upnp")
+				{
+					__.withHeader().print();
+					std::tie(root, rest) = pop(rest);
+					if (m_device->call_http(req, root, rest, resp))
+						return;
+				}
 			}
 
 			if (method == http_method::post)

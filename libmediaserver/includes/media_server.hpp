@@ -34,13 +34,20 @@ namespace net { namespace ssdp { namespace import { namespace av {
 
 	namespace items
 	{
+		struct media_generator {}; // not defined in any way yet
+		typedef std::shared_ptr<media_generator> media_generator_ptr;
+
+		typedef std::pair<boost::filesystem::path, media_generator_ptr> media_info;
+
 		struct media_item;
 		typedef std::shared_ptr<media_item> media_item_ptr;
 
 		struct media_item
 		{
-			typedef media_item_ptr        item_ptr;
-			typedef std::vector<item_ptr> container_type;
+			typedef items::media_info          media_info;
+			typedef items::media_generator_ptr media_generator_ptr;
+			typedef media_item_ptr             item_ptr;
+			typedef std::vector<item_ptr>       container_type;
 
 			MediaServer* m_device;
 			explicit media_item(MediaServer* device) : m_device(device), m_id(0) {}
@@ -59,7 +66,7 @@ namespace net { namespace ssdp { namespace import { namespace av {
 
 			//output
 			virtual bool           is_folder() const                                = 0;
-			virtual void           output(std::ostream& o, const std::vector<std::string>& filter) const = 0;
+			virtual void           output(std::ostream& o, const std::vector<std::string>& filter, const config::config_ptr& config) const = 0;
 
 			//attributes
 			virtual void           set_objectId_attr(const std::string& object_id) { m_object_id = object_id; }
@@ -67,10 +74,26 @@ namespace net { namespace ssdp { namespace import { namespace av {
 			virtual std::string    get_parent_attr() const;
 			virtual void           set_title(const std::string& title)             { m_title = title; }
 			virtual std::string    get_title() const                               { return m_title; }
-			virtual net::ulong     get_duration() const                            { return 0; };
 			virtual void           set_mime(const std::string& mime)               { m_mime = mime; }
 			virtual std::string    get_mime() const                                { return m_mime; }
+			virtual net::ulong     get_bitrate() const                             { return 0; }
+			virtual net::ulong     get_duration() const                            { return 0; }
+			virtual net::ulong     get_sample_freq() const                         { return 0; }
+			virtual net::ulong     get_channels() const                            { return 0; }
+			virtual net::ulong     get_size() const                                { return 0; }
 
+			//media
+			virtual media_info     get_media(bool main_resource)                   { return make_media_info(media_generator_ptr()); }
+
+
+			static media_info make_media_info(const boost::filesystem::path& path) { return std::make_pair(path, media_generator_ptr()); }
+			static media_info make_media_info(const media_generator_ptr& generator){ return std::make_pair(boost::filesystem::path(), generator); }
+
+			template <typename T, typename... Args>
+			static media_info create_media_info(Args && ... args)
+			{
+				return std::make_pair(boost::filesystem::path(), std::make_shared<T>(std::forward<Args>(args)...));
+			}
 
 		private:
 			uint m_id;
@@ -95,7 +118,7 @@ namespace net { namespace ssdp { namespace import { namespace av {
 			virtual time_t      get_last_write_time() const { return 0; }
 		protected:
 			void output_open(std::ostream& o, const std::vector<std::string>& filter, ulong child_count = 0) const;
-			void output_close(std::ostream& o, const std::vector<std::string>& filter) const;
+			void output_close(std::ostream& o, const std::vector<std::string>& filter, const config::config_ptr& config) const;
 		};
 	}
 
@@ -165,6 +188,10 @@ namespace net { namespace ssdp { namespace import { namespace av {
 			add(m_manager);
 		}
 
+		bool                  call_http(const http::http_request& req,
+		                                const boost::filesystem::path& root,
+		                                const boost::filesystem::path& rest,
+		                                http::response& resp)   override;
 		const char*           get_type() const                  override { return "urn:schemas-upnp-org:device:MediaServer:1"; }
 		const char*           get_description() const           override { return "UPnP/AV 1.0 Compliant Media Server"; }
 		ulong                 system_update_id() const                   { return m_system_update_id; }

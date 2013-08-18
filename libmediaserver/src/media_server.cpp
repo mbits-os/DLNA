@@ -56,12 +56,27 @@ namespace net { namespace ssdp { namespace import { namespace av {
 		return val;
 	}
 
-	static std::vector<std::string> parse_filter(const std::string& sort)
+	static std::vector<std::string> parse_filter(const std::string& filter)
 	{
-		if (sort.empty() || sort == "*")
+		if (filter.empty() || filter == "*")
 			return std::vector<std::string>();
 
-		return std::vector<std::string>();
+		std::vector<std::string> out;
+
+		std::string::size_type pos = 0;
+		while (true)
+		{
+			auto comma = filter.find(',', pos);
+			if (comma == std::string::npos)
+			{
+				out.push_back(filter.substr(pos));
+				break;
+			}
+			out.push_back(filter.substr(pos, comma - pos));
+			pos = comma + 1;
+		}
+
+		return out;
 	}
 
 	error_code ContentDirectory::GetSystemUpdateID(const http::http_request& http_request,
@@ -140,7 +155,7 @@ namespace net { namespace ssdp { namespace import { namespace av {
 					for (auto && child : children)
 					{
 						log::debug() << "    [" << child->get_objectId_attr() << "] \"" << child->get_title() << "\"";
-						child->output(value, filter);
+						child->output(value, filter, m_device->config());
 					}
 
 					NumberReturned = children.size();
@@ -149,7 +164,7 @@ namespace net { namespace ssdp { namespace import { namespace av {
 				else
 				{
 					item->check_updates();
-					item->output(value, filter);
+					item->output(value, filter, m_device->config());
 					NumberReturned = 1;
 					TotalMatches = 1;
 				}
@@ -302,15 +317,6 @@ namespace net { namespace ssdp { namespace import { namespace av {
 			return std::find(filter.begin(), filter.end(), key) != filter.end();
 		}
 
-		void common_props_item::output_open(std::ostream& o, const std::vector<std::string>& filter, ulong child_count) const
-		{
-			const char* name = is_folder() ? "container" : "item";
-			o << "  <" << name << " id=\"" << get_objectId_attr() << "\"";
-			if (is_folder() && contains(filter, "@childCount"))
-				o << " childCount=\"" << child_count << "\"";
-			o << " parentId=\"" << get_parent_attr() << "\" restricted=\"true\">\n    <dc:title>" << net::xmlencode(get_title()) << "</dc:title>\n";
-		}
-
 		struct part
 		{
 			part(net::ulong val, int w = 2) : val(val), w(w) {}
@@ -322,28 +328,70 @@ namespace net { namespace ssdp { namespace import { namespace av {
 			return o << std::setfill('0') << std::setw(op.w) << op.val;
 		}
 
-		void common_props_item::output_close(std::ostream& o, const std::vector<std::string>& filter) const
+		void common_props_item::output_open(std::ostream& o, const std::vector<std::string>& filter, ulong child_count) const
+		{
+			const char* name = is_folder() ? "container" : "item";
+			o << "  <" << name << " id=\"" << get_objectId_attr() << "\"";
+			if (is_folder() && contains(filter, "@childCount"))
+				o << " childCount=\"" << child_count << "\"";
+			o << " parentId=\"" << get_parent_attr() << "\" restricted=\"true\">\n    <dc:title>" << net::xmlencode(get_title()) << "</dc:title>\n";
+		}
+
+		void common_props_item::output_close(std::ostream& o, const std::vector<std::string>& filter, const config::config_ptr& config) const
 		{
 			const char* name = is_folder() ? "container" : "item";
 			auto date = get_last_write_time();
+			auto bitrate = get_bitrate();
 			auto duration = get_duration();
+			auto sample_freq = get_sample_freq();
+			auto channels = get_channels();
+			auto size = get_size();
+			auto mime = get_mime();
 
 			if (date && contains(filter, "dc:date"))
 				o << "    <dc:date>" << to_iso8601(time::from_time_t(date)) << "</dc:date>\n";
 
-			if (duration && contains(filter, "duration"))
+			if (!is_folder() && contains(filter, "res"))
 			{
-				auto millis = duration % 1000;
-				auto secs = duration / 1000;
-				auto mins = secs / 60;
-				auto hours = mins / 60;
+				o << "    <res xmlns:dlna=\"urn:schemas-dlna-org:metadata-1-0/\"";
+				if (!mime.empty() && contains(filter, "res@protocolInfo"))
+				{
+					o << "\n      protocolInfo=\"http-get:*:" << mime << ":";
 
-				secs %= 60;
-				mins %= 60;
+					std::string dlna_orgpn;
+					if (!dlna_orgpn.empty())
+						o << dlna_orgpn << ";";
+					
+					o << "DLNA.ORG_OP=01\"";
+				}
 
-				o << "    <duration>" << part(hours) << ":" << part(mins) << ":" << part(secs) << "." << part(millis, 3) << "</duration>\n";
+#define SIMPLE_RES_ATTR2(name, val) \
+	do { if (val && contains(filter, "res@" #name)) { o << "\n      " #name "=\"" << val << "\""; } } while (0)
+
+#define SIMPLE_RES_ATTR(name) SIMPLE_RES_ATTR2(name, name)
+
+				SIMPLE_RES_ATTR(bitrate);
+
+				if (duration && contains(filter, "res@duration"))
+				{
+					auto millis = duration % 1000;
+					auto secs = duration / 1000;
+					auto mins = secs / 60;
+					auto hours = mins / 60;
+
+					secs %= 60;
+					mins %= 60;
+
+					o << "\n      duration=\"" << part(hours) << ":" << part(mins) << ":" << part(secs) << "." << part(millis, 3) << "\"";
+				}
+
+				SIMPLE_RES_ATTR2(sampleFrequency, sample_freq);
+				SIMPLE_RES_ATTR2(nrAudioChannels, channels);
+				SIMPLE_RES_ATTR(size);
+
+				o << ">http://" << net::to_string(config->iface) << ":" << (int)config->port << "/upnp/media/" << get_objectId_attr() << "</res>\n";
 			}
-			o << "    <upnp:class>" << get_upnp_class() << "</upnp:class>  </" << name << ">\n";
+			o << "    <upnp:class>" << get_upnp_class() << "</upnp:class>\n  </" << name << ">\n";
 		}
 
 #pragma region root_item
@@ -361,7 +409,8 @@ namespace net { namespace ssdp { namespace import { namespace av {
 			media_item_ptr get_item(const std::string& id)                   override;
 			bool           is_folder() const                                 override { return true; }
 			void           output(std::ostream& o,
-			                   const std::vector<std::string>& filter) const override;
+			                   const std::vector<std::string>& filter,
+			                   const config::config_ptr& config) const       override;
 			const char*    get_upnp_class() const                            override { return "object.container.storageFolder"; }
 			ulong          update_id() const                                 override { return m_device->system_update_id(); }
 			virtual void   add_child(media_item_ptr);
@@ -413,10 +462,10 @@ namespace net { namespace ssdp { namespace import { namespace av {
 			return candidate->get_item(rest_of_id);
 		}
 
-		void root_item::output(std::ostream& o, const std::vector<std::string>& filter) const
+		void root_item::output(std::ostream& o, const std::vector<std::string>& filter, const config::config_ptr& config) const
 		{
 			output_open(o, filter, m_children.size());
-			output_close(o, filter);
+			output_close(o, filter, config);
 		}
 
 		void root_item::add_child(media_item_ptr child)
@@ -446,6 +495,34 @@ namespace net { namespace ssdp { namespace import { namespace av {
 	}
 
 #pragma region media_server
+	bool MediaServer::call_http(const http::http_request& req, const boost::filesystem::path& root, const boost::filesystem::path& rest, http::response& resp)
+	{
+		bool main_resource = root == "media";
+		if (!main_resource && root != "thumb")
+			return false;
+
+		auto item = get_item(rest.string());
+		if (!item)
+			return false;
+
+		auto info = item->get_media(main_resource);
+		if (!info.first.empty())
+		{
+			if (!fs::exists(info.first))
+				return false;
+
+			auto & header = resp.header();
+			header.clear(server());
+			header.append("content-type", item->get_mime());
+			header.append("last-modified")->out() << to_string(time::last_write(info.first));
+			resp.content(http::content::from_file(info.first));
+
+			return true;
+		}
+
+		return false;
+	}
+
 	items::media_item_ptr MediaServer::get_item(const std::string& id)
 	{
 		items::media_item_ptr candidate;

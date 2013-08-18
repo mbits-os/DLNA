@@ -89,6 +89,7 @@ namespace net
 			virtual size_t get_service_count() const { return m_services.size(); }
 			virtual service_ptr get_service(size_t i) const { return m_services[i]; }
 			virtual std::string get_configuration(const std::string& host) const;
+			virtual bool call_http(const http::http_request& req, const boost::filesystem::path& root, const boost::filesystem::path& rest, http::response& resp) = 0;
 
 			config::config_ptr config() const { return m_config; }
 		protected:
