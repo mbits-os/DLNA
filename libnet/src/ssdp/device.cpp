@@ -88,9 +88,9 @@ namespace net
 			o
 				<< R"(<iconList>
   <icon>
-    <mimetype>image/png</mimetype>
-    <width>256</width>
-    <height>256</height>
+    <mimetype>image/jpeg</mimetype>
+    <width>120</width>
+    <height>120</height>
     <depth>24</depth>
     <url>/images/icon-256.png</url>
   </icon>
