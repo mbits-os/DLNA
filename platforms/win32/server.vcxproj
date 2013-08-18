@@ -57,6 +57,10 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\server\fs_items.hpp" />
+    <ClInclude Include="RadioRC.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="Radio.rc" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
