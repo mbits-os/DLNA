@@ -68,7 +68,14 @@ namespace net
 				}
 				else
 				{
-					auto chunk_size = m_data.content()->read(buffer);
+					auto to_read = sizeof(buffer);
+					if (m_data.m_calculated_length < to_read)
+						to_read = m_data.m_calculated_length;
+
+					auto chunk_size = m_data.content()->read(buffer, to_read);
+
+					m_data.m_calculated_length -= chunk_size;
+
 					out_buffer.assign(buffer, chunk_size + buffer);
 					if (chunk_size == 0)
 						m_status = invalid;
@@ -89,7 +96,37 @@ namespace net
 				m_completed = true;
 
 				if (m_content->size_known())
-					m_response.append("content-size")->out() << m_content->get_size();
+				{
+					auto size = m_content->get_size();
+					if (has_range() && m_content->can_skip())
+					{
+						auto copy = m_range;
+						if (copy.second < 0) // 500- means all but first 500 bytes
+						{
+							copy.second = size - 1;
+						}
+						else if (copy.first < 0) // -500 means last 500 bytes
+						{
+							copy.first = size - copy.second;
+							copy.second = size - 1;
+						}
+
+						if (copy.first >= size || copy.second >= size)
+						{
+							m_response.m_status = 416; // Requested range not satisfiable
+							m_content = nullptr;
+							return;
+						}
+
+						m_response.m_status = 206; // Partial Content
+						m_response.append("content-range")->out() << copy.first << "-" << copy.second << "/" << size;
+						size = (size_t)(copy.second - copy.first + 1);
+
+						m_content->skip((size_t)copy.first);
+					}
+					m_calculated_length = size;
+					m_response.append("content-size")->out() << size;
+				}
 				else
 					m_response.append("transfer-encoding")->out() << "chunked";
 			}

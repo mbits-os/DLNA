@@ -155,9 +155,14 @@ namespace net
 			http_response m_response;
 			content_ptr m_content;
 			bool m_completed;
+			std::pair<long long, long long> m_range;
 		public:
-			response() : m_completed(false) {}
+			size_t m_calculated_length;
 
+			response() : m_completed(false), m_range(-1, -1), m_calculated_length(0) {}
+
+			void set_range(long long lower, long long upper) { m_range = std::make_pair(lower, upper); }
+			bool has_range() const { return m_range.first != -1 || m_range.second != -1; }
 			http_response& header() { return m_response; }
 			content_ptr content() { return m_content; }
 			void content(content_ptr c) { m_content = c; }

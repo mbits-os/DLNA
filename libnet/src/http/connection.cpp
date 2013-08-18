@@ -81,6 +81,67 @@ namespace net
 			return o;
 		};
 
+		bool parse_range(const std::string& range_s, long long& lower, long long& upper)
+		{
+			const char* c = range_s.c_str();
+			const char* e = c + range_s.length();
+
+			while (c != e && *c == ' ') ++c;
+			if (c == e || *c++ != 'b') return false;
+			if (c == e || *c++ != 'y') return false;
+			if (c == e || *c++ != 't') return false;
+			if (c == e || *c++ != 'e') return false;
+			if (c == e || *c++ != 's') return false;
+			while (c != e && *c == ' ') ++c;
+			if (c == e || *c++ != '=') return false;
+			while (c != e && *c == ' ') ++c;
+
+			if (c == e) return false;
+
+			lower = -1;
+			if (std::isdigit((unsigned char) *c))
+			{
+				lower = 0;
+				while (std::isdigit((unsigned char) *c))
+				{
+					lower *= 10;
+					lower += *c++ - '0';
+
+					if (c == e)
+						return false;
+				}
+			}
+
+			if (*c++ != '-')
+				return false;
+
+			upper = -1;
+
+			if (c == e)
+				return upper != lower; // eiter "-" or the "500-" case
+
+			if (std::isdigit((unsigned char) *c))
+			{
+				upper = 0;
+				while (std::isdigit((unsigned char) *c))
+				{
+					upper *= 10;
+					upper += *c++ - '0';
+
+					if (c == e)
+						break;
+				}
+
+				if (upper < lower)
+					return false;
+
+				if (c == e)
+					return true;
+			}
+
+			while (c != e && *c == ' ') ++c; // if this is multi-range, the comma will be cought here
+			return c == e; // we do not support multi-ranges.
+		}
 		void connection::read_some_more()
 		{
 			auto self(shared_from_this());
@@ -97,6 +158,15 @@ namespace net
 					if (ret == parser::finished)
 					{
 						auto request = m_parser.header();
+
+						auto range_it = request.find("range");
+						if (range_it != request.end())
+						{
+							long long lower = -1;
+							long long upper = -1;
+							if (parse_range(range_it->value(), lower, upper))
+								m_response.set_range(lower, upper);
+						}
 
 						auto content_length = request.find_as<size_t>("content-length");
 
