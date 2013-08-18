@@ -49,42 +49,59 @@ namespace lan
 
 	namespace item
 	{
-		struct path_item: av::items::common_props_item
+#define ITEM_PROP(type, name) \
+	private: \
+	type m_##name; \
+	public: \
+	type get_##name() const { return m_ ## name; }\
+	bool set_##name(type val) { m_ ## name = val; return true; }
+#define ITEM_SPROP(name) \
+	private: \
+	std::string m_##name; \
+	public: \
+	std::string get_##name() const { return m_ ## name; }\
+	bool set_##name(const std::string& val) { m_ ## name = val; return true; }
+
+		struct path_item : av::items::common_props_item
 		{
-			path_item(av::MediaServer* device, const fs::path& path)
+			path_item(av::MediaServer* device, const fs::path& path, net::ulong duration)
 				: av::items::common_props_item(device)
 				, m_path(path)
+				, m_duration(duration)
 			{
 				set_title(m_path.filename().string());
 				m_last_write = fs::last_write_time(m_path);
 			}
-			time_t get_last_write_time() const override { return m_last_write; }
-
-			fs::path get_path() const { return m_path; }
+			time_t     get_last_write_time() const override { return m_last_write; }
+			net::ulong get_duration() const        override { return m_duration; }
+			fs::path   get_path() const                     { return m_path; }
 
 		protected:
-			fs::path m_path;
-			time_t m_last_write;
+			fs::path   m_path;
+			time_t     m_last_write;
+
+			net::ulong m_duration;
 		};
 
 		struct common_file : path_item
 		{
-			common_file(av::MediaServer* device, const fs::path& path)
-				: path_item(device, path)
+			common_file(av::MediaServer* device, const fs::path& path, net::ulong duration)
+				: path_item(device, path, duration)
 			{
 			}
-			std::vector<av::items::media_item_ptr> list(net::ulong start_from, net::ulong max_count, const av::items::sort_criteria& sort) override { return std::vector<av::items::media_item_ptr>(); }
-			net::ulong predict_count(net::ulong served) const override { return served; }
-			net::ulong update_id() const override { return 0; }
-			av::items::media_item_ptr get_item(const std::string& id) override { return nullptr; }
-			bool is_folder() const override { return false; }
-			void output(std::ostream& o, const std::vector<std::string>& filter) const override;
+			container_type list(net::ulong start_from, net::ulong max_count)                     override { return container_type(); }
+			net::ulong     predict_count(net::ulong served) const                                override { return served; }
+			net::ulong     update_id() const                                                     override { return 0; }
+			item_ptr       get_item(const std::string& id)                                       override { return nullptr; }
+			bool           is_folder() const                                                     override { return false; }
+			void           output(std::ostream& o, const std::vector<std::string>& filter) const override;
+			virtual void   attrs(std::ostream& o, const std::vector<std::string>& filter) const           {};
 		};
 
 		struct photo_file : common_file
 		{
-			photo_file(av::MediaServer* device, const fs::path& path)
-				: common_file(device, path)
+			photo_file(av::MediaServer* device, const fs::path& path, net::ulong)
+				: common_file(device, path, 0)
 			{
 			}
 			const char* get_upnp_class() const override { return "object.item.imageItem.photo"; }
@@ -92,8 +109,8 @@ namespace lan
 
 		struct video_file : common_file
 		{
-			video_file(av::MediaServer* device, const fs::path& path)
-				: common_file(device, path)
+			video_file(av::MediaServer* device, const fs::path& path, net::ulong duration)
+				: common_file(device, path, duration)
 			{
 			}
 			const char* get_upnp_class() const override { return "object.item.videoItem"; }
@@ -101,11 +118,16 @@ namespace lan
 
 		struct audio_file : common_file
 		{
-			audio_file(av::MediaServer* device, const fs::path& path)
-				: common_file(device, path)
+			audio_file(av::MediaServer* device, const fs::path& path, net::ulong duration)
+				: common_file(device, path, duration)
 			{
 			}
 			const char* get_upnp_class() const override { return "object.item.audioItem.musicTrack"; }
+			void attrs(std::ostream& o, const std::vector<std::string>& filter) const override;
+
+			ITEM_SPROP(artist);
+			ITEM_SPROP(album);
+			ITEM_SPROP(genre);
 		};
 
 		struct container_file : path_item, std::enable_shared_from_this<container_file>
@@ -116,8 +138,8 @@ namespace lan
 			struct container_task
 			{
 				async_promise_type m_promise;
-				net::ulong m_start_from;
-				net::ulong m_max_count;
+				net::ulong         m_start_from;
+				net::ulong         m_max_count;
 				container_task(async_promise_type promise, net::ulong start_from, net::ulong max_count)
 					: m_promise(std::move(promise))
 					, m_start_from(start_from)
@@ -127,27 +149,27 @@ namespace lan
 			};
 
 			container_file(av::MediaServer* device, const fs::path& path)
-				: path_item(device, path)
+				: path_item(device, path, 0)
 				, m_update_id(1)
 				, m_current_max(0)
 				, m_running(false)
 			{
 			}
 
-			container_type list(net::ulong start_from, net::ulong max_count, const av::items::sort_criteria& sort) override;
-			net::ulong predict_count(net::ulong served) const override;
-			net::ulong update_id() const override { return m_update_id; }
-			av::items::media_item_ptr get_item(const std::string& id) override;
-			bool is_folder() const override { return true; }
-			void output(std::ostream& o, const std::vector<std::string>& filter) const override;
-			const char* get_upnp_class() const override { return "object.container.storageFolder"; }
+			container_type list(net::ulong start_from, net::ulong max_count)                     override;
+			net::ulong     predict_count(net::ulong served) const                                override;
+			net::ulong     update_id() const                                                     override { return m_update_id; }
+			item_ptr       get_item(const std::string& id)                                       override;
+			bool           is_folder() const                                                     override { return true; }
+			void           output(std::ostream& o, const std::vector<std::string>& filter) const override;
+			const char*    get_upnp_class() const                                                override { return "object.container.storageFolder"; }
 
-			void rescan_if_needed();
-			virtual bool rescan_is_needed() { return false; }
-			virtual void rescan() {}
-			virtual void folder_changed();
-			virtual void add_child(av::items::media_item_ptr);
-			virtual void remove_child(av::items::media_item_ptr);
+			void           rescan_if_needed();
+			virtual bool   rescan_needed()         { return false; }
+			virtual void   rescan()                {}
+			virtual void   folder_changed();
+			virtual void   add_child(item_ptr);
+			virtual void   remove_child(item_ptr);
 
 		private:
 			net::ulong m_current_max;
@@ -173,11 +195,10 @@ namespace lan
 				m_running = false;
 				fulfill_promises(true);
 			}
-			bool is_running() const { return m_running; }
-
-			future_type async_list(net::ulong start_from, net::ulong max_count, const av::items::sort_criteria& sort);
-			void fill_request(async_promise_type promise, net::ulong start_from, net::ulong max_count);
-			void fulfill_promises(bool forced);
+			bool        is_running() const { return m_running; }
+			future_type async_list(net::ulong start_from, net::ulong max_count);
+			void        fill_request(async_promise_type promise, net::ulong start_from, net::ulong max_count);
+			void        fulfill_promises(bool forced);
 		};
 
 		struct directory_item : container_file
@@ -189,8 +210,8 @@ namespace lan
 			}
 
 			void check_updates() override;
-			bool rescan_is_needed() override;
-			void rescan() override;
+			bool rescan_needed() override;
+			void rescan()        override;
 
 			struct contents
 			{
