@@ -319,7 +319,7 @@ namespace net
 
 				if (root == "upnp")
 				{
-					__.withHeader().print();
+					//__.withHeader().print();
 
 					std::tie(root, rest) = pop(rest);
 					if (m_device->call_http(req, root, rest, resp))

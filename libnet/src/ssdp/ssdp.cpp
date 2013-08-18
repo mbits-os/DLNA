@@ -84,6 +84,8 @@ namespace net
 
 		static void log_request(const net::http::http_request& header)
 		{
+			return;
+
 			std::string ssdp_ST = header.ssdp_ST();
 
 			if (ssdp_ST == "urn:schemas-upnp-org:device:InternetGatewayDevice:1")

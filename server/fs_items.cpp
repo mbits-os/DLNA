@@ -282,7 +282,7 @@ namespace lan
 			rescan_if_needed();
 			auto future = async_list(start_from, max_count);
 			auto data = std::move(future.get());
-			log::info() << "Got slice " << get_path().filename() << " (" << start_from << ", " << max_count << ")";
+			//log::info() << "Got slice " << get_path().filename() << " (" << start_from << ", " << max_count << ")";
 			return data;
 		}
 

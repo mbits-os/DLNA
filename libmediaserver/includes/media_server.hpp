@@ -194,7 +194,7 @@ namespace net { namespace ssdp { namespace import { namespace av {
 		                                http::response& resp)   override;
 		const char*           get_type() const                  override { return "urn:schemas-upnp-org:device:MediaServer:1"; }
 		const char*           get_description() const           override { return "UPnP/AV 1.0 Compliant Media Server"; }
-		ulong                 system_update_id() const                   { return m_system_update_id; }
+		ulong                 system_update_id() const                   { return (ulong)m_system_update_id; }
 		items::media_item_ptr get_item(const std::string& id);
 		void                  add_root_element(items::media_item_ptr);
 		void                  remove_root_element(items::media_item_ptr);
