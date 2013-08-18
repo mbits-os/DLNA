@@ -27,6 +27,8 @@
 #include <string>
 #include <memory>
 #include <boost/utility.hpp>
+#include <boost/asio/ip/address_v4.hpp>
+#include <network/interface.hpp>
 
 namespace net
 {
@@ -77,6 +79,8 @@ namespace net
 
 		struct config;
 
+		static inline void ensure_section(config& parent, section_ptr& dst, const std::string& name);
+
 		template <typename Value>
 		struct setting: public boost::noncopyable
 		{
@@ -112,7 +116,61 @@ namespace net
 			}
 
 		private:
-			void ensure_section() const;
+			void ensure_section() const
+			{
+				net::config::ensure_section(m_parent, m_sec, m_section);
+			}
+		};
+
+		template <>
+		struct setting<boost::asio::ip::address_v4> : public boost::noncopyable
+		{
+			typedef boost::asio::ip::address_v4 Value;
+			config& m_parent;
+			mutable section_ptr m_sec;
+			std::string m_section;
+			std::string m_name;
+			mutable bool m_set;
+			mutable Value m_cached;
+
+			setting(config& parent, const std::string& section, const std::string& name)
+				: m_parent(parent)
+				, m_section(section)
+				, m_name(name)
+				, m_set(false)
+			{}
+
+			bool is_set() const
+			{
+				ensure_section();
+				return m_sec->has_value(m_name);
+			}
+
+			Value val() const
+			{
+				ensure_section();
+				if (!m_set)
+				{
+					m_set = true;
+					auto str = get_value<std::string>::helper(m_sec, m_name, "0.0.0.0");
+					m_cached = Value::from_string(str);
+					if (m_cached.is_unspecified())
+						m_cached = net::iface::get_default_interface();
+				}
+				return m_cached;
+			}
+
+			void val(const Value& v)
+			{
+				ensure_section();
+				m_sec->set_value(m_name, v.to_string());
+			}
+
+		private:
+			void ensure_section() const
+			{
+				net::config::ensure_section(m_parent, m_sec, m_section);
+			}
 		};
 
 		struct config
@@ -120,22 +178,23 @@ namespace net
 			config()
 				: uuid(*this, "Server", "UUID")
 				, port(*this, "Server", "Port", 6001)
+				, iface(*this, "Server", "Interface")
 			{}
 			virtual ~config() {}
 			virtual section_ptr get_section(const std::string& name) = 0;
 
 			setting<std::string> uuid;
 			setting<int> port;
+			setting<boost::asio::ip::address_v4> iface;
 		};
 		typedef std::shared_ptr<config> config_ptr;
-	
-		template <typename Value>
-		void setting<Value>::ensure_section() const
+
+		static inline void ensure_section(config& parent, section_ptr& dst, const std::string& name)
 		{
-			if (!m_sec)
-				m_sec = m_parent.get_section(m_section);
-			if (!m_sec)
-				throw std::runtime_error("Section " + m_section + " was not created");
+			if (!dst)
+				dst = parent.get_section(name);
+			if (!dst)
+				throw std::runtime_error("Section " + name + " was not created");
 		}
 
 		config_ptr file_config(const boost::filesystem::path&);

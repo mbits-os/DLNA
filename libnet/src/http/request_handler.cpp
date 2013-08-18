@@ -166,12 +166,12 @@ namespace net
 			}
 		};
 
-		request_handler::request_handler(const ssdp::device_ptr& device, net::ushort port)
+		request_handler::request_handler(const ssdp::device_ptr& device, const config::config_ptr& config)
 			: m_device(device)
-			, m_port(port)
+			, m_config(config)
 		{
-			m_vars.emplace_back("host", to_string(iface::get_default_interface()));
-			m_vars.emplace_back("port", std::to_string(m_port));
+			m_vars.emplace_back("host", to_string(config->iface.val()));
+			m_vars.emplace_back("port", std::to_string(config->port.val()));
 			m_vars.emplace_back("uuid", m_device->usn());
 		}
 
@@ -345,7 +345,7 @@ namespace net
 			auto & header = resp.header();
 			header.clear(m_device->server());
 			header.append("content-type", "text/xml; charset=\"utf-8\"");
-			resp.content(content::from_string(m_device->get_configuration(to_string(iface::get_default_interface()) + ":" + std::to_string(m_port))));
+			resp.content(content::from_string(m_device->get_configuration(to_string(m_config->iface.val()) + ":" + std::to_string(m_config->port.val()))));
 		}
 
 		void request_handler::make_service_xml(response& resp, const ssdp::service_ptr& service)

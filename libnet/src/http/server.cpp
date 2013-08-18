@@ -29,18 +29,17 @@ namespace net
 {
 	namespace http
 	{
-		server::server(boost::asio::io_service& service, const ssdp::device_ptr& device, net::ushort port)
-			: m_port(port)
-			, m_device(device)
-			, m_handler(device, port)
+		server::server(boost::asio::io_service& service, const ssdp::device_ptr& device, const config::config_ptr& config)
+			: m_device(device)
+			, m_handler(device, config)
 			, m_io_service(service)
 			, m_acceptor(service)
 			, m_socket(service)
+			, m_config(config)
 		{
 			boost::asio::ip::tcp::resolver resolver(m_io_service);
-			std::ostringstream port_s; port_s << port;
 			boost::asio::ip::tcp::endpoint endpoint = *resolver.resolve(
-				boost::asio::ip::tcp::resolver::query{ "0.0.0.0", port_s.str() }
+				boost::asio::ip::tcp::resolver::query{ to_string(config->iface.val()), std::to_string(config->port.val()) }
 			);
 			m_acceptor.open(endpoint.protocol());
 			m_acceptor.set_option(boost::asio::ip::tcp::acceptor::reuse_address(true));

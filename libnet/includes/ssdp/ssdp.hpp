@@ -73,7 +73,7 @@ namespace net
 
 		struct ticker
 		{
-			ticker(boost::asio::io_service& io_service, const device_ptr& device, long seconds, net::ushort port);
+			ticker(boost::asio::io_service& io_service, const device_ptr& device, long seconds, const config::config_ptr& config);
 			void start();
 			void stop();
 		private:
@@ -82,7 +82,7 @@ namespace net
 			boost::asio::deadline_timer m_timer;
 			long                        m_interval;
 			boost::asio::ip::address    m_local;
-			net::ushort                 m_port;
+			config::config_ptr          m_config;
 
 			std::string build_msg(const std::string& nt, notification_type nts) const;
 
@@ -92,7 +92,7 @@ namespace net
 
 		struct receiver
 		{
-			receiver(boost::asio::io_service& io_service, const device_ptr& device, net::ushort port);
+			receiver(boost::asio::io_service& io_service, const device_ptr& device, const config::config_ptr& config);
 			void start();
 			void stop();
 		private:
@@ -102,11 +102,12 @@ namespace net
 			typedef boost::asio::ip::address_v4    address_t;
 			typedef boost::asio::ip::udp::endpoint endpoint_t;
 			typedef std::array<char, 1024>         buffer_t;
+			typedef config::config_ptr             config_ptr;
 
 			device_ptr  m_device;
 			service_t&  m_service;
 			address_t   m_local;
-			net::ushort m_port;
+			config_ptr  m_config;
 
 			void discovery(const std::string& st);
 			std::string build_discovery_msg(const std::string& st) const;
@@ -114,10 +115,10 @@ namespace net
 
 		struct server
 		{
-			server(boost::asio::io_service& service, const device_ptr& device, net::ushort port)
-				: m_http(service, device, port)
-				, m_alive_ticker(service, device, INTERVAL, port)
-				, m_listener(service, device, port)
+			server(boost::asio::io_service& service, const device_ptr& device, const config::config_ptr& config)
+				: m_http(service, device, config)
+				, m_alive_ticker(service, device, INTERVAL, config)
+				, m_listener(service, device, config)
 			{
 			}
 

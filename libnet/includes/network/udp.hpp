@@ -44,7 +44,7 @@ namespace net
 
 			typedef std::function<bool()> receive_handler_t;
 
-			multicast_receiver(io_service_t& io_service, const endpoint_t& multicast);
+			multicast_receiver(io_service_t& io_service, const endpoint_t& multicast, const address_t& local);
 			virtual ~multicast_receiver() {}
 
 			void start(const receive_handler_t& handler);
@@ -70,7 +70,7 @@ namespace net
 
 		struct multicast_socket : std::enable_shared_from_this<multicast_socket>
 		{
-			multicast_socket(boost::asio::io_service& io_service, const boost::asio::ip::udp::endpoint& endpoint);
+			multicast_socket(boost::asio::io_service& io_service, const boost::asio::ip::udp::endpoint& endpoint, const boost::asio::ip::address_v4& local);
 			virtual ~multicast_socket();
 			void send(const std::string& msg);
 

@@ -45,8 +45,6 @@ namespace lan
 		static const Log::Module& module() { return APP; }
 	};
 
-	static const net::ushort PORT = 6001;
-
 	namespace item
 	{
 		av::items::media_item_ptr from_path(av::MediaServer* device, const fs::path& path);
@@ -54,10 +52,10 @@ namespace lan
 
 	struct radio
 	{
-		radio(const net::ssdp::device_ptr& device)
+		radio(const net::ssdp::device_ptr& device, const net::config::config_ptr& config)
 			: m_service()
 			, m_signals(m_service)
-			, m_upnp(m_service, device, PORT)
+			, m_upnp(m_service, device, config)
 		{
 			m_signals.add(SIGINT);
 			m_signals.add(SIGTERM);
@@ -81,6 +79,23 @@ namespace lan
 	};
 }
 
+#ifdef _WIN32
+#  define HAS_TERMINAL_API
+void set_terminal_title(const std::string& title)
+{
+	SetConsoleTitleA(title.c_str());
+}
+#endif
+
+void set_terminal_title(const net::config::config_ptr& config)
+{
+#ifdef HAS_TERMINAL_API
+	std::ostringstream title;
+	title << "LAN Radio [" << boost::asio::ip::host_name() << ", " << config->iface.val() << ":" << config->port.val() << "]";
+	set_terminal_title(title.str());
+#endif
+}
+
 int main(int argc, char* argv [])
 {
 	try
@@ -96,6 +111,8 @@ int main(int argc, char* argv [])
 		};
 
 		auto config = net::config::file_config("lanradio.conf");
+		set_terminal_title(config);
+
 		auto server = std::make_shared<av::MediaServer>(info, config);
 
 		for (int arg = 1; arg < argc; ++arg)
@@ -114,7 +131,7 @@ int main(int argc, char* argv [])
 			}
 		}
 
-		lan::radio lanRadio(server);
+		lan::radio lanRadio(server, config);
 
 		lanRadio.run();
 	}

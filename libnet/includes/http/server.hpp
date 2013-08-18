@@ -37,7 +37,7 @@ namespace net
 	{
 		struct server
 		{
-			server(boost::asio::io_service& service, const ssdp::device_ptr& device, net::ushort port);
+			server(boost::asio::io_service& service, const ssdp::device_ptr& device, const config::config_ptr& config);
 
 			void start() { do_accept(); }
 			void stop();
@@ -47,7 +47,7 @@ namespace net
 			request_handler m_handler;
 			boost::asio::io_service& m_io_service;
 			boost::asio::ip::tcp::acceptor m_acceptor;
-			net::ushort m_port;
+			config::config_ptr m_config;
 
 			boost::asio::ip::tcp::socket m_socket;
 			http::connection_manager m_manager;

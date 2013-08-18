@@ -30,9 +30,9 @@ namespace net
 {
 	namespace udp
 	{
-		multicast_receiver::multicast_receiver(boost::asio::io_service& io_service, const endpoint_t& multicast)
+		multicast_receiver::multicast_receiver(boost::asio::io_service& io_service, const endpoint_t& multicast, const address_t& local)
 			: m_io_service(io_service)
-			, m_local(net::iface::get_default_interface())
+			, m_local(local)
 			, m_multicast(multicast)
 			, m_socket(m_io_service, multicast.protocol())
 		{
@@ -87,9 +87,9 @@ namespace net
 		}
 
 
-		multicast_socket::multicast_socket(boost::asio::io_service& io_service, const boost::asio::ip::udp::endpoint& endpoint)
+		multicast_socket::multicast_socket(boost::asio::io_service& io_service, const boost::asio::ip::udp::endpoint& endpoint, const boost::asio::ip::address_v4& local)
 			: m_io_service(io_service)
-			, m_local(net::iface::get_default_interface())
+			, m_local(local)
 			, m_remote(endpoint)
 			, m_socket(io_service, endpoint.protocol())
 		{
