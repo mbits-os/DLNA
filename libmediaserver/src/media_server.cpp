@@ -29,6 +29,8 @@
 #include <algorithm>
 #include <log.hpp>
 
+#include <iomanip>
+
 namespace net { namespace ssdp { namespace import { namespace av {
 
 	extern Log::Module Multimedia {"AVMS"};
@@ -52,11 +54,6 @@ namespace net { namespace ssdp { namespace import { namespace av {
 		std::istringstream i(text);
 		i >> val;
 		return val;
-	}
-
-	static items::sort_criteria parse_sort(const std::string& sort)
-	{
-		return items::sort_criteria();
 	}
 
 	static std::vector<std::string> parse_filter(const std::string& sort)
@@ -93,14 +90,14 @@ namespace net { namespace ssdp { namespace import { namespace av {
 	error_code ContentDirectory::GetSearchCapabilities(const http::http_request& http_request,
 	                                                   /* OUT */ std::string& SearchCaps)
 	{
-		SearchCaps = "*";
+		//SearchCaps = "*";
 		return error::no_error;
 	}
 
 	error_code ContentDirectory::GetSortCapabilities(const http::http_request& http_request,
 	                                                 /* OUT */ std::string& SortCaps)
 	{
-		SortCaps = "*";
+		//SortCaps = "*";
 		return error::no_error;
 	}
 
@@ -139,7 +136,7 @@ namespace net { namespace ssdp { namespace import { namespace av {
 
 				if (BrowseFlag == VALUE_BrowseDirectChildren)
 				{
-					auto children = item->list(StartingIndex, RequestedCount, parse_sort(SortCriteria));
+					auto children = item->list(StartingIndex, RequestedCount);
 					for (auto && child : children)
 					{
 						log::debug() << "    [" << child->get_objectId_attr() << "] \"" << child->get_title() << "\"";
@@ -311,25 +308,80 @@ namespace net { namespace ssdp { namespace import { namespace av {
 			o << "  <" << name << " id=\"" << get_objectId_attr() << "\"";
 			if (is_folder() && contains(filter, "@childCount"))
 				o << " childCount=\"" << child_count << "\"";
-			o << " parentId=\"" << get_parent_attr() << "\" restricted=\"true\">\n    <dc:title>" << get_title() << "</dc:title>\n";
+			o << " parentId=\"" << get_parent_attr() << "\" restricted=\"true\">\n    <dc:title>" << net::xmlencode(get_title()) << "</dc:title>\n";
+		}
+
+		struct part
+		{
+			part(net::ulong val, int w = 2) : val(val), w(w) {}
+			net::ulong val;
+			int w;
+		};
+		std::ostream& operator << (std::ostream& o, const part& op)
+		{
+			return o << std::setfill('0') << std::setw(op.w) << op.val;
 		}
 
 		void common_props_item::output_close(std::ostream& o, const std::vector<std::string>& filter) const
 		{
 			const char* name = is_folder() ? "container" : "item";
 			auto date = get_last_write_time();
+			auto duration = get_duration();
+
 			if (date && contains(filter, "dc:date"))
 				o << "    <dc:date>" << to_iso8601(time::from_time_t(date)) << "</dc:date>\n";
+
+			if (duration && contains(filter, "duration"))
+			{
+				auto millis = duration % 1000;
+				auto secs = duration / 1000;
+				auto mins = secs / 60;
+				auto hours = mins / 60;
+
+				secs %= 60;
+				mins %= 60;
+
+				o << "    <duration>" << part(hours) << ":" << part(mins) << ":" << part(secs) << "." << part(millis, 3) << "</duration>\n";
+			}
 			o << "    <upnp:class>" << get_upnp_class() << "</upnp:class>  </" << name << ">\n";
 		}
 
-#pragma region container_item
-
-		std::vector<media_item_ptr> container_item::list(ulong start_from, ulong max_count, const sort_criteria& sort)
+#pragma region root_item
+		struct root_item : common_props_item
 		{
-			log::debug() << "[" << get_objectId_attr() << "]->list(" << start_from << ", " << max_count << ")";
-			rescan_if_needed();
+			root_item(MediaServer* device)
+				: common_props_item(device)
+				, m_update_id(1)
+				, m_current_max(0)
+			{
+			}
 
+			container_type list(ulong start_from, ulong max_count)           override;
+			ulong          predict_count(ulong served) const                 override { return m_children.size(); }
+			media_item_ptr get_item(const std::string& id)                   override;
+			bool           is_folder() const                                 override { return true; }
+			void           output(std::ostream& o,
+			                   const std::vector<std::string>& filter) const override;
+			const char*    get_upnp_class() const                            override { return "object.container.storageFolder"; }
+			ulong          update_id() const                                 override { return m_device->system_update_id(); }
+			virtual void   add_child(media_item_ptr);
+			virtual void   remove_child(media_item_ptr);
+
+			
+
+			std::string get_parent_attr() const override {
+				static std::string parent_id { "-1" };
+				return parent_id;
+			}
+
+		private:
+			ulong          m_current_max;
+			time_t         m_update_id;
+			container_type m_children;
+		};
+
+		root_item::container_type root_item::list(ulong start_from, ulong max_count)
+		{
 			std::vector<media_item_ptr> out;
 			if (start_from > m_children.size())
 				start_from = m_children.size();
@@ -339,19 +391,13 @@ namespace net { namespace ssdp { namespace import { namespace av {
 				end_at = max_count;
 			end_at += start_from;
 
-			log::debug() << "    revised<" << start_from << ", " << end_at << ">";
 			for (auto i = start_from; i < end_at; ++i)
 				out.push_back(m_children.at(i));
-
-			if (!sort.empty())
-			{
-				// TODO: sort the result
-			}
 
 			return out;
 		}
 
-		media_item_ptr container_item::get_item(const std::string& id)
+		media_item_ptr root_item::get_item(const std::string& id)
 		{
 			media_item_ptr candidate;
 			std::string rest_of_id;
@@ -367,47 +413,26 @@ namespace net { namespace ssdp { namespace import { namespace av {
 			return candidate->get_item(rest_of_id);
 		}
 
-		void container_item::output(std::ostream& o, const std::vector<std::string>& filter) const
+		void root_item::output(std::ostream& o, const std::vector<std::string>& filter) const
 		{
 			output_open(o, filter, m_children.size());
 			output_close(o, filter);
 		}
 
-		void container_item::add_child(media_item_ptr child)
+		void root_item::add_child(media_item_ptr child)
 		{
-			remove_child(child);
 			m_children.push_back(child);
 			auto id = ++m_current_max;
 			child->set_id(id);
 			child->set_objectId_attr(get_objectId_attr() + SEP + std::to_string(id));
 		}
 
-		void container_item::remove_child(media_item_ptr child)
+		void root_item::remove_child(media_item_ptr child)
 		{
-			folder_changed();
-
 			auto pos = std::find(m_children.begin(), m_children.end(), child);
 			if (pos != m_children.end())
 				m_children.erase(pos);
 		}
-#pragma endregion
-
-#pragma region root_item
-
-		struct root_item : container_item
-		{
-			root_item(MediaServer* device) : container_item(device) {}
-
-			// If the ObjectID is zero, then the UpdateID returned is SystemUpdateID
-			ulong update_id() const override { return m_device->system_update_id(); }
-			void folder_changed() override { m_device->object_changed(); }
-
-			std::string get_parent_attr() const override {
-				static std::string parent_id { "-1" };
-				return parent_id;
-			}
-		};
-
 #pragma endregion
 
 		std::string media_item::get_parent_attr() const

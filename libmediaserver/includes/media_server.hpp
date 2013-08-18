@@ -34,45 +34,49 @@ namespace net { namespace ssdp { namespace import { namespace av {
 
 	namespace items
 	{
-		struct sort_criterion
-		{
-			bool m_ascending;
-			std::string m_term;
-		};
-		typedef std::vector<sort_criterion> sort_criteria;
-
 		struct media_item;
 		typedef std::shared_ptr<media_item> media_item_ptr;
 
 		struct media_item
 		{
-			typedef av::items::media_item_ptr item_ptr;
+			typedef media_item_ptr        item_ptr;
 			typedef std::vector<item_ptr> container_type;
 
 			MediaServer* m_device;
 			explicit media_item(MediaServer* device) : m_device(device), m_id(0) {}
 			virtual ~media_item() {}
-			virtual container_type list(ulong start_from, ulong max_count, const sort_criteria& sort) = 0;
-			virtual ulong predict_count(ulong served) const = 0;
-			virtual void check_updates() {}
-			virtual ulong update_id() const = 0;
-			virtual media_item_ptr get_item(const std::string& id) = 0;
-			virtual void set_id(uint id) { m_id = id; }
-			virtual uint get_id() const { return m_id; }
-			virtual bool is_folder() const = 0;
-			virtual void output(std::ostream& o, const std::vector<std::string>& filter) const = 0;
 
-			virtual void set_objectId_attr(const std::string& object_id) { m_object_id = object_id; }
-			virtual std::string get_objectId_attr() const { return m_object_id; }
-			virtual std::string get_parent_attr() const;
+			//enumeration
+			virtual container_type list(ulong start_from, ulong max_count)          = 0;
+			virtual ulong          predict_count(ulong served) const                = 0;
+			virtual void           check_updates()                                  {}
+			virtual ulong          update_id() const                                = 0;
 
-			virtual void set_title(const std::string& title) { m_title = title; }
-			virtual std::string get_title() const { return m_title; }
+			//navigation
+			virtual media_item_ptr get_item(const std::string& id)                  = 0;
+			virtual void           set_id(uint id)                                  { m_id = id; }
+			virtual uint           get_id() const                                   { return m_id; }
+
+			//output
+			virtual bool           is_folder() const                                = 0;
+			virtual void           output(std::ostream& o, const std::vector<std::string>& filter) const = 0;
+
+			//attributes
+			virtual void           set_objectId_attr(const std::string& object_id) { m_object_id = object_id; }
+			virtual std::string    get_objectId_attr() const                       { return m_object_id; }
+			virtual std::string    get_parent_attr() const;
+			virtual void           set_title(const std::string& title)             { m_title = title; }
+			virtual std::string    get_title() const                               { return m_title; }
+			virtual net::ulong     get_duration() const                            { return 0; };
+			virtual void           set_mime(const std::string& mime)               { m_mime = mime; }
+			virtual std::string    get_mime() const                                { return m_mime; }
+
 
 		private:
 			uint m_id;
 			std::string m_object_id;
 			std::string m_title;
+			std::string m_mime;
 		};
 
 		static const char SEP = '.';
@@ -86,38 +90,12 @@ namespace net { namespace ssdp { namespace import { namespace av {
 		struct common_props_item : media_item
 		{
 			common_props_item(MediaServer* device) : media_item(device) {}
-			virtual const char* get_upnp_class() const = 0;
-			virtual time_t get_last_write_time() const { return 0; }
+
+			virtual const char* get_upnp_class() const      = 0;
+			virtual time_t      get_last_write_time() const { return 0; }
 		protected:
-			void output_open(std::ostream& o, const std::vector<std::string>& filter, ulong child_count) const;
+			void output_open(std::ostream& o, const std::vector<std::string>& filter, ulong child_count = 0) const;
 			void output_close(std::ostream& o, const std::vector<std::string>& filter) const;
-		};
-
-		struct container_item : common_props_item
-		{
-			container_item(MediaServer* device)
-				: common_props_item(device)
-				, m_update_id(1)
-				, m_current_max(0)
-			{
-			}
-
-			std::vector<media_item_ptr> list(ulong start_from, ulong max_count, const sort_criteria& sort) override;
-			ulong predict_count(ulong served) const override { return m_children.size(); }
-			media_item_ptr get_item(const std::string& id) override;
-			bool is_folder() const override { return true; }
-			void output(std::ostream& o, const std::vector<std::string>& filter) const override;
-			const char* get_upnp_class() const override { return "object.container.storageFolder"; }
-
-			virtual void rescan_if_needed() {}
-			virtual void folder_changed() = 0;
-			virtual void add_child(media_item_ptr);
-			virtual void remove_child(media_item_ptr);
-
-		private:
-			ulong m_current_max;
-			time_t m_update_id;
-			std::vector<media_item_ptr> m_children;
 		};
 	}
 
@@ -187,21 +165,19 @@ namespace net { namespace ssdp { namespace import { namespace av {
 			add(m_manager);
 		}
 
-		const char* get_type() const override { return "urn:schemas-upnp-org:device:MediaServer:1"; }
-		const char* get_description() const override { return "UPnP/AV 1.0 Compliant Media Server"; }
-
-		ulong system_update_id() const { return m_system_update_id; }
-
+		const char*           get_type() const                  override { return "urn:schemas-upnp-org:device:MediaServer:1"; }
+		const char*           get_description() const           override { return "UPnP/AV 1.0 Compliant Media Server"; }
+		ulong                 system_update_id() const                   { return m_system_update_id; }
 		items::media_item_ptr get_item(const std::string& id);
-		void add_root_element(items::media_item_ptr);
-		void remove_root_element(items::media_item_ptr);
-		void object_changed();
+		void                  add_root_element(items::media_item_ptr);
+		void                  remove_root_element(items::media_item_ptr);
+		void                  object_changed();
 
 	private:
-		items::root_item_ptr m_root_item;
-		std::shared_ptr<ContentDirectory> m_directory;
+		items::root_item_ptr               m_root_item;
+		std::shared_ptr<ContentDirectory>  m_directory;
 		std::shared_ptr<ConnectionManager> m_manager;
-		time_t m_system_update_id;
+		time_t                             m_system_update_id;
 
 		items::root_item_ptr create_root_item();
 	};
