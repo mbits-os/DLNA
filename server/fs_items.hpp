@@ -116,6 +116,9 @@ namespace lan
 			{
 			}
 			const char* get_upnp_class() const override { return "object.item.imageItem.photo"; }
+
+			ITEM_PROP_V(net::ulong, width);
+			ITEM_PROP_V(net::ulong, height);
 		};
 
 		struct video_file : common_file
@@ -125,6 +128,10 @@ namespace lan
 			{
 			}
 			const char* get_upnp_class() const override { return "object.item.videoItem"; }
+
+			ITEM_PROP_V(net::ulong, width);
+			ITEM_PROP_V(net::ulong, height);
+			ITEM_PROP_V(int, ref_frame_count);
 		};
 
 		struct audio_file : common_file

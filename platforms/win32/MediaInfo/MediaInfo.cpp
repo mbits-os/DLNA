@@ -7,6 +7,7 @@
 #include <dom.hpp>
 #include <sstream>
 #include <iostream>
+#include <vector>
 
 #pragma comment(lib, "libz.lib")
 #pragma comment(lib, "libzen.lib")
@@ -162,6 +163,131 @@ namespace MediaInfo
 	};
 
 	namespace {
+		struct Format
+		{
+			const char* m_name;
+			std::vector<const char*> m_values;
+			Format(const char* name)
+				: m_name(name)
+			{}
+			Format(const char* name, const std::vector<const char*>& values)
+				: m_name(name)
+				, m_values(values)
+			{}
+		};
+
+		// commands:
+		// ! exact
+		// < starts with
+		// ~ contains
+		// ? matches
+		const Format codecs  [] = {
+			Format("aac",     { "!m4a", "!40", "!a_aac", "!aac" }),
+			Format("ac3",     { "!ac-3", "!a_ac3", "!2000" }),
+			Format("aiff",    { "~aiff" }),
+			Format("alac",    { "!alac" }),
+			Format("ape",     { "!monkey's audio" }),
+			Format("atrac",   { "~atrac3" }),
+			Format("avi",     { "!avi", "!opendml" }),
+			Format("bmp",     { "!bitmap" }),
+			Format("divx",    { "~div", "~dx" }),
+			//Format("dts",     { "!dts" }),
+			Format("dtshd",   { "!dts", "!a_dts", "!8" }),
+			Format("dtshd+",  { "!ma" }),
+			Format("dv",      { "?(?i)(dv)|(cdv.?)|(dc25)|(dcap)|(dvc.?)|(dvs.?)|(dvrs)|(dv25)|(dv50)|(dvan)|(dvh.?)|(dvis)|(dvl.?)|(dvnm)|(dvp.?)|(mdvf)|(pdvc)|(r411)|(r420)|(sdcc)|(sl25)|(sl50)|(sldv)" }),
+			Format("eac3",    { "!e-ac-3" }),
+			Format("flac",    { "!flac" }),
+			Format("flv",     { "<flash" }),
+			Format("gif",     { "!gif" }),
+			Format("h264",    { "<avc", "~h264" }),
+			Format("jpg",     { "!jpeg" }),
+			Format("lpcm",    { "!pcm", "!1" }),
+			Format("mkv",     { "!matroska" }),
+			//Format("gmc",     {  }),
+			//Format("qpel",    {  }),
+			Format("mjpeg",   { "~mjpg", "~m-jpeg" }),
+			Format("mlp",     { "~mlp" }),
+			Format("mov",     { "!qt", "!quicktime" }),
+			Format("mp3",     { "!55", "!a_mpeg/l3" }),
+			Format("mp3+",    { "!layer 3" }),
+			Format("mp4",     { "!isom", "<mp4", "!20", "!m4v", "<mpeg-4", "~xvid" }),
+			Format("mpa",     { "!mpeg audio" }),
+			Format("mpc",     { "~musepack" }),
+			Format("mpeg1",   { "!version 1" }),
+			Format("mpeg2",   { "~mpeg video" }),
+			Format("mpegps",  { "~mpeg-ps" }),
+			Format("mpegts",  { "~mpeg-ts", "!bdav" }),
+			Format("ogg",     { "~ogg", "!vorbis", "!a_vorbis" }),
+			Format("png",     { "!png" }),
+			//Format("ra",      {  }),
+			Format("rm",      { "~realmedia", "<rv", "<cook" }),
+			Format("shn",     { "!shorten" }),
+			Format("tiff",    { "!tiff" }),
+			Format("truehd",  { "~truehd" }),
+			Format("vc1",     { "!vc-1", "!vc1", "!wvc1", "!wmv3", "!wmv9", "!wmva" }),
+			Format("wavpack", { "~wavpack" }),
+			Format("wav",     { "!wave" }),
+			Format("WebM",    { "!webm" }),
+			Format("wma",     { "!161", "<wma" }),
+			Format("wmv",     { "~windows media", "!wmv1", "!wmv2", "!wmv7", "!wmv8" })
+		};
+
+		bool equals(const char* value, const char* tmplt)
+		{
+			return strcmp(value, tmplt) == 0;
+		}
+
+		bool starts_with(const char* value, const char* tmplt)
+		{
+			auto len1 = strlen(value);
+			auto len2 = strlen(tmplt);
+			if (len2 > len1)
+				return false;
+			if (len2 == len1)
+				return equals(value, tmplt);
+			return strncmp(value, tmplt, len2) == 0;
+		}
+
+		bool contains(const char* value, const char* tmplt)
+		{
+			return strstr(value, tmplt) != nullptr;
+		}
+
+		bool re_matches(const char* value, const char* tmplt)
+		{
+			std::cout << "REGEX(\"" << value << "\", \"" << tmplt << "\") not implemented!\n";
+			return false;
+		}
+
+		bool matches(const char* value, const char* tmplt)
+		{
+			switch (*tmplt)
+			{
+			case '!': return equals(value, tmplt + 1);
+			case '<': return starts_with(value, tmplt + 1);
+			case '~': return contains(value, tmplt + 1);
+			case '?': return re_matches(value, tmplt + 1);
+			}
+			return false;
+		}
+
+		const char* find_format(const char* value)
+		{
+			if (!value)
+				return nullptr;
+
+			for (auto&& codec : codecs)
+			{
+				for (auto&& tmplt : codec.m_values)
+				{
+					if (matches(value, tmplt))
+						return codec.m_name;
+				}
+			}
+
+			return nullptr;
+		}
+
 		template <typename Value>
 		struct setter
 		{
@@ -185,6 +311,16 @@ namespace MediaInfo
 					return (dst->*method)(val);
 				};
 			}
+			static std::function<bool (ITrack* dst, const dom::XmlNodePtr& src)> function(bool (*func)(ITrack*, const Value&))
+			{
+				return [func](ITrack* dst, const dom::XmlNodePtr& src) -> bool
+				{
+					Value val;
+					if (!ref_get(src, val))
+						return false;
+					return func(dst, val);
+				};
+			}
 		};
 		template <>
 		struct setter<const char*>
@@ -197,6 +333,16 @@ namespace MediaInfo
 					if (!ref_get(src, val))
 						return false;
 					return (dst->*method)(val.c_str());
+				};
+			}
+			static std::function<bool (ITrack* dst, const dom::XmlNodePtr& src)> function(bool (*func)(ITrack*, const char*) )
+			{
+				return [func](ITrack* dst, const dom::XmlNodePtr& src) -> bool
+				{
+					std::string val;
+					if (!ref_get(src, val))
+						return false;
+					return func(dst, val.c_str());
 				};
 			}
 		};
@@ -228,30 +374,56 @@ namespace MediaInfo
 			{
 			}
 
+			template <typename Value>
+			Setter(const char* name, bool (*func) (ITrack*, const Value&))
+				: m_name(name)
+				, m_setter(setter<Value>::function(func))
+			{
+			}
+
 			Setter(const char* name, bool (ITrack::*method) (const char*) )
 				: m_name(name)
 				, m_setter(setter<const char*>::function(method))
 			{
 			}
 
+			Setter(const char* name, bool (*func)(ITrack*, const char*) )
+				: m_name(name)
+				, m_setter(setter<const char*>::function(func))
+			{
+			}
+
 			bool operator() (ITrack* dst, const dom::XmlNodePtr& src) const { return m_setter(dst, src); }
 		};
 
+		bool set_format(ITrack* dst, const std::string& value)
+		{
+			std::string v = value;
+			for (auto && c : v) c = std::tolower((unsigned char) c);
+
+			auto format = find_format(v.c_str());
+			if (!format)
+				return dst->set_format(value.c_str());
+
+			//... additional analysis needed
+			return dst->set_format(format);
+		}
+
 		const Setter names [] =
 		{
-			Setter("Format"),
+			Setter("Format",            set_format),
 			Setter("Duration",          &ITrack::set_duration),
 			Setter("InternetMediaType", &ITrack::set_mime),
-			Setter("Format_Settings_RefFrames.String"),
+			Setter("Format_Settings_RefFrames.String", &ITrack::set_ref_frame_count),
 			Setter("Format_Settings_QPel"),
 			Setter("Format_Settings_GMC"),
 			Setter("MuxingMode"),
-			Setter("CodecID"),
+			Setter("CodecID",          set_format),
 			Setter("Language"),
 			Setter("Title",            &ITrack::set_title),
-			Setter("Width"),
+			Setter("Width",            &ITrack::set_width),
 			Setter("Encryption"),
-			Setter("Height"),
+			Setter("Height",           &ITrack::set_height),
 			Setter("DisplayAspectRatio.String"),
 			Setter("DisplayAspectRatio_Original.Stri"),
 			Setter("FrameRate"),
@@ -299,8 +471,13 @@ namespace MediaInfo
 
 			if (!show)
 			{
-				if (name.substr(0, 14) == "Format_Version" || name.substr(0, 14) == "Format_Profile" || name.substr(0, 5) == "Track")
+				auto sub = name.substr(0, 14);
+				if (sub == "Format_Version" || sub == "Format_Profile")
+				{
+					if (!names[0](dst, field))
+						return false;
 					show = true;
+				}
 			}
 
 			if (!show)

@@ -78,12 +78,16 @@ namespace MediaInfo
 		TRACK_PROP(unsigned long, bitrate);
 		TRACK_PROP(unsigned long, sample_freq);
 		TRACK_PROP(unsigned long, channels);
+		TRACK_PROP(unsigned long, width);
+		TRACK_PROP(unsigned long, height);
 		TRACK_SPROP(mime);
 		TRACK_SPROP(title);
 		TRACK_SPROP(artist);
 		TRACK_SPROP(album);
 		TRACK_SPROP(genre);
+		TRACK_SPROP(format);
 		TRACK_PROP(int, track_position);
+		TRACK_PROP(int, ref_frame_count);
 	};
 
 	struct IContainer

@@ -356,7 +356,7 @@ namespace net { namespace ssdp { namespace import { namespace av {
 				o << "    <res xmlns:dlna=\"urn:schemas-dlna-org:metadata-1-0/\"";
 				if (!mime.empty() && contains(filter, "res@protocolInfo"))
 				{
-					o << "\n      protocolInfo=\"http-get:*:" << mime << ":";
+					o << " protocolInfo=\"http-get:*:" << mime << ":";
 
 					std::string dlna_orgpn;
 					if (!dlna_orgpn.empty())
@@ -366,7 +366,7 @@ namespace net { namespace ssdp { namespace import { namespace av {
 				}
 
 #define SIMPLE_RES_ATTR2(name, val) \
-	do { if (val && contains(filter, "res@" #name)) { o << "\n      " #name "=\"" << val << "\""; } } while (0)
+	do { if (val && contains(filter, "res@" #name)) { o << " " #name "=\"" << val << "\""; } } while (0)
 
 #define SIMPLE_RES_ATTR(name) SIMPLE_RES_ATTR2(name, name)
 
@@ -382,12 +382,19 @@ namespace net { namespace ssdp { namespace import { namespace av {
 					secs %= 60;
 					mins %= 60;
 
-					o << "\n      duration=\"" << part(hours) << ":" << part(mins) << ":" << part(secs) << "." << part(millis, 3) << "\"";
+					o << " duration=\"" << part(hours) << ":" << part(mins) << ":" << part(secs) << "." << part(millis, 3) << "\"";
 				}
 
 				SIMPLE_RES_ATTR2(sampleFrequency, sample_freq);
 				SIMPLE_RES_ATTR2(nrAudioChannels, channels);
 				SIMPLE_RES_ATTR(size);
+
+				auto width = get_width();
+				auto height = get_height();
+				if (width && height && contains(filter, "res@resolution"))
+				{
+					o << " resolution=\"" << width << "x" << height << "\"";
+				}
 
 				o << ">http://" << net::to_string(config->iface) << ":" << (int)config->port << "/upnp/media/" << get_objectId_attr() << "</res>\n";
 			}

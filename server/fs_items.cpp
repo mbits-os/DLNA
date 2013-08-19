@@ -83,6 +83,13 @@ namespace lan
 					: m_type(type)
 					, m_id(id)
 					, m_duration(0)
+					, m_bitrate(0)
+					, m_sample_freq(0)
+					, m_channels(0)
+					, m_width(0)
+					, m_height(0)
+					, m_track_position(0)
+					, m_ref_frame_count(0)
 				{
 				}
 				mi::TrackType get_type() const override { return m_type; }
@@ -92,12 +99,16 @@ namespace lan
 				TPROPERTY(unsigned long, bitrate);
 				TPROPERTY(unsigned long, sample_freq);
 				TPROPERTY(unsigned long, channels);
+				TPROPERTY(unsigned long, width);
+				TPROPERTY(unsigned long, height);
 				SPROPERTY(mime);
 				SPROPERTY(title);
 				SPROPERTY(artist);
 				SPROPERTY(album);
 				SPROPERTY(genre);
 				TPROPERTY(int, track_position);
+				TPROPERTY(int, ref_frame_count);
+				SPROPERTY(format);
 			};
 			typedef std::shared_ptr<MediaTrack> track_ptr;
 
@@ -154,10 +165,12 @@ namespace lan
 
 #define GET(name) \
 	auto name = env.get_ ## name(); \
-	if (!name) name = primary->get_ ## name()
+	if (!name) name = primary->get_ ## name(); \
+	if (!name && secondary) name = secondary->get_ ## name()
 #define GETS(name) \
 	auto name = env.get_ ## name(); \
-	if (name.empty()) name = primary->get_ ## name()
+	if (name.empty()) name = primary->get_ ## name(); \
+	if (name.empty() && secondary) name = secondary->get_ ## name()
 
 #define MOVE(name) \
 	GET(name); \
@@ -168,15 +181,19 @@ namespace lan
 	item->set_ ## name(name);
 
 		template <typename T>
-		void item_specific(T* item, Media::MetadataContainer& env, const Media::track_ptr& primary)
+		void item_specific(T* item, Media::MetadataContainer& env, const Media::track_ptr& primary, const Media::track_ptr& secondary)
 		{
 		}
 
-		void item_specific(audio_file* item, Media::MetadataContainer& env, const Media::track_ptr& primary)
+		void item_specific(video_file* item, Media::MetadataContainer& env, const Media::track_ptr& primary, const Media::track_ptr& secondary)
 		{
-			GETS(title);
-			if (!title.empty())
-				item->set_title(title);
+			MOVE(width);
+			MOVE(height);
+			MOVE(ref_frame_count);
+		}
+
+		void item_specific(audio_file* item, Media::MetadataContainer& env, const Media::track_ptr& primary, const Media::track_ptr& secondary)
+		{
 			MOVES(album);
 			MOVES(artist);
 			MOVES(genre);
@@ -187,10 +204,16 @@ namespace lan
 			MOVE(channels);
 		}
 
+		void item_specific(photo_file* item, Media::MetadataContainer& env, const Media::track_ptr& primary, const Media::track_ptr& secondary)
+		{
+			MOVE(width);
+			MOVE(height);
+		}
+
 		template <typename T>
 		std::shared_ptr<T> create(av::MediaServer* device, const fs::path& path, Media::MetadataContainer& env)
 		{
-			Media::track_ptr primary;
+			Media::track_ptr primary, secondary;
 			for (auto&& track : env.m_tracks)
 			{
 				if ((int)track->get_type() == track_type<T>::value)
@@ -200,18 +223,37 @@ namespace lan
 				}
 			}
 
+			if (track_type<T>::value == (int) MediaInfo::TrackType::Video)
+			{
+				for (auto && track : env.m_tracks)
+				{
+					if (track->get_type() == MediaInfo::TrackType::Audio)
+					{
+						secondary = track;
+						break;
+					}
+				}
+			}
+
 			if (!primary)
 				return nullptr;
 
 			GET(duration);
 			GETS(mime);
-			if (mime.empty())
-				mime = "video/mpeg";
+
+			auto title = env.get_title();
+			if (title.empty()) title = primary->get_title();
 
 			auto ret = std::make_shared<T>(device, path, duration);
 
+			if (mime.empty())
+				mime = "video/mpeg";
 			ret->set_mime(mime);
-			item_specific(ret.get(), env, primary);
+
+			if (!title.empty())
+				ret->set_title(title);
+
+			item_specific(ret.get(), env, primary, secondary);
 
 			return ret;
 		}

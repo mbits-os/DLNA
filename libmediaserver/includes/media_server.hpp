@@ -81,6 +81,9 @@ namespace net { namespace ssdp { namespace import { namespace av {
 			virtual net::ulong     get_sample_freq() const                         { return 0; }
 			virtual net::ulong     get_channels() const                            { return 0; }
 			virtual net::ulong     get_size() const                                { return 0; }
+			virtual net::ulong     get_height() const                              { return 0; }
+			virtual net::ulong     get_width() const                               { return 0; }
+			virtual int            get_ref_frame_count() const                     { return 0; }
 
 			//media
 			virtual media_info     get_media(bool main_resource)                   { return make_media_info(media_generator_ptr()); }
