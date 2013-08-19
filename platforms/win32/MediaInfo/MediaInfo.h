@@ -67,7 +67,8 @@ namespace MediaInfo
 
 #define TRACK_SPROP(name) \
 	virtual bool set_##name(const char* val) = 0; \
-	virtual std::string get_##name() const = 0
+	virtual std::string get_##name() const = 0; \
+	virtual const char* get_##name##_c() const = 0
 
 	struct ITrack
 	{
@@ -93,6 +94,8 @@ namespace MediaInfo
 	struct IContainer
 	{
 		virtual ITrack* create_track(TrackType type, int id) = 0;
+		virtual size_t get_length() const = 0;
+		virtual ITrack* get_item(size_t track) const = 0;
 	};
 
 	typedef struct APIHandle{} *HMEDIAINFOAPI;

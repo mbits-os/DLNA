@@ -131,22 +131,18 @@ namespace MediaInfo
 				{
 					auto attrs = readTrackType(track);
 					auto dst = env->create_track(attrs.first, attrs.second);
-					//if (attrs.first == TrackType::Unknown)
-					//{
-					//	auto type = get(track, "@type", std::string());
-					//	std::cout << "UNKNOWN TRACK: " << type << "\n";
-					//}
+
 					if (!dst)
 						continue;
 					if (!extract_track(dst, track))
 						return false;
 				}
-				//std::cout << "\n";
 
-				return true;
+				return analyze_tracks(env);
 			}
 
 			bool extract_track(ITrack* dst, const dom::XmlNodePtr& src);
+			bool analyze_tracks(IContainer* env);
 		};
 
 		MediaInfoAPI()
@@ -180,7 +176,6 @@ namespace MediaInfo
 		// ! exact
 		// < starts with
 		// ~ contains
-		// ? matches
 		const Format codecs  [] = {
 			Format("aac",     { "!m4a", "!40", "!a_aac", "!aac" }),
 			Format("ac3",     { "!ac-3", "!a_ac3", "!2000" }),
@@ -194,7 +189,7 @@ namespace MediaInfo
 			//Format("dts",     { "!dts" }),
 			Format("dtshd",   { "!dts", "!a_dts", "!8" }),
 			Format("dtshd+",  { "!ma" }),
-			Format("dv",      { "?(?i)(dv)|(cdv.?)|(dc25)|(dcap)|(dvc.?)|(dvs.?)|(dvrs)|(dv25)|(dv50)|(dvan)|(dvh.?)|(dvis)|(dvl.?)|(dvnm)|(dvp.?)|(mdvf)|(pdvc)|(r411)|(r420)|(sdcc)|(sl25)|(sl50)|(sldv)" }),
+			Format("dv",      { "!dv", "<cdv", "!dc25", "!dcap", "<dvc", "<dvs", "!dvrs", "!dv25", "!dv50", "!dvan", "<dvh", "!dvis", "<dvl", "!dvnm", "<dvp", "!mdvf", "!pdvc", "!r411", "!r420", "!sdcc", "!sl25", "!sl50", "!sldv" }),
 			Format("eac3",    { "!e-ac-3" }),
 			Format("flac",    { "!flac" }),
 			Format("flv",     { "<flash" }),
@@ -253,12 +248,6 @@ namespace MediaInfo
 			return strstr(value, tmplt) != nullptr;
 		}
 
-		bool re_matches(const char* value, const char* tmplt)
-		{
-			std::cout << "REGEX(\"" << value << "\", \"" << tmplt << "\") not implemented!\n";
-			return false;
-		}
-
 		bool matches(const char* value, const char* tmplt)
 		{
 			switch (*tmplt)
@@ -266,7 +255,6 @@ namespace MediaInfo
 			case '!': return equals(value, tmplt + 1);
 			case '<': return starts_with(value, tmplt + 1);
 			case '~': return contains(value, tmplt + 1);
-			case '?': return re_matches(value, tmplt + 1);
 			}
 			return false;
 		}
@@ -403,7 +391,7 @@ namespace MediaInfo
 
 			auto format = find_format(v.c_str());
 			if (!format)
-				return dst->set_format(value.c_str());
+				return true; // dst->set_format(value.c_str());
 
 			//... additional analysis needed
 			return dst->set_format(format);
@@ -458,6 +446,11 @@ namespace MediaInfo
 			auto len = name.length();
 			bool show = false;
 
+			if (name == "Cover_Data")
+			{
+				std::cout << "Cover_Data\n";
+			}
+
 			for (auto && known : names)
 			{
 				if (name == known.m_name)
@@ -500,6 +493,154 @@ namespace MediaInfo
 		}
 		//msg << "\n";
 		//if (printed) std::cout << msg.str();
+
+		return true;
+	}
+
+	struct tracks_iterator
+	{
+		IContainer* m_env;
+		size_t m_index;
+	public:
+
+		tracks_iterator(IContainer* env, size_t index) : m_env(env), m_index(index) {}
+
+		ITrack* operator*() { return m_env->get_item(m_index); }
+
+		tracks_iterator operator ++()
+		{
+			++m_index;
+			return *this;
+		}
+
+		tracks_iterator operator ++(int)
+		{
+			tracks_iterator tmp(*this);
+			m_index++;
+			return tmp;
+		}
+
+		bool operator == (const tracks_iterator& rhs) const { return m_index == rhs.m_index; }
+		bool operator != (const tracks_iterator& rhs) const { return m_index != rhs.m_index; }
+	};
+
+	inline tracks_iterator begin(IContainer* env)
+	{
+		return tracks_iterator(env, 0);
+	}
+
+	inline tracks_iterator end(IContainer* env)
+	{
+		return tracks_iterator(env, env ? env->get_length() : 0);
+	}
+
+	bool MediaInfoAPI::Session::analyze_tracks(IContainer* env)
+	{
+		ITrack* general = nullptr;
+		ITrack* video = nullptr;
+		ITrack* audio = nullptr;
+		ITrack* photo = nullptr;
+		for (auto && track : env)
+		{
+			if (!general && track->get_type() == TrackType::General) general = track;
+			if (!video && track->get_type()   == TrackType::Video)   video = track;
+			if (!audio && track->get_type()   == TrackType::Audio)   audio = track;
+			if (!photo && track->get_type()   == TrackType::Image)   photo = track;
+		}
+
+		if (!general)
+			return false;
+
+		std::string format, video_format, audio_format;
+		std::string mime, video_mime, audio_mime;
+
+		format = general->get_format_c();
+		mime = general->get_mime_c();
+
+		if (video)
+		{
+			video_format = video->get_format_c();
+			video_mime = video->get_mime_c();
+		}
+		if (audio)
+		{
+			audio_format = audio->get_format_c();
+			audio_mime = audio->get_mime_c();
+		}
+
+		if (!video && !audio && !photo)
+			return true;
+
+		//std::cout << "[" << format << ":" << video_format << ":" << audio_format << "][" << mime << ":" << video_mime << ":" << audio_mime << "] -> ";
+
+		for (auto && c : format) c = std::tolower((unsigned char) c);
+		for (auto && c : video_format) c = std::tolower((unsigned char) c);
+		for (auto && c : audio_format) c = std::tolower((unsigned char) c);
+
+#define UNKNOWN_VIDEO_TYPEMIME "video/mpeg"
+#define UNKNOWN_IMAGE_TYPEMIME "image/jpeg"
+#define UNKNOWN_AUDIO_TYPEMIME "audio/mpeg"
+#define AUDIO_MP3_TYPEMIME "audio/mpeg"
+#define AUDIO_MP4_TYPEMIME "audio/x-m4a"
+#define AUDIO_WAV_TYPEMIME "audio/wav"
+#define AUDIO_WMA_TYPEMIME "audio/x-ms-wma"
+#define AUDIO_FLAC_TYPEMIME "audio/x-flac"
+#define AUDIO_OGG_TYPEMIME "audio/x-ogg"
+#define AUDIO_LPCM_TYPEMIME "audio/L16"
+#define MPEG_TYPEMIME "video/mpeg"
+#define MP4_TYPEMIME "video/mp4"
+#define AVI_TYPEMIME "video/avi"
+#define WMV_TYPEMIME "video/x-ms-wmv"
+#define ASF_TYPEMIME "video/x-ms-asf"
+#define MATROSKA_TYPEMIME "video/x-matroska"
+#define VIDEO_TRANSCODE "video/transcode"
+#define AUDIO_TRANSCODE "audio/transcode"
+#define PNG_TYPEMIME "image/png"
+#define JPEG_TYPEMIME "image/jpeg"
+#define TIFF_TYPEMIME "image/tiff"
+#define GIF_TYPEMIME "image/gif"
+#define BMP_TYPEMIME "image/bmp"
+
+		if (format == "avi")
+			mime = AVI_TYPEMIME;
+		else if (format == "asf" || format == "wmv")
+			mime = WMV_TYPEMIME;
+		else if (format == "matroska" || format == "mkv")
+			mime = MATROSKA_TYPEMIME;
+		else if (video_format == "mjpeg")
+			mime = JPEG_TYPEMIME;
+		else if ("png" == video_format || "png" == format)
+			mime = PNG_TYPEMIME;
+		else if ("gif" == video_format || "gif" == format)
+			mime = GIF_TYPEMIME;
+		else if (video_format == "h264" || video_format == "h263" || video_format == "mpeg4" || video_format == "mp4")
+			mime = MP4_TYPEMIME;
+		else if (video_format.find("mpeg") != std::string::npos || video_format.find("mpg") != std::string::npos)
+			mime = MPEG_TYPEMIME;
+		else if (video_format.empty() && (audio_format == "mpa" || audio_format == "mp3+" || audio_format.find("mp3") != std::string::npos))
+			mime = AUDIO_MP3_TYPEMIME;
+		else if (video_format.empty() && audio_format.find("aac") != std::string::npos)
+			mime = AUDIO_MP4_TYPEMIME;
+		else if (video_format.empty() && audio_format.find("flac") != std::string::npos)
+			mime = AUDIO_FLAC_TYPEMIME;
+		else if (video_format.empty() && audio_format.find("vorbis") != std::string::npos)
+			mime = AUDIO_OGG_TYPEMIME;
+		else if (video_format.empty() && (audio_format.find("asf") != std::string::npos || starts_with(audio_format.c_str(), "wm")))
+			mime = AUDIO_WMA_TYPEMIME;
+		else if (video_format.empty() && (audio_format.find("wav") != std::string::npos || starts_with(audio_format.c_str(), "pcm")))
+			mime = AUDIO_WAV_TYPEMIME;
+		else if (video)
+			mime = UNKNOWN_VIDEO_TYPEMIME;
+		else if (audio)
+			mime = UNKNOWN_AUDIO_TYPEMIME;
+		else if (photo)
+			mime = UNKNOWN_IMAGE_TYPEMIME;
+
+		general->set_mime(mime.c_str());
+
+		//char buffer[1024];
+		//WideCharToMultiByte(CP_ACP, 0, m_path, -1, buffer, sizeof(buffer), nullptr, nullptr);
+		//std::cout << "[" << mime << "] " << buffer << "\n";
 
 		return true;
 	}

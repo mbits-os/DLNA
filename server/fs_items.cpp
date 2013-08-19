@@ -72,6 +72,7 @@ namespace lan
 		std::string m_##name; \
 		public: \
 		std::string get_##name() const override { /*std::cout << "Reading " #name ": " << m_ ## name << "\n";*/ return m_ ## name; }\
+		const char* get_##name##_c() const override { return m_ ## name.c_str(); }\
 		bool set_##name(const char* val) override { /*std::cout << "Setting " #name ": " << val << "\n";*/ m_ ## name = val; return true; }
 
 			struct MediaTrack : mi::ITrack
@@ -155,6 +156,8 @@ namespace lan
 
 					return ptr.get();
 				}
+				size_t get_length() const override { return 1 + m_tracks.size(); }
+				ITrack* get_item(size_t track) const override { return track == 0 ? const_cast<MetadataContainer*>(this) : m_tracks[track - 1].get(); }
 			};
 		}
 
