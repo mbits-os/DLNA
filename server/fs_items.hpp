@@ -104,7 +104,7 @@ namespace lan
 			item_ptr       get_item(const std::string& id)                                 override { return nullptr; }
 			bool           is_image() const                                                override { return false; }
 			bool           is_folder() const                                               override { return false; }
-			media_info     get_media(bool main_resource)                                   override;
+			media_ptr      get_media(bool main_resource)                                   override;
 			void           output(std::ostream& o, const std::vector<std::string>& filter,
 			                      const net::config::config_ptr& config) const             override;
 			virtual void   attrs(std::ostream& o, const std::vector<std::string>& filter,

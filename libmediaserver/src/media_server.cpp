@@ -519,6 +519,74 @@ namespace net { namespace ssdp { namespace import { namespace av {
 			return m_object_id.substr(0, pos);
 		}
 
+		struct media_file : media
+		{
+			fs::path    m_path;
+			std::string m_mime;
+			bool        m_main_resource;
+
+			media_file(const fs::path& path, const std::string& mime, bool main)
+				: m_path(path)
+				, m_mime(mime)
+				, m_main_resource(main)
+			{}
+
+			bool prep_response(http::response& resp) override
+			{
+				if (!fs::exists(m_path))
+					return false;
+
+
+				auto& header = resp.header();
+				header.append("content-type", m_mime);
+				header.append("last-modified")->out() << to_string(time::last_write(m_path));
+				resp.content(http::content::from_file(m_path));
+
+				if (m_main_resource && resp.first_range())
+					log::info() << "Serving " << m_path;
+
+				return true;
+			}
+		};
+
+		static struct
+		{
+			std::string ext;
+			const char* mime_type;
+		} s_extensions [] = {
+			{ ".xml", "text/xml" },
+			{ ".png", "image/png" },
+			{ ".jpg", "image/jpeg" }
+		};
+
+		std::string naive_mime(const fs::path& path)
+		{
+			const char* content_type = "text/html";
+			if (path.has_extension())
+			{
+				std::string cmp = path.extension().string();
+				for (auto && c : cmp) c = std::tolower((unsigned char) c);
+
+				for (auto && ext : s_extensions)
+					if (ext.ext == cmp)
+					{
+						content_type = ext.mime_type;
+						break;
+					}
+			}
+			return content_type;
+		}
+
+		media_ptr media::from_file(const boost::filesystem::path& path, bool main_resource)
+		{
+			return std::make_shared<media_file>(path, naive_mime(path), main_resource);
+		}
+
+		media_ptr media::from_file(const boost::filesystem::path& path, const std::string& mime, bool main_resource)
+		{
+			return std::make_shared<media_file>(path, mime, main_resource);
+		}
+
 	}
 
 #pragma region media_server
@@ -533,24 +601,11 @@ namespace net { namespace ssdp { namespace import { namespace av {
 			return false;
 
 		auto info = item->get_media(main_resource);
-		if (!info.first.empty())
-		{
-			if (!fs::exists(info.first))
-				return false;
+		if (!info)
+			return false;
 
-			auto & header = resp.header();
-			header.clear(server());
-			header.append("content-type", item->get_mime());
-			header.append("last-modified")->out() << to_string(time::last_write(info.first));
-			resp.content(http::content::from_file(info.first));
-
-			if (main_resource && resp.first_range())
-				log::info() << "Serving " << info.first;
-
-			return true;
-		}
-
-		return false;
+		resp.header().clear(server());
+		return info->prep_response(resp);
 	}
 
 	items::media_item_ptr MediaServer::get_item(const std::string& id)

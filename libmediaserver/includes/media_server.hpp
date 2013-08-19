@@ -34,20 +34,27 @@ namespace net { namespace ssdp { namespace import { namespace av {
 
 	namespace items
 	{
-		struct media_generator {}; // not defined in any way yet
-		typedef std::shared_ptr<media_generator> media_generator_ptr;
+		struct media;
+		struct media_file;
+		typedef std::shared_ptr<media> media_ptr;
 
-		typedef std::pair<boost::filesystem::path, media_generator_ptr> media_info;
+		struct media
+		{
+			virtual ~media() {}
+			virtual bool prep_response(http::response& resp) { return true; }
+			static media_ptr from_file(const boost::filesystem::path& path, bool main_resource);
+			static media_ptr from_file(const boost::filesystem::path& path, const std::string& mime, bool main_resource);
+		};
 
 		struct media_item;
 		typedef std::shared_ptr<media_item> media_item_ptr;
 
 		struct media_item
 		{
-			typedef items::media_info          media_info;
-			typedef items::media_generator_ptr media_generator_ptr;
-			typedef media_item_ptr             item_ptr;
-			typedef std::vector<item_ptr>       container_type;
+			typedef items::media          media;
+			typedef items::media_ptr      media_ptr;
+			typedef media_item_ptr        item_ptr;
+			typedef std::vector<item_ptr> container_type;
 
 			MediaServer* m_device;
 			explicit media_item(MediaServer* device) : m_device(device), m_id(0) {}
@@ -87,17 +94,7 @@ namespace net { namespace ssdp { namespace import { namespace av {
 			virtual int            get_ref_frame_count() const                     { return 0; }
 
 			//media
-			virtual media_info     get_media(bool main_resource)                   { return make_media_info(media_generator_ptr()); }
-
-
-			static media_info make_media_info(const boost::filesystem::path& path) { return std::make_pair(path, media_generator_ptr()); }
-			static media_info make_media_info(const media_generator_ptr& generator){ return std::make_pair(boost::filesystem::path(), generator); }
-
-			template <typename T, typename... Args>
-			static media_info create_media_info(Args && ... args)
-			{
-				return std::make_pair(boost::filesystem::path(), std::make_shared<T>(std::forward<Args>(args)...));
-			}
+			virtual media_ptr      get_media(bool main_resource)                   { return nullptr; }
 
 		private:
 			uint m_id;

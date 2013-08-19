@@ -303,12 +303,12 @@ namespace lan
 			return nullptr;
 		}
 
-		common_file::media_info common_file::get_media(bool main_resource)
+		common_file::media_ptr common_file::get_media(bool main_resource)
 		{
 			if (main_resource)
-				return make_media_info(get_path());
+				return media::from_file(get_path(), get_mime(), true);
 
-			return make_media_info(m_cover);
+			return media::from_file(m_cover, false);
 		}
 
 		void common_file::output(std::ostream& o, const std::vector<std::string>& filter, const net::config::config_ptr& config) const
