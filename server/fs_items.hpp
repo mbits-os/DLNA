@@ -82,11 +82,13 @@ namespace lan
 			net::ulong get_duration() const        override { return m_duration; }
 			net::ulong get_size() const            override { return fs::is_directory(m_path) ? 0 : fs::file_size(m_path); }
 			fs::path   get_path() const                     { return m_path; }
-			void       set_cover(const fs::path& cover)     { m_cover = cover; }
+			void       set_cover(const std::string& base64);
+			void       set_cover(const fs::path& cover)     { m_cover = media::from_file(cover, false); }
+			media_ptr  get_cover()                          { return m_cover; }
 
 		protected:
 			fs::path   m_path;
-			fs::path   m_cover;
+			media_ptr  m_cover;
 			time_t     m_last_write;
 
 			net::ulong m_duration;

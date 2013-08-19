@@ -67,7 +67,7 @@ namespace MediaInfo
 
 #define TRACK_SPROP(name) \
 	virtual bool set_##name(const char* val) = 0; \
-	virtual std::string get_##name() const = 0; \
+	virtual const std::string& get_##name() const = 0; \
 	virtual const char* get_##name##_c() const = 0
 
 	struct ITrack
@@ -87,6 +87,7 @@ namespace MediaInfo
 		TRACK_SPROP(album);
 		TRACK_SPROP(genre);
 		TRACK_SPROP(format);
+		TRACK_SPROP(cover);
 		TRACK_PROP(int, track_position);
 		TRACK_PROP(int, ref_frame_count);
 	};

@@ -421,7 +421,7 @@ namespace MediaInfo
 			Setter("BitRate",          &ITrack::set_bitrate),
 			Setter("SamplingRate",     &ITrack::set_sample_freq),
 			Setter("ID"),
-			Setter("Cover_Data"),
+			Setter("Cover_Data",       &ITrack::set_cover),
 			Setter("Track",            &ITrack::set_title),
 			Setter("Album",            &ITrack::set_album),
 			Setter("Performer",        &ITrack::set_artist),

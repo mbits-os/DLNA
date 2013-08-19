@@ -71,7 +71,7 @@ namespace lan
 		private: \
 		std::string m_##name; \
 		public: \
-		std::string get_##name() const override { /*std::cout << "Reading " #name ": " << m_ ## name << "\n";*/ return m_ ## name; }\
+		const std::string& get_##name() const override { /*std::cout << "Reading " #name ": " << m_ ## name << "\n";*/ return m_ ## name; }\
 		const char* get_##name##_c() const override { return m_ ## name.c_str(); }\
 		bool set_##name(const char* val) override { /*std::cout << "Setting " #name ": " << val << "\n";*/ m_ ## name = val; return true; }
 
@@ -107,6 +107,7 @@ namespace lan
 				SPROPERTY(artist);
 				SPROPERTY(album);
 				SPROPERTY(genre);
+				SPROPERTY(cover);
 				TPROPERTY(int, track_position);
 				TPROPERTY(int, ref_frame_count);
 				SPROPERTY(format);
@@ -193,6 +194,9 @@ namespace lan
 			MOVE(width);
 			MOVE(height);
 			MOVE(ref_frame_count);
+
+			if (!env.get_cover().empty()) item->set_cover(env.get_cover());
+			else if (!primary->get_cover().empty()) item->set_cover(primary->get_cover());
 		}
 
 		void item_specific(audio_file* item, Media::MetadataContainer& env, const Media::track_ptr& primary, const Media::track_ptr& secondary)
@@ -205,6 +209,14 @@ namespace lan
 			MOVE(bitrate);
 			MOVE(sample_freq);
 			MOVE(channels);
+
+			auto title = env.get_title();
+			if (title.empty()) title = primary->get_title();
+			if (!title.empty())
+				item->set_title(title);
+
+			if (!env.get_cover().empty()) item->set_cover(env.get_cover());
+			else if (!primary->get_cover().empty()) item->set_cover(primary->get_cover());
 		}
 
 		void item_specific(photo_file* item, Media::MetadataContainer& env, const Media::track_ptr& primary, const Media::track_ptr& secondary)
@@ -244,31 +256,28 @@ namespace lan
 			GET(duration);
 			GETS(mime);
 
-			auto title = env.get_title();
-			if (title.empty()) title = primary->get_title();
-
 			auto ret = std::make_shared<T>(device, path, duration);
 
 			if (mime.empty())
 				mime = "video/mpeg";
 			ret->set_mime(mime);
 
-			if (!title.empty())
-				ret->set_title(title);
-
 			item_specific(ret.get(), env, primary, secondary);
 
-			fs::path cover;
-			if (env.fileClass() == Media::Class::Video ||
-				env.fileClass() == Media::Class::Audio)
+			if (!ret->get_cover())
 			{
-				cover = path.string() + ".cover.png";
-				if (!fs::exists(cover))
-					cover = path.string() + ".cover.jpg";
-			}
+				fs::path cover;
+				if (env.fileClass() == Media::Class::Video ||
+					env.fileClass() == Media::Class::Audio)
+				{
+					cover = path.string() + ".cover.png";
+					if (!fs::exists(cover))
+						cover = path.string() + ".cover.jpg";
+				}
 
-			if (fs::exists(cover))
-				ret->set_cover(cover);
+				if (fs::exists(cover))
+					ret->set_cover(cover);
+			}
 
 			return ret;
 		}
@@ -303,12 +312,118 @@ namespace lan
 			return nullptr;
 		}
 
+		struct embedded_cover;
+		typedef std::shared_ptr<embedded_cover> embedded_cover_ptr;
+
+		class referenced_content : public net::http::content
+		{
+			embedded_cover_ptr m_ref;
+			std::size_t m_pointer;
+		public:
+			referenced_content(const embedded_cover_ptr& ref): m_ref(ref), m_pointer(0) {}
+			bool can_skip() override { return true; }
+			bool size_known() override { return true; }
+			std::size_t get_size() override;
+			std::size_t skip(std::size_t size) override;
+			std::size_t read(void* buffer, std::size_t size) override;
+		};
+
+		struct embedded_cover : av::items::media, std::enable_shared_from_this<embedded_cover>
+		{
+			std::string m_mime;
+			std::vector<char> m_text;
+
+			bool prep_response(net::http::response& resp) override
+			{
+				auto& header = resp.header();
+				header.append("content-type", m_mime);
+				resp.content(std::make_shared<referenced_content>(shared_from_this()));
+
+				return true;
+			}
+		};
+
+		std::size_t referenced_content::get_size()
+		{
+			return m_ref->m_text.size();
+		}
+
+		std::size_t referenced_content::skip(std::size_t size)
+		{
+			auto rest = m_ref->m_text.size() - m_pointer;
+			if (size > rest)
+				size = rest;
+
+			m_pointer += size;
+			return size;
+		}
+
+		std::size_t referenced_content::read(void* buffer, std::size_t size)
+		{
+			auto rest = m_ref->m_text.size() - m_pointer;
+			if (size > rest)
+				size = rest;
+			memcpy(buffer, m_ref->m_text.data() + m_pointer, size);
+			m_pointer += size;
+			return size;
+		}
+
+		int decode_char(char c)
+		{
+			static char alphabet [] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+			for (int i = 0; i < sizeof(alphabet); ++i)
+				if (alphabet[i] == c)
+					return i;
+			return -1;
+		}
+
+		void base64_decode(const std::string& base64, std::vector<char>& dst)
+		{
+			size_t len = base64.length();
+			const char* p = base64.c_str();
+			const char* e = p + len;
+
+			size_t out_len = ((len + 3) >> 2) * 3;
+
+			while (p != e && e[-1] == '=') { --e; --len; --out_len; }
+
+			dst.resize(out_len);
+
+			size_t pos = 0;
+			unsigned int bits = 0;
+			unsigned int accu = 0;
+			for (; p != e; ++p)
+			{
+				int val = decode_char(*p);
+				if (val < 0)
+					continue;
+
+				accu = (accu << 6) | (val & 0x3F);
+				bits += 6;
+				while (bits >= 8)
+				{
+					bits -= 8;
+					dst[pos++] = ((accu >> bits) & 0xFF);
+				}
+			}
+		}
+
+		void path_item::set_cover(const std::string& base64)
+		{
+			auto ret = std::make_shared<embedded_cover>();
+
+			base64_decode(base64, ret->m_text);
+			ret->m_mime = "image/png"; // TODO: detect jpg
+
+			m_cover = ret;
+		}
+
 		common_file::media_ptr common_file::get_media(bool main_resource)
 		{
 			if (main_resource)
 				return media::from_file(get_path(), get_mime(), true);
 
-			return media::from_file(m_cover, false);
+			return m_cover;
 		}
 
 		void common_file::output(std::ostream& o, const std::vector<std::string>& filter, const net::config::config_ptr& config) const
