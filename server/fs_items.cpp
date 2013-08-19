@@ -258,6 +258,18 @@ namespace lan
 
 			item_specific(ret.get(), env, primary, secondary);
 
+			fs::path cover;
+			if (env.fileClass() == Media::Class::Video ||
+				env.fileClass() == Media::Class::Audio)
+			{
+				cover = path.string() + ".cover.png";
+				if (!fs::exists(cover))
+					cover = path.string() + ".cover.jpg";
+			}
+
+			if (fs::exists(cover))
+				ret->set_cover(cover);
+
 			return ret;
 		}
 
@@ -267,7 +279,13 @@ namespace lan
 			{
 				if (path.filename() == ".")
 					return nullptr;
-				return std::make_shared<directory_item>(device, path);
+				auto ret = std::make_shared<directory_item>(device, path);
+
+				fs::path cover = path / "Folder.jpg";
+				if (fs::exists(cover))
+					ret->set_cover(cover);
+
+				return ret;
 			}
 
 			Media::MetadataContainer env;
@@ -290,7 +308,7 @@ namespace lan
 			if (main_resource)
 				return make_media_info(get_path());
 
-			return make_media_info(fs::path());
+			return make_media_info(m_cover);
 		}
 
 		void common_file::output(std::ostream& o, const std::vector<std::string>& filter, const net::config::config_ptr& config) const

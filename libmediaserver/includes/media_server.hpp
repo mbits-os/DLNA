@@ -66,6 +66,7 @@ namespace net { namespace ssdp { namespace import { namespace av {
 
 			//output
 			virtual bool           is_folder() const                                = 0;
+			virtual bool           is_image() const                                 = 0;
 			virtual void           output(std::ostream& o, const std::vector<std::string>& filter, const config::config_ptr& config) const = 0;
 
 			//attributes

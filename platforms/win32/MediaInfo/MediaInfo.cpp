@@ -446,10 +446,12 @@ namespace MediaInfo
 			auto len = name.length();
 			bool show = false;
 
-			if (name == "Cover_Data")
-			{
-				std::cout << "Cover_Data\n";
-			}
+			//if (name == "Cover_Data")
+			//{
+			//	auto fld = field->stringValue();
+			//	std::cout << "Cover_Data\n";
+			//	std::cout << "    " << fld << "\n";
+			//}
 
 			for (auto && known : names)
 			{

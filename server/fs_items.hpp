@@ -82,9 +82,11 @@ namespace lan
 			net::ulong get_duration() const        override { return m_duration; }
 			net::ulong get_size() const            override { return fs::is_directory(m_path) ? 0 : fs::file_size(m_path); }
 			fs::path   get_path() const                     { return m_path; }
+			void       set_cover(const fs::path& cover)     { m_cover = cover; }
 
 		protected:
 			fs::path   m_path;
+			fs::path   m_cover;
 			time_t     m_last_write;
 
 			net::ulong m_duration;
@@ -100,6 +102,7 @@ namespace lan
 			net::ulong     predict_count(net::ulong served) const                          override { return served; }
 			net::ulong     update_id() const                                               override { return 0; }
 			item_ptr       get_item(const std::string& id)                                 override { return nullptr; }
+			bool           is_image() const                                                override { return false; }
 			bool           is_folder() const                                               override { return false; }
 			media_info     get_media(bool main_resource)                                   override;
 			void           output(std::ostream& o, const std::vector<std::string>& filter,
@@ -116,6 +119,7 @@ namespace lan
 			{
 			}
 			const char* get_upnp_class() const override { return "object.item.imageItem.photo"; }
+			bool is_image() const override { return true; }
 
 			ITEM_PROP_V(net::ulong, width);
 			ITEM_PROP_V(net::ulong, height);
@@ -182,6 +186,7 @@ namespace lan
 			net::ulong     predict_count(net::ulong served) const                          override;
 			net::ulong     update_id() const                                               override { return m_update_id; }
 			item_ptr       get_item(const std::string& id)                                 override;
+			bool           is_image() const                                                override { return false; }
 			bool           is_folder() const                                               override { return true; }
 			void           output(std::ostream& o, const std::vector<std::string>& filter,
 			                      const net::config::config_ptr& config) const             override;

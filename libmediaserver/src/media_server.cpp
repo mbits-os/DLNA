@@ -398,6 +398,25 @@ namespace net { namespace ssdp { namespace import { namespace av {
 
 				o << ">http://" << net::to_string(config->iface) << ":" << (int)config->port << "/upnp/media/" << get_objectId_attr() << "</res>\n";
 			}
+
+			//todo: do a proper 
+			if (!is_image() && contains(filter, "res"))
+			{
+				o << "    <res xmlns:dlna=\"urn:schemas-dlna-org:metadata-1-0/\"";
+				if (!mime.empty() && contains(filter, "res@protocolInfo"))
+				{
+					o << " protocolInfo=\"http-get:*:image/jpeg:";
+
+					std::string dlna_orgpn;
+					if (!dlna_orgpn.empty())
+						o << dlna_orgpn << ";";
+
+					o << "DLNA.ORG_OP=01\"";
+				}
+
+				o << ">http://" << net::to_string(config->iface) << ":" << (int) config->port << "/upnp/thumb/" << get_objectId_attr() << "</res>\n";
+			}
+
 			o << "    <upnp:class>" << get_upnp_class() << "</upnp:class>\n  </" << name << ">\n";
 		}
 
@@ -414,6 +433,7 @@ namespace net { namespace ssdp { namespace import { namespace av {
 			container_type list(ulong start_from, ulong max_count)           override;
 			ulong          predict_count(ulong served) const                 override { return m_children.size(); }
 			media_item_ptr get_item(const std::string& id)                   override;
+			bool           is_image() const                                  override { return false; }
 			bool           is_folder() const                                 override { return true; }
 			void           output(std::ostream& o,
 			                   const std::vector<std::string>& filter,
@@ -523,6 +543,9 @@ namespace net { namespace ssdp { namespace import { namespace av {
 			header.append("content-type", item->get_mime());
 			header.append("last-modified")->out() << to_string(time::last_write(info.first));
 			resp.content(http::content::from_file(info.first));
+
+			if (main_resource && resp.first_range())
+				log::info() << "Serving " << info.first;
 
 			return true;
 		}

@@ -168,6 +168,7 @@ namespace net
 			void content(content_ptr c) { m_content = c; }
 			void complete_header();
 			response_buffer get_data();
+			bool first_range() const { return m_range.first < 1; }
 		};
 
 		struct complete
