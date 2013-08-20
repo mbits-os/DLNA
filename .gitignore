@@ -216,11 +216,9 @@ pip-log.txt
 .mr.developer.cfg
 
 
-libmediaserver/includes/*.ipp
-libmediaserver/includes/*.cpp
-libmediaserver/includes/directory.hpp
-libmediaserver/includes/manager.hpp
-lanradio.conf
+upnp/libav/inc/*.ipp
+upnp/libav/inc/*.cpp
+upnp/libav/inc/directory.hpp
+upnp/libav/inc/manager.hpp
 
-/mi.*
-/mi_d.*
+lanradio.conf

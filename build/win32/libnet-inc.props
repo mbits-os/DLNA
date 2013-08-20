@@ -4,7 +4,7 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup>
     <_PropertySheetDisplayName>Network Library API</_PropertySheetDisplayName>
-    <IncludePath>$(SolutionDir)..\..\libnet\includes;$(IncludePath)</IncludePath>
+    <IncludePath>$(SolutionDir)..\..\upnp\libnet\inc;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <ItemGroup />
 </Project>

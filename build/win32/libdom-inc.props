@@ -4,7 +4,7 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup>
     <_PropertySheetDisplayName>Expat DOM Library API</_PropertySheetDisplayName>
-    <IncludePath>$(SolutionDir)..\..\libdom\includes;$(IncludePath)</IncludePath>
+    <IncludePath>$(SolutionDir)..\..\upnp\libdom\inc;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <ItemDefinitionGroup>
     <ClCompile>

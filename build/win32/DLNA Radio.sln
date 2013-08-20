@@ -13,7 +13,9 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "server", "server.vcxproj", 
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libnet", "libnet.vcxproj", "{12560094-628B-4C3C-AF58-29EAC43D2334}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libmediaserver", "libmediaserver.vcxproj", "{6B47BF90-6BED-4A66-877A-2B8F1AA3D12D}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libssdp", "libssdp.vcxproj", "{ED32D229-8E28-4A25-AC8B-4D9275CD5DD1}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libav", "libav.vcxproj", "{6B47BF90-6BED-4A66-877A-2B8F1AA3D12D}"
 	ProjectSection(ProjectDependencies) = postProject
 		{A432694A-25B2-4CB8-A93F-CBB7A5D92D22} = {A432694A-25B2-4CB8-A93F-CBB7A5D92D22}
 		{12560094-628B-4C3C-AF58-29EAC43D2334} = {12560094-628B-4C3C-AF58-29EAC43D2334}
@@ -32,6 +34,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "MediaInfo", "MediaInfo\Medi
 	ProjectSection(ProjectDependencies) = postProject
 		{A432694A-25B2-4CB8-A93F-CBB7A5D92D22} = {A432694A-25B2-4CB8-A93F-CBB7A5D92D22}
 	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "upnp", "upnp", "{B8E95E25-281E-43D5-9BC6-FE3691EAD47C}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -66,5 +70,10 @@ Global
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{A432694A-25B2-4CB8-A93F-CBB7A5D92D22} = {B8E95E25-281E-43D5-9BC6-FE3691EAD47C}
+		{6B47BF90-6BED-4A66-877A-2B8F1AA3D12D} = {B8E95E25-281E-43D5-9BC6-FE3691EAD47C}
+		{12560094-628B-4C3C-AF58-29EAC43D2334} = {B8E95E25-281E-43D5-9BC6-FE3691EAD47C}
 	EndGlobalSection
 EndGlobal

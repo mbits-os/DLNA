@@ -4,7 +4,7 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup>
     <_PropertySheetDisplayName>SSDP Media Server API</_PropertySheetDisplayName>
-    <IncludePath>$(SolutionDir)..\..\libmediaserver\includes;$(IncludePath)</IncludePath>
+    <IncludePath>$(SolutionDir)..\..\upnp\libav\inc;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <ItemGroup />
 </Project>
