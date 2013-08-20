@@ -621,6 +621,18 @@ namespace lan
 				log::info() << "Scan needed in " << m_path;
 			return ret;
 		}
+
+		bool less(const fs::path& lhs, const fs::path& rhs)
+		{
+			bool lhs_dir = fs::is_directory(lhs);
+			bool rhs_dir = fs::is_directory(rhs);
+
+			if (lhs_dir != rhs_dir)
+				return lhs_dir; // directories before files
+
+			return lhs < rhs;
+		}
+
 		void directory_item::rescan()
 		{
 			log::info() << "Scanning " << m_path;
@@ -636,8 +648,8 @@ namespace lan
 				current.emplace_back(get_path(ptr), ptr);
 			auto update = m_update_id + 1;
 
-			std::sort(entries.begin(), entries.end(), [](const std::pair<fs::path, int>& lhs, const std::pair<fs::path, int>& rhs) { return lhs.first < rhs.first; });
-			std::sort(current.begin(), current.end(), [](const std::pair<fs::path, av::items::media_item_ptr>& lhs, const std::pair<fs::path, av::items::media_item_ptr>& rhs) { return lhs.first < rhs.first; });
+			std::sort(entries.begin(), entries.end(), [](const std::pair<fs::path, int>& lhs, const std::pair<fs::path, int>& rhs) { return less(lhs.first, rhs.first); });
+			std::sort(current.begin(), current.end(), [](const std::pair<fs::path, av::items::media_item_ptr>& lhs, const std::pair<fs::path, av::items::media_item_ptr>& rhs) { return less(lhs.first, rhs.first); });
 
 			auto entry = entries.begin();
 			auto curr = current.begin();
