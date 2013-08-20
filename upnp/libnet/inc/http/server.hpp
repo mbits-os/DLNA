@@ -29,7 +29,7 @@
 #include <http/connection.hpp>
 #include <memory>
 #include <http/request_handler.hpp>
-#include <device.hpp>
+#include <config.hpp>
 
 namespace net
 {
@@ -37,14 +37,13 @@ namespace net
 	{
 		struct server
 		{
-			server(boost::asio::io_service& service, const ssdp::device_ptr& device, const config::config_ptr& config);
+			server(boost::asio::io_service& service, const request_handler_ptr& handler, const config::config_ptr& config);
 
 			void start() { do_accept(); }
 			void stop();
 
 		private:
-			ssdp::device_ptr m_device;
-			request_handler m_handler;
+			request_handler_ptr m_handler;
 			boost::asio::io_service& m_io_service;
 			boost::asio::ip::tcp::acceptor m_acceptor;
 			config::config_ptr m_config;

@@ -24,7 +24,7 @@
 
 #include "pch.h"
 #include <http/connection.hpp>
-#include <network/utils.hpp>
+#include <utils.hpp>
 #include <iostream>
 #include <log.hpp>
 
@@ -51,7 +51,7 @@ namespace net
 			m_connections.clear();
 		}
 
-		connection::connection(boost::asio::ip::tcp::socket && socket, connection_manager& manager, request_handler& handler)
+		connection::connection(boost::asio::ip::tcp::socket && socket, connection_manager& manager, const request_handler_ptr& handler)
 			: m_socket(std::move(socket))
 			, m_manager(manager)
 			, m_handler(handler)
@@ -173,14 +173,14 @@ namespace net
 						request.remote_endpoint(m_socket.remote_endpoint());
 						request.request_data(make_request_data(m_socket, content_length, data, end - data));
 
-						m_handler.handle(request, m_response);
+						m_handler->handle(request, m_response);
 						send_reply(request.method() != http_method::head);
 					}
 					else if (ret == parser::error)
 					{
 						log::error()
 							<< "[CONNECTION] Parse error: " << buffer(m_buffer.data(), std::min(bytes_transferred, (size_t)100)) << " (starting at " << (m_pos - bytes_transferred) << " bytes)";
-						m_handler.make_404(m_response);
+						m_handler->make_404(m_response);
 						send_reply(true);
 					}
 					else

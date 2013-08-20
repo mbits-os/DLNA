@@ -52,9 +52,11 @@
       <PrecompiledHeader>Create</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="..\..\upnp\libupnp\src\device.cpp" />
+    <ClCompile Include="..\..\upnp\libupnp\src\http_handler.cpp" />
     <ClCompile Include="..\..\upnp\libupnp\src\ssdp.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\..\upnp\libupnp\inc\http_handler.hpp" />
     <ClInclude Include="..\..\upnp\libupnp\inc\service_description.hpp" />
     <ClInclude Include="..\..\upnp\libupnp\inc\service_impl.hpp" />
     <ClInclude Include="..\..\upnp\libupnp\inc\ssdp.hpp" />

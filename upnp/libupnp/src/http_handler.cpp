@@ -23,10 +23,10 @@
  */
 
 #include "pch.h"
-#include <http/request_handler.hpp>
+#include <http_handler.hpp>
 #include <http/response.hpp>
 #include <regex>
-#include <network/interface.hpp>
+#include <interface.hpp>
 #include <dom.hpp>
 #include <log.hpp>
 
@@ -168,7 +168,7 @@ namespace net
 			}
 		};
 
-		request_handler::request_handler(const ssdp::device_ptr& device, const config::config_ptr& config)
+		http_handler::http_handler(const ssdp::device_ptr& device, const config::config_ptr& config)
 			: m_device(device)
 			, m_config(config)
 		{
@@ -279,7 +279,7 @@ namespace net
 			return std::make_pair(action.substr(0, hash), action.substr(hash + 1));
 		}
 
-		void request_handler::handle(const http_request& req, response& resp)
+		void http_handler::handle(const http_request& req, response& resp)
 		{
 			auto SOAPAction = req.SOAPAction();
 			auto res = req.resource();
@@ -371,7 +371,7 @@ namespace net
 			make_404(resp);
 		}
 
-		void request_handler::make_templated(const char* tmplt, const char* content_type, response& resp)
+		void http_handler::make_templated(const char* tmplt, const char* content_type, response& resp)
 		{
 			auto & header = resp.header();
 			header.clear(m_device->server());
@@ -379,7 +379,7 @@ namespace net
 			resp.content(std::make_shared<template_content>(tmplt, std::ref(m_vars)));
 		}
 
-		void request_handler::make_device_xml(response& resp)
+		void http_handler::make_device_xml(response& resp)
 		{
 			auto & header = resp.header();
 			header.clear(m_device->server());
@@ -387,7 +387,7 @@ namespace net
 			resp.content(content::from_string(m_device->get_configuration(to_string(m_config->iface) + ":" + std::to_string(m_config->port))));
 		}
 
-		void request_handler::make_service_xml(response& resp, const ssdp::service_ptr& service)
+		void http_handler::make_service_xml(response& resp, const ssdp::service_ptr& service)
 		{
 			auto & header = resp.header();
 			header.clear(m_device->server());
@@ -404,7 +404,7 @@ namespace net
 			{ ".png", "image/png" }
 		};
 
-		void request_handler::make_file(const fs::path& path, response& resp)
+		void http_handler::make_file(const fs::path& path, response& resp)
 		{
 			if (!fs::exists(path))
 				return make_404(resp);
@@ -430,7 +430,7 @@ namespace net
 			resp.content(content::from_file(path));
 		}
 
-		void request_handler::make_404(response& resp)
+		void http_handler::make_404(response& resp)
 		{
 			auto & header = resp.header();
 			header.clear(m_device->server());
@@ -439,7 +439,7 @@ namespace net
 			resp.content(content::from_string("File not found...\n"));
 		}
 
-		void request_handler::make_500(response& resp)
+		void http_handler::make_500(response& resp)
 		{
 			auto & header = resp.header();
 			header.clear(m_device->server());

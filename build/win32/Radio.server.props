@@ -19,7 +19,7 @@
       <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;WIN32_LEAN_AND_MEAN;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>libnet.lib;libdom.lib;libav.lib;mi.lib</AdditionalDependencies>
+      <AdditionalDependencies>libdom.lib;libenv.lib;libnet.lib;libupnp.lib;libav.lib;mi.lib</AdditionalDependencies>
       <SubSystem>Console</SubSystem>
       <ProgramDatabaseFile>$(TargetDir)$(TargetName).pdb</ProgramDatabaseFile>
     </Link>

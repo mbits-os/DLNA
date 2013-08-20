@@ -21,6 +21,9 @@
     <ClCompile Include="..\..\upnp\libupnp\pch\pch.cpp">
       <Filter>pch</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\upnp\libupnp\src\http_handler.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\upnp\libupnp\pch\pch.h">
@@ -36,6 +39,9 @@
       <Filter>inc</Filter>
     </ClInclude>
     <ClInclude Include="..\..\upnp\libupnp\inc\service_impl.hpp">
+      <Filter>inc</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\upnp\libupnp\inc\http_handler.hpp">
       <Filter>inc</Filter>
     </ClInclude>
   </ItemGroup>

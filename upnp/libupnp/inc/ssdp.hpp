@@ -25,7 +25,7 @@
 #define __SSDP_SSDP_HPP__
 
 #include <iostream>
-#include <http/http.hpp>
+#include <http_handler.hpp>
 #include <http/server.hpp>
 #include <udp.hpp>
 #include <interface.hpp>
@@ -116,7 +116,8 @@ namespace net
 		struct server
 		{
 			server(boost::asio::io_service& service, const device_ptr& device, const config::config_ptr& config)
-				: m_http(service, device, config)
+				: m_handler(std::make_shared<http::http_handler>(device, config))
+				, m_http(service, m_handler, config)
 				, m_alive_ticker(service, device, INTERVAL, config)
 				, m_listener(service, device, config)
 			{
@@ -137,9 +138,12 @@ namespace net
 			}
 
 		private:
-			http::server m_http;
-			ticker       m_alive_ticker;
-			receiver     m_listener;
+			typedef http::request_handler_ptr handler_ptr;
+
+			handler_ptr   m_handler;
+			http::server  m_http;
+			ticker        m_alive_ticker;
+			receiver      m_listener;
 		};
 	}
 }

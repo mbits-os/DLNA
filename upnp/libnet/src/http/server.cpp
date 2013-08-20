@@ -29,9 +29,8 @@ namespace net
 {
 	namespace http
 	{
-		server::server(boost::asio::io_service& service, const ssdp::device_ptr& device, const config::config_ptr& config)
-			: m_device(device)
-			, m_handler(device, config)
+		server::server(boost::asio::io_service& service, const request_handler_ptr& handler, const config::config_ptr& config)
+			: m_handler(handler)
 			, m_io_service(service)
 			, m_acceptor(service)
 			, m_socket(service)

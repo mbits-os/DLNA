@@ -27,9 +27,6 @@
     <ClCompile Include="..\..\upnp\libnet\src\http\http_win32.cpp">
       <Filter>src\http</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\upnp\libnet\src\http\request_handler.cpp">
-      <Filter>src\http</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\upnp\libnet\src\http\response.cpp">
       <Filter>src\http</Filter>
     </ClCompile>

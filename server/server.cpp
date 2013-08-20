@@ -27,7 +27,7 @@
 
 #include <http/http.hpp>
 #include <http/server.hpp>
-#include <ssdp/ssdp.hpp>
+#include <ssdp.hpp>
 #include <media_server.hpp>
 #include <boost/filesystem.hpp>
 #include <log.hpp>

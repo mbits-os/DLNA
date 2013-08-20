@@ -22,26 +22,38 @@
  * SOFTWARE.
  */
 
-#ifndef __HTTP_REQUEST_HANDLER_HPP__
-#define __HTTP_REQUEST_HANDLER_HPP__
+#ifndef __HTTP_HANDLER_HPP__
+#define __HTTP_HANDLER_HPP__
 
-#include <memory>
+#include <http/request_handler.hpp>
+#include <string>
+#include <vector>
+#include <boost/filesystem.hpp>
+#include <device.hpp>
+#include <config.hpp>
 
 namespace net
 {
 	namespace http
 	{
-		class response;
-		class http_request;
-
-		struct request_handler
+		typedef std::vector<std::pair<std::string, std::string>> template_vars;
+		class http_handler: public request_handler, boost::noncopyable
 		{
-			virtual ~request_handler() {}
-			virtual void handle(const http_request& req, response& resp) = 0;
-			virtual void make_404(response& resp) = 0;
+			template_vars      m_vars;
+			ssdp::device_ptr   m_device;
+			config::config_ptr m_config;
+
+			void make_templated(const char* tmplt, const char* content_type, response& resp);
+			void make_device_xml(response& resp);
+			void make_service_xml(response& resp, const ssdp::service_ptr& service);
+			void make_file(const boost::filesystem::path& path, response& resp);
+		public:
+			http_handler(const ssdp::device_ptr& device, const config::config_ptr& config);
+			void handle(const http_request& req, response& resp) override;
+			void make_404(response& resp) override;
+			void make_500(response& resp);
 		};
-		typedef std::shared_ptr<request_handler> request_handler_ptr;
 	}
 }
 
-#endif // __HTTP_REQUEST_HANDLER_HPP__
+#endif // __HTTP_HANDLER_HPP__

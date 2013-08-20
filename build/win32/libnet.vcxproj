@@ -54,7 +54,6 @@
     <ClCompile Include="..\..\upnp\libnet\src\http\connection.cpp" />
     <ClCompile Include="..\..\upnp\libnet\src\http\header_parser.cpp" />
     <ClCompile Include="..\..\upnp\libnet\src\http\http_win32.cpp" />
-    <ClCompile Include="..\..\upnp\libnet\src\http\request_handler.cpp" />
     <ClCompile Include="..\..\upnp\libnet\src\http\response.cpp" />
     <ClCompile Include="..\..\upnp\libnet\src\http\server.cpp" />
     <ClCompile Include="..\..\upnp\libnet\src\net_win32.cpp" />
