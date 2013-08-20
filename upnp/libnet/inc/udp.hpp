@@ -28,7 +28,7 @@
 #include <set>
 #include <boost/utility.hpp>
 #include <boost/asio.hpp>
-#include <network/utils.hpp>
+#include <utils.hpp>
 
 namespace net
 {

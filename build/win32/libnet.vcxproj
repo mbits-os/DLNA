@@ -48,43 +48,27 @@
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\libnet\pch\pch.cpp">
+    <ClCompile Include="..\..\upnp\libnet\pch\pch.cpp">
       <PrecompiledHeader>Create</PrecompiledHeader>
     </ClCompile>
-    <ClCompile Include="..\..\libnet\src\config.cpp" />
-    <ClCompile Include="..\..\libnet\src\http\connection.cpp" />
-    <ClCompile Include="..\..\libnet\src\http\header_parser.cpp" />
-    <ClCompile Include="..\..\libnet\src\http\http_win32.cpp" />
-    <ClCompile Include="..\..\libnet\src\http\request_handler.cpp" />
-    <ClCompile Include="..\..\libnet\src\http\response.cpp" />
-    <ClCompile Include="..\..\libnet\src\http\server.cpp" />
-    <ClCompile Include="..\..\libnet\src\log.cpp" />
-    <ClCompile Include="..\..\libnet\src\network\interface_win32.cpp" />
-    <ClCompile Include="..\..\libnet\src\network\net_win32.cpp" />
-    <ClCompile Include="..\..\libnet\src\network\udp.cpp" />
-    <ClCompile Include="..\..\libnet\src\network\utils.cpp" />
-    <ClCompile Include="..\..\libnet\src\ssdp\device.cpp" />
-    <ClCompile Include="..\..\libnet\src\ssdp\ssdp.cpp" />
-    <ClCompile Include="..\..\libnet\src\threads.cpp" />
+    <ClCompile Include="..\..\upnp\libnet\src\http\connection.cpp" />
+    <ClCompile Include="..\..\upnp\libnet\src\http\header_parser.cpp" />
+    <ClCompile Include="..\..\upnp\libnet\src\http\http_win32.cpp" />
+    <ClCompile Include="..\..\upnp\libnet\src\http\request_handler.cpp" />
+    <ClCompile Include="..\..\upnp\libnet\src\http\response.cpp" />
+    <ClCompile Include="..\..\upnp\libnet\src\http\server.cpp" />
+    <ClCompile Include="..\..\upnp\libnet\src\net_win32.cpp" />
+    <ClCompile Include="..\..\upnp\libnet\src\udp.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\libnet\includes\config.hpp" />
-    <ClInclude Include="..\..\libnet\includes\http\connection.hpp" />
-    <ClInclude Include="..\..\libnet\includes\http\header_parser.hpp" />
-    <ClInclude Include="..\..\libnet\includes\http\http.hpp" />
-    <ClInclude Include="..\..\libnet\includes\http\mime.hpp" />
-    <ClInclude Include="..\..\libnet\includes\http\request_handler.hpp" />
-    <ClInclude Include="..\..\libnet\includes\http\response.hpp" />
-    <ClInclude Include="..\..\libnet\includes\http\server.hpp" />
-    <ClInclude Include="..\..\libnet\includes\log.hpp" />
-    <ClInclude Include="..\..\libnet\includes\network\interface.hpp" />
-    <ClInclude Include="..\..\libnet\includes\network\udp.hpp" />
-    <ClInclude Include="..\..\libnet\includes\network\utils.hpp" />
-    <ClInclude Include="..\..\libnet\includes\ssdp\service_description.hpp" />
-    <ClInclude Include="..\..\libnet\includes\ssdp\service_impl.hpp" />
-    <ClInclude Include="..\..\libnet\includes\ssdp\ssdp.hpp" />
-    <ClInclude Include="..\..\libnet\includes\ssdp\device.hpp" />
-    <ClInclude Include="..\..\libnet\includes\threads.hpp" />
-    <ClInclude Include="..\..\libnet\pch\pch.h" />
+    <ClInclude Include="..\..\upnp\libnet\inc\http\connection.hpp" />
+    <ClInclude Include="..\..\upnp\libnet\inc\http\header_parser.hpp" />
+    <ClInclude Include="..\..\upnp\libnet\inc\http\http.hpp" />
+    <ClInclude Include="..\..\upnp\libnet\inc\http\mime.hpp" />
+    <ClInclude Include="..\..\upnp\libnet\inc\http\request_handler.hpp" />
+    <ClInclude Include="..\..\upnp\libnet\inc\http\response.hpp" />
+    <ClInclude Include="..\..\upnp\libnet\inc\http\server.hpp" />
+    <ClInclude Include="..\..\upnp\libnet\inc\udp.hpp" />
+    <ClInclude Include="..\..\upnp\libnet\pch\pch.h" />
   </ItemGroup>
 </Project>

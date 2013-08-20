@@ -30,7 +30,7 @@
 #include <string>
 #include <vector>
 #include <boost/filesystem.hpp>
-#include <ssdp/device.hpp>
+#include <device.hpp>
 #include <config.hpp>
 
 namespace net

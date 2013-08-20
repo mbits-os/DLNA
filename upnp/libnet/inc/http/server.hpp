@@ -29,7 +29,7 @@
 #include <http/connection.hpp>
 #include <memory>
 #include <http/request_handler.hpp>
-#include <ssdp/device.hpp>
+#include <device.hpp>
 
 namespace net
 {

@@ -26,7 +26,7 @@
 #include <log.hpp>
 #include <boost/date_time.hpp>
 #include <boost/filesystem.hpp>
-#include <network/utils.hpp>
+#include <utils.hpp>
 #include <clocale>
 #include <locale>
 #include <vector>

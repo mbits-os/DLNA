@@ -1,15 +1,11 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ImportGroup Label="PropertySheets">
-    <Import Project="libnet-inc.props" />
-    <Import Project="libupnp-inc.props" />
-    <Import Project="libdom-inc.props" />
-    <Import Project="libav-inc.props" />
     <Import Project="libenv-inc.props" />
   </ImportGroup>
   <PropertyGroup>
-    <_PropertySheetDisplayName>SSDP MediaServer:1 Library</_PropertySheetDisplayName>
-    <LibraryPath>$(SolutionDir)..\..\bin\$(PlatformName)\$(Configuration)\;$(LibraryPath)</LibraryPath>
+    <_PropertySheetDisplayName>Basic Environment Library</_PropertySheetDisplayName>
+    <IncludePath>$(SolutionDir)..\..\upnp\libenv\pch;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Label="UserMacros" />
   <ItemDefinitionGroup>

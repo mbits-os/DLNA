@@ -1,7 +1,7 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <Filter Include="includes">
+    <Filter Include="inc">
       <UniqueIdentifier>{fb88f64b-351a-4728-9614-90670321aa7f}</UniqueIdentifier>
     </Filter>
     <Filter Include="src">
@@ -9,21 +9,21 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\libdom\includes\expat.hpp">
-      <Filter>includes</Filter>
+    <ClInclude Include="..\..\upnp\libdom\inc\expat.hpp">
+      <Filter>inc</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\libdom\includes\dom_xpath.hpp">
-      <Filter>includes</Filter>
+    <ClInclude Include="..\..\upnp\libdom\inc\dom_xpath.hpp">
+      <Filter>inc</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\libdom\includes\dom.hpp">
-      <Filter>includes</Filter>
+    <ClInclude Include="..\..\upnp\libdom\inc\dom.hpp">
+      <Filter>inc</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\libdom\src\dom_xpath.cpp">
+    <ClCompile Include="..\..\upnp\libdom\src\dom_xpath.cpp">
       <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\libdom\src\dom.cpp">
+    <ClCompile Include="..\..\upnp\libdom\src\dom.cpp">
       <Filter>src</Filter>
     </ClCompile>
   </ItemGroup>

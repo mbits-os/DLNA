@@ -6,7 +6,7 @@
 
 #include <string>
 #include <http/response.hpp>
-#include <ssdp/device.hpp>
+#include <device.hpp>
 #include <dom.hpp>
 #include <log.hpp>
 

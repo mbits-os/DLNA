@@ -13,7 +13,7 @@
   <PropertyGroup Label="Globals">
     <ProjectGuid>{6B47BF90-6BED-4A66-877A-2B8F1AA3D12D}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
-    <RootNamespace>libmediaserver</RootNamespace>
+    <RootNamespace>libav</RootNamespace>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Label="Configuration">
@@ -37,10 +37,10 @@
     <Import Project="$(SolutionDir)\Radio.$(Platform).props" Condition="exists('$(SolutionDir)\Radio.$(Platform).props')" />
     <Import Project="$(SolutionDir)\Radio.$(Configuration).props" Condition="exists('$(SolutionDir)\Radio.$(Configuration).props')" />
     <Import Project="$(SolutionDir)\Radio.$(Platform).$(Configuration).props" Condition="exists('$(SolutionDir)\Radio.$(Platform).$(Configuration).props')" />
-    <Import Project="$(SolutionDir)\Radio.libmediaserver.props" Condition="exists('$(SolutionDir)\Radio.libmediaserver.props')" />
-    <Import Project="$(SolutionDir)\Radio.libmediaserver.$(Platform).props" Condition="exists('$(SolutionDir)\Radio.libmediaserver.$(Platform).props')" />
-    <Import Project="$(SolutionDir)\Radio.libmediaserver.$(Configuration).props" Condition="exists('$(SolutionDir)\Radio.libmediaserver.$(Configuration).props')" />
-    <Import Project="$(SolutionDir)\Radio.libmediaserver.$(Platform).$(Configuration).props" Condition="exists('$(SolutionDir)\Radio.libmediaserver.$(Platform).$(Configuration).props')" />
+    <Import Project="$(SolutionDir)\Radio.libav.props" Condition="exists('$(SolutionDir)\Radio.libav.props')" />
+    <Import Project="$(SolutionDir)\Radio.libav.$(Platform).props" Condition="exists('$(SolutionDir)\Radio.libav.$(Platform).props')" />
+    <Import Project="$(SolutionDir)\Radio.libav.$(Configuration).props" Condition="exists('$(SolutionDir)\Radio.libav.$(Configuration).props')" />
+    <Import Project="$(SolutionDir)\Radio.libav.$(Platform).$(Configuration).props" Condition="exists('$(SolutionDir)\Radio.libav.$(Platform).$(Configuration).props')" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup />
@@ -48,32 +48,32 @@
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\libmediaserver\pch\pch.cpp">
+    <ClCompile Include="..\..\upnp\libav\pch\pch.cpp">
       <PrecompiledHeader>Create</PrecompiledHeader>
     </ClCompile>
-    <ClCompile Include="..\..\libmediaserver\src\media_server.cpp" />
+    <ClCompile Include="..\..\upnp\libav\src\media_server.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\libmediaserver\includes\directory.hpp" />
-    <ClInclude Include="..\..\libmediaserver\includes\manager.hpp" />
-    <ClInclude Include="..\..\libmediaserver\includes\media_server.hpp" />
-    <ClInclude Include="..\..\libmediaserver\pch\pch.h" />
-    <ClInclude Include="..\..\libmediaserver\includes\directory.ipp" />
-    <ClInclude Include="..\..\libmediaserver\includes\manager.ipp" />
+    <ClInclude Include="..\..\upnp\libav\inc\directory.hpp" />
+    <ClInclude Include="..\..\upnp\libav\inc\manager.hpp" />
+    <ClInclude Include="..\..\upnp\libav\inc\media_server.hpp" />
+    <ClInclude Include="..\..\upnp\libav\pch\pch.h" />
+    <ClInclude Include="..\..\upnp\libav\inc\directory.ipp" />
+    <ClInclude Include="..\..\upnp\libav\inc\manager.ipp" />
   </ItemGroup>
   <ItemGroup>
-    <CustomBuild Include="..\..\libmediaserver\configs\directory.spcd">
+    <CustomBuild Include="..\..\upnp\libav\configs\directory.spcd">
       <FileType>Document</FileType>
-      <Command>"$(OutDir)svcc" "%(Identity)" "%(RootDir)%(Directory)..\includes\%(Filename).hpp"</Command>
+      <Command>"$(OutDir)svcc" "%(Identity)" "%(RootDir)%(Directory)..\inc\%(Filename).hpp"</Command>
       <Message>Compiling SPCD</Message>
-      <Outputs>%(RootDir)%(Directory)..\includes\%(Filename).hpp;%(RootDir)%(Directory)..\includes\%(Filename).ipp;%(Outputs)</Outputs>
+      <Outputs>%(RootDir)%(Directory)..\inc\%(Filename).hpp;%(RootDir)%(Directory)..\inc\%(Filename).ipp;%(Outputs)</Outputs>
       <AdditionalInputs>$(OutDir)svcc.exe;%(AdditionalInputs)</AdditionalInputs>
     </CustomBuild>
-    <CustomBuild Include="..\..\libmediaserver\configs\manager.spcd">
+    <CustomBuild Include="..\..\upnp\libav\configs\manager.spcd">
       <FileType>Document</FileType>
-      <Command>"$(OutDir)svcc" "%(Identity)" "%(RootDir)%(Directory)..\includes\%(Filename).hpp"</Command>
+      <Command>"$(OutDir)svcc" "%(Identity)" "%(RootDir)%(Directory)..\inc\%(Filename).hpp"</Command>
       <Message>Compiling SPCD</Message>
-      <Outputs>%(RootDir)%(Directory)..\includes\%(Filename).hpp;%(RootDir)%(Directory)..\includes\%(Filename).ipp;%(Outputs)</Outputs>
+      <Outputs>%(RootDir)%(Directory)..\inc\%(Filename).hpp;%(RootDir)%(Directory)..\inc\%(Filename).ipp;%(Outputs)</Outputs>
       <AdditionalInputs>$(OutDir)svcc.exe;%(AdditionalInputs)</AdditionalInputs>
     </CustomBuild>
   </ItemGroup>

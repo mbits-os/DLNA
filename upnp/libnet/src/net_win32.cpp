@@ -23,7 +23,7 @@
  */
 
 #include "pch.h"
-#include <network/utils.hpp>
+#include <utils.hpp>
 #include <sdkddkver.h>
 #include <windows.h>
 #include <rpc.h>

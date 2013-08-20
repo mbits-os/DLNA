@@ -28,7 +28,7 @@
 #include <memory>
 #include <boost/utility.hpp>
 #include <boost/asio/ip/address_v4.hpp>
-#include <network/interface.hpp>
+#include <interface.hpp>
 
 namespace net
 {

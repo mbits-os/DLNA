@@ -24,7 +24,7 @@
 #ifndef __SSDP_MEDIA_SERVER_HPP__
 #define __SSDP_MEDIA_SERVER_HPP__
 
-#include <ssdp/device.hpp>
+#include <device.hpp>
 #include <directory.hpp>
 #include <manager.hpp>
 

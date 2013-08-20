@@ -10,44 +10,45 @@
     <Filter Include="pch">
       <UniqueIdentifier>{4d4076c9-832d-401a-b58c-0d94f6af340c}</UniqueIdentifier>
     </Filter>
-    <Filter Include="configs">
-      <UniqueIdentifier>{a42900d5-d21f-4b32-9b3a-0385e009c013}</UniqueIdentifier>
-    </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\upnp\libav\pch\pch.cpp">
+    <ClCompile Include="..\..\upnp\libenv\pch\pch.cpp">
       <Filter>pch</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\upnp\libav\src\media_server.cpp">
+    <ClCompile Include="..\..\upnp\libenv\src\log.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\upnp\libenv\src\config.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\upnp\libenv\src\threads.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\upnp\libenv\src\utils.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\upnp\libenv\src\interface_win32.cpp">
       <Filter>src</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\upnp\libav\pch\pch.h">
+    <ClInclude Include="..\..\upnp\libenv\pch\pch.h">
       <Filter>pch</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\upnp\libav\inc\directory.hpp">
+    <ClInclude Include="..\..\upnp\libenv\inc\log.hpp">
       <Filter>inc</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\upnp\libav\inc\manager.hpp">
+    <ClInclude Include="..\..\upnp\libenv\inc\config.hpp">
       <Filter>inc</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\upnp\libav\inc\directory.ipp">
+    <ClInclude Include="..\..\upnp\libenv\inc\threads.hpp">
       <Filter>inc</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\upnp\libav\inc\manager.ipp">
+    <ClInclude Include="..\..\upnp\libenv\inc\utils.hpp">
       <Filter>inc</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\upnp\libav\inc\media_server.hpp">
+    <ClInclude Include="..\..\upnp\libenv\inc\interface.hpp">
       <Filter>inc</Filter>
     </ClInclude>
-  </ItemGroup>
-  <ItemGroup>
-    <CustomBuild Include="..\..\upnp\libav\configs\directory.spcd">
-      <Filter>configs</Filter>
-    </CustomBuild>
-    <CustomBuild Include="..\..\upnp\libav\configs\manager.spcd">
-      <Filter>configs</Filter>
-    </CustomBuild>
   </ItemGroup>
 </Project>

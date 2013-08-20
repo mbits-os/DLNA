@@ -30,10 +30,10 @@
 #include <dom.hpp>
 #include <http/http.hpp>
 #include <http/server.hpp>
-#include <ssdp/ssdp.hpp>
+#include <ssdp.hpp>
 #include <boost/filesystem.hpp>
 #include <iostream>
-#include <ssdp/service_description.hpp>
+#include <service_description.hpp>
 
 namespace fs = boost::filesystem;
 

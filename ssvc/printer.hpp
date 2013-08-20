@@ -25,10 +25,10 @@
 #ifndef __PRINTER_HPP__
 #define __PRINTER_HPP__
 
-#include <ssdp/ssdp.hpp>
+#include <ssdp.hpp>
 #include <boost/filesystem.hpp>
 #include <iostream>
-#include <ssdp/service_description.hpp>
+#include <service_description.hpp>
 
 namespace fs = boost::filesystem;
 using namespace net::ssdp;
@@ -421,7 +421,7 @@ struct printer
 	{
 		o <<
 			"#include <string>\n"
-			"#include <ssdp/service_impl.hpp>\n"
+			"#include <service_impl.hpp>\n"
 			"#include \"" << out.filename().string() << "\"\n"
 			"\n"
 			"namespace net { namespace ssdp { namespace import { namespace " << safe_name << " {\n";
@@ -479,7 +479,7 @@ struct printer
 
 		o <<
 			"#include <string>\n"
-			"#include <ssdp/service_impl.hpp>\n"
+			"#include <service_impl.hpp>\n"
 			"\n"
 			"namespace net { namespace ssdp { namespace import { namespace " << safe_name << " {\n";
 

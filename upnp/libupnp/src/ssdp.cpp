@@ -23,7 +23,7 @@
  */
 
 #include "pch.h"
-#include <ssdp/ssdp.hpp>
+#include <ssdp.hpp>
 #include <thread>
 #include <http/http.hpp>
 #include <http/header_parser.hpp>

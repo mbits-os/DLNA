@@ -7,15 +7,19 @@
     <Import Project="libenv-inc.props" />
   </ImportGroup>
   <PropertyGroup>
-    <_PropertySheetDisplayName>SSDP Service Compiler</_PropertySheetDisplayName>
-    <LibraryPath>$(SolutionDir)..\..\bin\$(PlatformName)\$(Configuration)\;$(LibraryPath)</LibraryPath>
+    <_PropertySheetDisplayName>UPnP Library</_PropertySheetDisplayName>
+    <IncludePath>$(SolutionDir)..\..\upnp\libupnp\pch;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Label="UserMacros" />
   <ItemDefinitionGroup>
+    <ClCompile>
+      <PreprocessorDefinitions>_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PrecompiledHeader>Use</PrecompiledHeader>
+      <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
+    </ClCompile>
     <Link>
-      <AdditionalDependencies>libdom.lib</AdditionalDependencies>
-      <SubSystem>Console</SubSystem>
-      <ProgramDatabaseFile>$(TargetDir)$(TargetName).pdb</ProgramDatabaseFile>
+      <SubSystem>Windows</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup />

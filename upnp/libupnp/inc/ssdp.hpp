@@ -27,9 +27,9 @@
 #include <iostream>
 #include <http/http.hpp>
 #include <http/server.hpp>
-#include <network/udp.hpp>
-#include <network/interface.hpp>
-#include <ssdp/device.hpp>
+#include <udp.hpp>
+#include <interface.hpp>
+#include <device.hpp>
 
 namespace net
 {

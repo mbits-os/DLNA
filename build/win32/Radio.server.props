@@ -2,14 +2,15 @@
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ImportGroup Label="PropertySheets">
     <Import Project="libnet-inc.props" />
-    <Import Project="libmediaserver-inc.props" />
+    <Import Project="libupnp-inc.props" />
+    <Import Project="libav-inc.props" />
     <Import Project="libdom-inc.props" />
+    <Import Project="libenv-inc.props" />
   </ImportGroup>
   <PropertyGroup>
     <_PropertySheetDisplayName>Radio Server App</_PropertySheetDisplayName>
     <LibraryPath>$(SolutionDir)..\..\bin\$(PlatformName)\MediaInfo;$(LibraryPath)</LibraryPath>
     <IncludePath>$(SolutionDir)MediaInfo;$(IncludePath)</IncludePath>
-    <ExecutablePath>$(SolutionDir)..\..;$(ExecutablePath)</ExecutablePath>
     <TargetName>radio</TargetName>
   </PropertyGroup>
   <PropertyGroup Label="UserMacros" />
@@ -18,7 +19,7 @@
       <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;WIN32_LEAN_AND_MEAN;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>libnet.lib;libdom.lib;libmediaserver.lib</AdditionalDependencies>
+      <AdditionalDependencies>libnet.lib;libdom.lib;libav.lib;mi.lib</AdditionalDependencies>
       <SubSystem>Console</SubSystem>
       <ProgramDatabaseFile>$(TargetDir)$(TargetName).pdb</ProgramDatabaseFile>
     </Link>

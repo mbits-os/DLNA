@@ -2,11 +2,11 @@
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ImportGroup Label="PropertySheets">
     <Import Project="libnet-inc.props" />
-    <Import Project="libdom-inc.props" />
+    <Import Project="libenv-inc.props" />
   </ImportGroup>
   <PropertyGroup>
     <_PropertySheetDisplayName>Network Library</_PropertySheetDisplayName>
-    <IncludePath>$(SolutionDir)..\..\libnet\pch;$(SolutionDir)..\..\libnet\inc;$(IncludePath)</IncludePath>
+    <IncludePath>$(SolutionDir)..\..\upnp\libnet\pch;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Label="UserMacros" />
   <ItemDefinitionGroup>

@@ -25,7 +25,7 @@
 #ifndef __HTTP_HTTP_HPP__
 #define __HTTP_HTTP_HPP__
 
-#include <network/utils.hpp>
+#include <utils.hpp>
 #include <http/mime.hpp>
 #include <string>
 #include <sstream>
