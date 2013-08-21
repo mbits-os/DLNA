@@ -222,3 +222,4 @@ lanradio.conf
 
 /mi.*
 /mi_d.*
+/build/resources/renderers
