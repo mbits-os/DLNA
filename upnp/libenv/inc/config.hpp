@@ -65,63 +65,63 @@ namespace net
 			template <typename Value> struct setting;
 
 			struct section : public boost::noncopyable
-            {
+			{
 				template <typename Value> friend struct get_value;
 				template <typename Value> friend struct setting;
 
-				base::config_ptr m_parent;
-    			mutable base::section_ptr m_section;
-    			std::string m_section_name;
+				base::config_ptr m_impl;
+				mutable base::section_ptr m_section;
+				std::string m_section_name;
 
-				section(const base::config_ptr& parent, const std::string& section)
-				    : m_parent(parent)
-				    , m_section_name(section)
-			    {}
+				section(const base::config_ptr& impl, const std::string& section)
+					: m_impl(impl)
+					, m_section_name(section)
+				{}
 
-		    private:
-                bool has_value(const std::string& name) const
-                {
-                    ensure_section();
-                    return m_section->has_value(name);
-                }
-                void set_value(const std::string& name, const std::string& svalue)
-                {
-                    ensure_section();
-                    return m_section->set_value(name, svalue);
-                }
-                void set_value(const std::string& name, int ivalue)
-                {
-                    ensure_section();
-                    return m_section->set_value(name, ivalue);
-                }
-                void set_value(const std::string& name, bool bvalue)
-                {
-                    ensure_section();
-                    return m_section->set_value(name, bvalue);
-                }
-                std::string get_string(const std::string& name, const std::string& def_val) const
-                {
-                    ensure_section();
-                    return m_section->get_string(name, def_val);
-                }
-                int get_int(const std::string& name, int def_val) const
-                {
-                    ensure_section();
-                    return m_section->get_int(name, def_val);
-                }
-                bool get_bool(const std::string& name, bool def_val) const
-                {
-                    ensure_section();
-                    return m_section->get_bool(name, def_val);
-                }
-                void ensure_section() const
-			    {
-			        if (!m_section)
-						m_section = m_parent->get_section(m_section_name);
-			        if (!m_section)
-				        throw std::runtime_error("Section " + m_section_name + " was not created");
-			    }
-            };
+			private:
+				bool has_value(const std::string& name) const
+				{
+					ensure_section();
+					return m_section->has_value(name);
+				}
+				void set_value(const std::string& name, const std::string& svalue)
+				{
+					ensure_section();
+					return m_section->set_value(name, svalue);
+				}
+				void set_value(const std::string& name, int ivalue)
+				{
+					ensure_section();
+					return m_section->set_value(name, ivalue);
+				}
+				void set_value(const std::string& name, bool bvalue)
+				{
+					ensure_section();
+					return m_section->set_value(name, bvalue);
+				}
+				std::string get_string(const std::string& name, const std::string& def_val) const
+				{
+					ensure_section();
+					return m_section->get_string(name, def_val);
+				}
+				int get_int(const std::string& name, int def_val) const
+				{
+					ensure_section();
+					return m_section->get_int(name, def_val);
+				}
+				bool get_bool(const std::string& name, bool def_val) const
+				{
+					ensure_section();
+					return m_section->get_bool(name, def_val);
+				}
+				void ensure_section() const
+				{
+					if (!m_section)
+						m_section = m_impl->get_section(m_section_name);
+					if (!m_section)
+						throw std::runtime_error("Section " + m_section_name + " was not created");
+				}
+			};
 
 			template <>
 			struct get_value<std::string>
@@ -236,18 +236,12 @@ namespace net
 		{
 		private:
 			wrapper::section server;
+
 		public:
-			struct Server : wrapper::section
-			{
-				Server(const base::config_ptr& parent)
-					: wrapper::section(parent, "Server")
-				{
-				}
-			};
-			config(const base::config_ptr& parent)
-				: server(parent, "Server")
-				, uuid(server, "UUID")
-				, port(server, "Port", 6001)
+			config(const base::config_ptr& impl)
+				: server(impl, "Server")
+				, uuid (server, "UUID")
+				, port (server, "Port", 6001)
 				, iface(server, "Interface")
 			{}
 			virtual ~config() {}
@@ -264,6 +258,124 @@ namespace net
 
 				return std::make_shared<config>(impl);
 			}
+		};
+
+		struct renderer
+		{
+			struct general_wrapper : wrapper::section
+			{
+				general_wrapper(const base::config_ptr& impl)
+					: wrapper::section(impl, "General")
+					, name(*this, "Name")
+					, icon(*this, "Icon")
+				{
+				}
+				wrapper::setting<std::string> name;
+				wrapper::setting<std::string> icon;
+			};
+			struct recognize_wrapper : wrapper::section
+			{
+				recognize_wrapper(const base::config_ptr& impl)
+					: wrapper::section(impl, "Recognize")
+					, ua_match               (*this, "UAMatch")
+					, additional_header      (*this, "AdditionalHeader")
+					, additional_header_match(*this, "AdditionalHeaderMatch")
+				{
+				}
+				wrapper::setting<std::string> ua_match;
+				wrapper::setting<std::string> additional_header;
+				wrapper::setting<std::string> additional_header_match;
+			};
+			struct basic_capabilites_wrapper : wrapper::section
+			{
+				basic_capabilites_wrapper(const base::config_ptr& impl)
+					: wrapper::section(impl, "Basic capabilites")
+					, video(*this, "Video", false)
+					, audio(*this, "Audio", false)
+					, image(*this, "Image", false)
+				{
+				}
+				wrapper::setting<bool> video;
+				wrapper::setting<bool> audio;
+				wrapper::setting<bool> image;
+			};
+			struct media_server_wrapper : wrapper::section
+			{
+				media_server_wrapper(const base::config_ptr& impl)
+					: wrapper::section(impl, "MediaServer")
+					, seek_by_time         (*this, "SeekByTime", false)
+					, protocol_localization(*this, "ProtocolLocalization", false)
+					, profile_patches      (*this, "ProfilePatches")
+					, send_ORG_PN          (*this, "Send_ORG_PN", false)
+				{
+				}
+				wrapper::setting<bool>        seek_by_time;
+				wrapper::setting<bool>        protocol_localization;
+				wrapper::setting<std::string> profile_patches;
+				wrapper::setting<bool>        send_ORG_PN;
+			};
+			struct transcode_wrapper : wrapper::section
+			{
+				transcode_wrapper(const base::config_ptr& impl)
+					: wrapper::section(impl, "Transcode")
+					, video                 (*this, "Video", false)
+					, audio                 (*this, "Audio", false)
+					, max_video_bitrate_mbps(*this, "MaxVideoBitrateMbps", 0)
+					, max_video_width       (*this, "MaxVideoWidth", 0)
+					, max_video_height      (*this, "MaxVideoHeight", 0)
+					, max_h264_level_41     (*this, "MaxH264Level41", false)
+					, audio_441kHz          (*this, "441kHzAudio", false)
+					, fast_start            (*this, "FastStart", false)
+					, video_size            (*this, "VideoFileSize", false)
+					, force_jpg_thumbnails  (*this, "ForceJPGThumbnails", false)
+					, thumbnails_as_resource(*this, "ThumbnailAsResource", false)
+					, allow_chunked_transfer(*this, "AllowChunkedTransfer", false)
+					, exif_auto_rotate      (*this, "ExifAutoRotate", false)
+				{
+				}
+
+				wrapper::setting<bool> video;
+				wrapper::setting<bool> audio;
+				wrapper::setting<int>  max_video_bitrate_mbps;
+				wrapper::setting<int>  max_video_width;
+				wrapper::setting<int>  max_video_height;
+				wrapper::setting<bool> max_h264_level_41;
+				wrapper::setting<bool> audio_441kHz;
+				wrapper::setting<bool> fast_start;
+				wrapper::setting<int>  video_size;
+				wrapper::setting<bool> force_jpg_thumbnails;
+				wrapper::setting<bool> thumbnails_as_resource;
+				wrapper::setting<bool> allow_chunked_transfer;
+				wrapper::setting<bool> exif_auto_rotate;
+			};
+			struct supported_wrapper : wrapper::section
+			{
+				supported_wrapper(const base::config_ptr& impl, const std::string& name)
+					: wrapper::section(impl, name)
+				{
+				}
+			};
+
+			renderer(const base::config_ptr& impl)
+				: general(impl)
+				, recognize(impl)
+				, basic_capabilities(impl)
+				, media_server(impl)
+				, transcode(impl)
+				, supported_video(impl, "Video formats")
+				, supported_audio(impl, "Audio formats")
+				, supported_image(impl, "Image formats")
+			{
+			}
+
+			general_wrapper           general;
+			recognize_wrapper         recognize;
+			basic_capabilites_wrapper basic_capabilities;
+			media_server_wrapper      media_server;
+			transcode_wrapper         transcode;
+			supported_wrapper         supported_video;
+			supported_wrapper         supported_audio;
+			supported_wrapper         supported_image;
 		};
 	}
 }
