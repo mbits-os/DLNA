@@ -43,7 +43,7 @@ namespace net
 			typedef std::weak_ptr<config> config_ptr;
 			typedef std::shared_ptr<config> shared_config_ptr;
 
-			struct section: net::config::section
+			struct section: net::config::base::section
 			{
 				typedef std::map<std::string, boost::any> map_t;
 				map_t m_values;
@@ -115,7 +115,7 @@ namespace net
 			};
 			typedef std::shared_ptr<section> file_section_ptr;
 
-			struct config: net::config::config, std::enable_shared_from_this<config>
+			struct config: net::config::base::config, std::enable_shared_from_this<config>
 			{
 				typedef std::map<std::string, file_section_ptr> map_t;
 				map_t m_sections;
@@ -123,7 +123,7 @@ namespace net
 
 				void open(const fs::path& path);
 				void store();
-				section_ptr get_section(const std::string& name) override;
+				base::section_ptr get_section(const std::string& name) override;
 			};
 
 			void section::store()
@@ -203,7 +203,7 @@ namespace net
 				}
 			}
 
-			section_ptr config::get_section(const std::string& name)
+			base::section_ptr config::get_section(const std::string& name)
 			{
 				auto pos = m_sections.lower_bound(name);
 				if (pos != m_sections.end() && !m_sections.key_comp()(name, pos->first))
@@ -215,12 +215,15 @@ namespace net
 			}
 		}
 
-		config_ptr file_config(const fs::path& path)
+		namespace base
 		{
-			auto cfg = std::make_shared<file::config>();
-			if (cfg)
-				cfg->open(path);
-			return cfg;
+			config_ptr file_config(const fs::path& path)
+			{
+				auto cfg = std::make_shared<file::config>();
+				if (cfg)
+					cfg->open(path);
+				return cfg;
+			}
 		}
 	}
 }

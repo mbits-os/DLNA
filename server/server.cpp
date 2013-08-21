@@ -110,7 +110,7 @@ int main(int argc, char* argv [])
 			{ "midnightBITS", "http://www.midnightbits.com" }
 		};
 
-		auto config = net::config::file_config("lanradio.conf");
+		auto config = net::config::config::from_file("lanradio.conf");
 		set_terminal_title(config);
 
 		auto server = std::make_shared<av::MediaServer>(info, config);
