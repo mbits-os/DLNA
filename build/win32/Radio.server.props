@@ -24,7 +24,7 @@
       <ProgramDatabaseFile>$(TargetDir)$(TargetName).pdb</ProgramDatabaseFile>
     </Link>
     <CustomBuildStep>
-      <Command>copy $(SolutionDir)..\..\bin\$(PlatformName)\MediaInfo\mi.dll $(SolutionDir)..\..\bin\$(PlatformName)\$(Configuration)\</Command>
+      <Command>copy "$(SolutionDir)..\..\bin\$(PlatformName)\MediaInfo\mi.dll" "$(SolutionDir)..\..\bin\$(PlatformName)\$(Configuration)\"</Command>
       <Outputs>$(SolutionDir)..\..\bin\$(PlatformName)\$(Configuration)\mi.dll</Outputs>
       <Inputs>$(SolutionDir)..\..\bin\$(PlatformName)\MediaInfo\mi.dll</Inputs>
     </CustomBuildStep>
