@@ -463,6 +463,12 @@ namespace net
 			{
 				log::info() << "New client: \"" << client->get_name() << "\" at " << to_string(req.m_remote_address);
 				m_clients_seen.emplace_back(req.m_remote_address, client);
+				if (!client->from_config())
+				{
+					log::info() << (const mime::headers&)req;
+				}
+				else
+					std::cout << "Found " << client->get_name() << " at " << to_string(req.m_remote_address) << std::endl;
 			}
 			return client;
 		}

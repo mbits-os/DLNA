@@ -67,24 +67,33 @@ namespace net
 
 		struct client_info
 		{
-			client_info(const std::string& name,
+			client_info(const std::string& name) : m_name(name) {}
+			virtual ~client_info() {}
+			const std::string& get_name() const {return m_name; }
+			virtual bool from_config() const { return true; }
+			virtual bool matches(const http::http_request& request) const = 0;
+		private:
+			std::string m_name;
+		};
+		typedef std::shared_ptr<client_info> client_info_ptr;
+
+		struct basic_client_info: client_info
+		{
+			basic_client_info(const std::string& name,
 				const std::string& user_agent_match,
 				const std::string& other_header,
 				const std::string& other_header_match)
-				: m_name(name)
+				: client_info(name)
 				, m_matcher(user_agent_match, other_header, other_header_match)
 			{}
-			virtual ~client_info() {}
-			const std::string& get_name() const {return m_name; }
+
 			virtual bool matches(const http::http_request& request) const
 			{
 				return m_matcher.matches(request);
 			}
 		private:
-			std::string m_name;
 			client_matcher m_matcher;
 		};
-		typedef std::shared_ptr<client_info> client_info_ptr;
 
 		struct device_info
 		{

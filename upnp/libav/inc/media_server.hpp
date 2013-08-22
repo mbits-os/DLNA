@@ -32,8 +32,8 @@ namespace net { namespace ssdp { namespace import { namespace av {
 
 	struct MediaServer;
 
-	typedef client_info     client;
-	typedef client_info_ptr client_ptr;
+	typedef basic_client_info client;
+	typedef client_info_ptr   client_ptr;
 
 	namespace items
 	{
@@ -187,7 +187,6 @@ namespace net { namespace ssdp { namespace import { namespace av {
 			, m_directory(std::make_shared<ContentDirectory>(this))
 			, m_manager(std::make_shared<ConnectionManager>(this))
 			, m_system_update_id(1)
-			, m_default_client(create_default_client())
 		{
 			add(m_directory);
 			add(m_manager);
@@ -213,9 +212,8 @@ namespace net { namespace ssdp { namespace import { namespace av {
 		std::shared_ptr<ConnectionManager> m_manager;
 		time_t                             m_system_update_id;
 		std::vector<client_ptr>            m_known_clients;
-		client_ptr                         m_default_client;
 
-		static client_ptr create_default_client();
+		static client_ptr create_default_client(const http::http_request& request);
 		items::root_item_ptr create_root_item();
 	};
 

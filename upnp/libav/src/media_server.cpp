@@ -632,9 +632,35 @@ namespace net { namespace ssdp { namespace import { namespace av {
 		return root;
 	}
 
-	client_ptr MediaServer::create_default_client()
+	struct default_client_info : client_info
 	{
-		return std::make_shared<client>("Unknown", "", "", "");
+		default_client_info(const http::http_request& request)
+			: client_info("Unknown")
+			, m_request(request)
+		{}
+
+		bool from_config() const override { return false; }
+		bool matches(const http::http_request& request) const override
+		{
+			for (auto&& here : m_request)
+				if (request.find(here.name()) == request.end())
+					return false;
+
+			for (auto && there : request)
+			{
+				auto it = m_request.find(there.name());
+				if (it == m_request.end() || it->value() != there.value())
+					return false;
+			}
+
+			return true;
+		}
+		http::http_request m_request;
+	};
+
+	client_ptr MediaServer::create_default_client(const http::http_request& request)
+	{
+		return std::make_shared<default_client_info>(request);
 	}
 
 	void MediaServer::object_changed()
@@ -691,7 +717,7 @@ namespace net { namespace ssdp { namespace import { namespace av {
 			if (candidate->matches(request))
 				return candidate;
 
-		return m_default_client;
+		return create_default_client(request);
 	}
 #pragma endregion
 }}}}
