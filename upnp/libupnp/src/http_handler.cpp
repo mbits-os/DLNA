@@ -281,7 +281,6 @@ namespace net
 
 		void http_handler::handle(const http_request& req, response& resp)
 		{
-			auto client = client_from_request(req);
 			auto SOAPAction = req.SOAPAction();
 			auto res = req.resource();
 			auto method = req.method();
@@ -322,6 +321,7 @@ namespace net
 				{
 					//__.withHeader().print();
 
+					auto client = client_from_request(req);
 					std::tie(root, rest) = pop(rest);
 					if (m_device->call_http(req, root, rest, resp))
 						return;
@@ -332,6 +332,7 @@ namespace net
 			{
 				if (root == "upnp")
 				{
+					auto client = client_from_request(req);
 					std::string soap_type, soap_method;
 					std::tie(soap_type, soap_method) = break_action(SOAPAction);
 
