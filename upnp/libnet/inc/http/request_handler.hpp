@@ -32,7 +32,7 @@ namespace net
 	namespace http
 	{
 		class response;
-		class http_request;
+		struct http_request;
 
 		struct request_handler
 		{

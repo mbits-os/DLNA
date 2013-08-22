@@ -3,11 +3,6 @@
 import os, glob, sys
 from os.path import *
 
-# [Video formats]
-# [Audio formats]
-# [Image formats]
-# Supported -> Format(n)
-
 field_map = {
     "RendererName":                    "General/Name",
     "RendererIcon":                    "General/Icon",
@@ -106,6 +101,10 @@ if len(sys.argv) < 3:
 src = join(sys.argv[1], "renderers")
 dst = join(sys.argv[2], "renderers")
 src = glob.glob(join(src, "*.conf"))
+
+try: os.makedirs(dst)
+except: pass
+
 for fname in src:
     here, conf = split(fname)
     translate(fname, join(dst, conf))

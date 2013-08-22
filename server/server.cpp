@@ -205,6 +205,25 @@ int main(int argc, char* argv [])
 			}
 		}
 
+		fs::path confs("build");
+		confs /= "resources";
+		confs /= "renderers";
+
+		struct contents
+		{
+			fs::path m_path;
+			contents(const fs::path& path) : m_path(path) {}
+			fs::directory_iterator begin() const { return fs::directory_iterator(m_path); }
+			fs::directory_iterator end() const { return fs::directory_iterator(); }
+		};
+		for (auto&& entry : contents(confs))
+		{
+			if (!fs::is_directory(entry) && fs::extension(entry) == ".conf")
+			{
+				server->add_renderer_conf(entry.path());
+			}
+		}
+
 		lan::radio lanRadio(server, config);
 
 		lanRadio.run();

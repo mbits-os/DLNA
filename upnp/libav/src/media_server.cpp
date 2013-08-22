@@ -632,6 +632,11 @@ namespace net { namespace ssdp { namespace import { namespace av {
 		return root;
 	}
 
+	client_ptr MediaServer::create_default_client()
+	{
+		return std::make_shared<client>("Unknown", "", "", "");
+	}
+
 	void MediaServer::object_changed()
 	{
 		::time(&m_system_update_id);
@@ -645,6 +650,47 @@ namespace net { namespace ssdp { namespace import { namespace av {
 	void MediaServer::remove_root_element(items::media_item_ptr ptr)
 	{
 		m_root_item->remove_child(ptr);
+	}
+
+	const char* yn(bool b) { return b ? "yes;" : "no;"; }
+
+	void MediaServer::add_renderer_conf(const boost::filesystem::path& conf)
+	{
+		auto ptr = net::config::base::file_config(conf);
+		if (!ptr)
+			return;
+
+		net::config::renderer config(ptr);
+		std::string name = config.general.name;
+		std::string ua_match = config.recognize.ua_match;
+		std::string additional_header = config.recognize.additional_header;
+		std::string additional_header_match = config.recognize.additional_header_match;
+
+		// if there is no name OR the info couldn't match anything
+		if (name.empty() || (
+			ua_match.empty() &&
+			additional_header.empty() &&
+			additional_header_match.empty()
+			))
+		{
+			return;
+		}
+
+		auto client_info = std::make_shared<client>(name, ua_match, additional_header, additional_header_match);
+		m_known_clients.push_back(client_info);
+
+		// other attributes
+
+		log::info() << "Client configuration for \"" << name << "\"";
+	}
+
+	client_info_ptr MediaServer::match_from_request(const http::http_request& request) const
+	{
+		for (auto&& candidate : m_known_clients)
+			if (candidate->matches(request))
+				return candidate;
+
+		return m_default_client;
 	}
 #pragma endregion
 }}}}

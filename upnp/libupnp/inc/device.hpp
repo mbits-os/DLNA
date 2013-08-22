@@ -27,6 +27,7 @@
 #include <http/http.hpp>
 #include <config.hpp>
 #include <log.hpp>
+#include <regex>
 
 namespace dom
 {
@@ -43,6 +44,44 @@ namespace net
 
 	namespace ssdp
 	{
+		struct client_matcher
+		{
+			client_matcher(const std::string& user_agent_match,
+				const std::string& other_header,
+				const std::string& other_header_match)
+				: m_user_agent(user_agent_match)
+				, m_other_header(other_header)
+				, m_header_match(other_header_match)
+			{}
+
+			bool matches(const http::http_request& request) const;
+		private:
+			std::string m_other_header;
+			std::regex m_user_agent;
+			std::regex m_header_match;
+		};
+
+		struct client_info
+		{
+			client_info(const std::string& name,
+				const std::string& user_agent_match,
+				const std::string& other_header,
+				const std::string& other_header_match)
+				: m_name(name)
+				, m_matcher(user_agent_match, other_header, other_header_match)
+			{}
+			virtual ~client_info() {}
+			const std::string& get_name() const {return m_name; }
+			virtual bool matches(const http::http_request& request) const
+			{
+				return m_matcher.matches(request);
+			}
+		private:
+			std::string m_name;
+			client_matcher m_matcher;
+		};
+		typedef std::shared_ptr<client_info> client_info_ptr;
+
 		struct device_info
 		{
 			net::http::module_version m_server;
@@ -90,6 +129,7 @@ namespace net
 			virtual service_ptr get_service(size_t i) const { return m_services[i]; }
 			virtual std::string get_configuration(const std::string& host) const;
 			virtual bool call_http(const http::http_request& req, const boost::filesystem::path& root, const boost::filesystem::path& rest, http::response& resp) = 0;
+			virtual client_info_ptr match_from_request(const http::http_request& request) const = 0;
 
 			config::config_ptr config() const { return m_config; }
 		protected:

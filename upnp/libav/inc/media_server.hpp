@@ -32,6 +32,9 @@ namespace net { namespace ssdp { namespace import { namespace av {
 
 	struct MediaServer;
 
+	typedef client_info     client;
+	typedef client_info_ptr client_ptr;
+
 	namespace items
 	{
 		struct media;
@@ -184,6 +187,7 @@ namespace net { namespace ssdp { namespace import { namespace av {
 			, m_directory(std::make_shared<ContentDirectory>(this))
 			, m_manager(std::make_shared<ConnectionManager>(this))
 			, m_system_update_id(1)
+			, m_default_client(create_default_client())
 		{
 			add(m_directory);
 			add(m_manager);
@@ -200,13 +204,18 @@ namespace net { namespace ssdp { namespace import { namespace av {
 		void                  add_root_element(items::media_item_ptr);
 		void                  remove_root_element(items::media_item_ptr);
 		void                  object_changed();
+		void                  add_renderer_conf(const boost::filesystem::path& conf);
+		client_info_ptr       match_from_request(const http::http_request& request) const override;
 
 	private:
 		items::root_item_ptr               m_root_item;
 		std::shared_ptr<ContentDirectory>  m_directory;
 		std::shared_ptr<ConnectionManager> m_manager;
 		time_t                             m_system_update_id;
+		std::vector<client_ptr>            m_known_clients;
+		client_ptr                         m_default_client;
 
+		static client_ptr create_default_client();
 		items::root_item_ptr create_root_item();
 	};
 

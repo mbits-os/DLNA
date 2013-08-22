@@ -81,6 +81,12 @@ namespace net
 					auto it = m_values.find(name);
 					if (it == m_values.end())
 						return def_val;
+
+					auto& any = it->second;
+					if (any.type() == typeid(bool))
+						return boost::any_cast<bool>(any) ? "true" : "false";
+					if (any.type() == typeid(int))
+						return std::to_string(boost::any_cast<int>(any));
 					return boost::any_cast<std::string>(it->second);
 				}
 				int get_int(const std::string& name, int def_val) const override
@@ -88,14 +94,26 @@ namespace net
 					auto it = m_values.find(name);
 					if (it == m_values.end())
 						return def_val;
-					return boost::any_cast<int>(it->second);
+
+					auto& any = it->second;
+					if (any.type() == typeid(bool))
+						return boost::any_cast<bool>(any) ? 1 : 0;
+					if (any.type() == typeid(std::string))
+						return 0;
+					return boost::any_cast<int>(any);
 				}
 				bool get_bool(const std::string& name, bool def_val) const override
 				{
 					auto it = m_values.find(name);
 					if (it == m_values.end())
 						return def_val;
-					return boost::any_cast<bool>(it->second);
+
+					auto& any = it->second;
+					if (any.type() == typeid(int))
+						return boost::any_cast<int>(any) != 0;
+					if (any.type() == typeid(std::string))
+						return !boost::any_cast<std::string>(any).empty();
+					return boost::any_cast<bool>(any);
 				}
 
 			private:
@@ -121,7 +139,7 @@ namespace net
 				map_t m_sections;
 				fs::path m_path;
 
-				void open(const fs::path& path);
+				bool open(const fs::path& path);
 				void store();
 				base::section_ptr get_section(const std::string& name) override;
 			};
@@ -133,19 +151,21 @@ namespace net
 					ptr->store();
 			}
 
-			void config::open(const fs::path& path)
+			bool config::open(const fs::path& path)
 			{
 				m_sections.clear();
 				m_path = path;
 
 				fs::ifstream in{ m_path };
+				if (!in)
+					return false;
 
 				file_section_ptr curr;
 				std::string line;
 				std::regex header(R"(^\s*\[(.*)\]\s*$)");
-				std::regex number(R"(^\s*([^=]+)\s*=\s*(\d+)\s*$)");
-				std::regex boolean(R"(^\s*([^=]+)\s*=\s*(true|false|yes|no)\s*$)");
-				std::regex text(R"(^\s*([^=]+)\s*=\s*(.*)\s*$)");
+				std::regex number(R"(^\s*([^=]+?)\s*=\s*(\d+)\s*$)");
+				std::regex boolean(R"(^\s*([^=]+?)\s*=\s*(true|false|yes|no)\s*$)");
+				std::regex text(R"(^\s*([^=]+?)\s*=\s*(.*?)\s*$)");
 
 				while (std::getline(in, line))
 				{
@@ -157,13 +177,11 @@ namespace net
 					}
 
 					if (!curr) // default section not supported
-						continue;
+						return false;
 
 					if (std::regex_match(line, match, number))
 					{
-						std::istringstream num(match[2]);
-						int val;
-						num >> val;
+						int val = atoi(match[2].str().c_str());
 						curr->m_values[match[1]] = val;
 						continue;
 					}
@@ -180,6 +198,8 @@ namespace net
 						continue;
 					}
 				}
+
+				return true;
 			}
 
 			void config::store()
@@ -220,8 +240,8 @@ namespace net
 			config_ptr file_config(const fs::path& path)
 			{
 				auto cfg = std::make_shared<file::config>();
-				if (cfg)
-					cfg->open(path);
+				if (cfg && !cfg->open(path))
+					return nullptr;
 				return cfg;
 			}
 		}

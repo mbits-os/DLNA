@@ -29,6 +29,21 @@ namespace net
 {
 	namespace ssdp
 	{
+		bool client_matcher::matches(const http::http_request& request) const
+		{
+			auto header = request.user_agent();
+			if (std::regex_match(header, m_user_agent))
+				return true;
+
+			if (!m_other_header.empty())
+			{
+				auto other = request.simple(m_other_header);
+				if (std::regex_match(header, m_user_agent))
+					return true;
+			}
+			return false;
+		}
+
 		struct prop
 		{
 			std::string name;
