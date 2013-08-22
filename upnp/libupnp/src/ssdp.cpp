@@ -215,7 +215,7 @@ namespace net
 						{
 							bool interesting = false;
 							if (!interesting) interesting = st == "ssdp:all";
-							if (!interesting) interesting = st == "ssdp:rootdevice";
+							if (!interesting) interesting = st == "upnp:rootdevice";
 							if (!interesting) interesting = st == m_device->usn();
 							if (!interesting) interesting = st == m_device->get_type();
 							if (!interesting)
@@ -252,7 +252,6 @@ namespace net
 
 		void receiver::discovery(const std::string& st)
 		{
-			printf("Replying to DISCOVER...\n");
 			log::info() << "Replying to DISCOVER...";
 			auto datagram = std::make_shared<udp::unicast_socket>(m_service, m_impl.remote());
 			datagram->send(build_discovery_msg(st));
