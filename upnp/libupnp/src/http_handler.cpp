@@ -356,7 +356,7 @@ namespace net
 						if (rest == "service" + std::to_string(int_id)) try
 						{
 							resp.header().clear(m_device->server());
-							if (service->answer(soap_method, req, doc, resp))
+							if (service->answer(soap_method, client, req, doc, resp))
 								return;
 						}
 						catch (std::exception& e)
@@ -452,16 +452,13 @@ namespace net
 			for (auto&& seen : m_clients_seen)
 			{
 				if (seen.m_address == req.m_remote_address && seen.m_client->matches(req))
-				{
-					log::debug() << "Returning client: \"" << seen.m_client->get_name() << "\" at " << to_string(seen.m_address);
 					return seen.m_client;
-				}
 			}
 
 			auto client = m_device->match_from_request(req);
 			if (client)
 			{
-				log::info() << "New client: \"" << client->get_name() << "\" at " << to_string(req.m_remote_address);
+				log::info() << "New client at " << to_string(req.m_remote_address) <<": " << client->get_name();
 				m_clients_seen.emplace_back(req.m_remote_address, client);
 				if (!client->from_config())
 				{

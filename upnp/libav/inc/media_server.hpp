@@ -134,24 +134,26 @@ namespace net { namespace ssdp { namespace import { namespace av {
 		MediaServer* m_device;
 		ContentDirectory(MediaServer* device) : m_device(device) {}
 
-		error_code GetSystemUpdateID(const http::http_request& http_request, ui4& Id) override;
+		error_code GetSystemUpdateID(const client_info_ptr& client, const http::http_request& http_request,
+		                             ui4& Id) override;
 
-		error_code Search(const http::http_request& http_request, const std::string& ContainerID,
-		                  const std::string& SearchCriteria, const std::string& Filter,
-		                  ui4 StartingIndex, ui4 RequestedCount, const std::string& SortCriteria,
-		                  std::string& Result, ui4& NumberReturned, ui4& TotalMatches,
-		                  ui4& UpdateID) override;
+		error_code Search(const client_info_ptr& client, const http::http_request& http_request,
+		                  const std::string& ContainerID, const std::string& SearchCriteria,
+		                  const std::string& Filter, ui4 StartingIndex, ui4 RequestedCount,
+		                  const std::string& SortCriteria, std::string& Result, ui4& NumberReturned,
+		                  ui4& TotalMatches, ui4& UpdateID) override;
 
-		error_code GetSearchCapabilities(const http::http_request& http_request,
+		error_code GetSearchCapabilities(const client_info_ptr& client, const http::http_request& http_request,
 		                                 std::string& SearchCaps) override;
 
-		error_code GetSortCapabilities(const http::http_request& http_request, std::string& SortCaps) override;
+		error_code GetSortCapabilities(const client_info_ptr& client, const http::http_request& http_request,
+		                               std::string& SortCaps) override;
 
-		error_code Browse(const http::http_request& http_request, const std::string& ObjectID,
-		                  A_ARG_TYPE_BrowseFlag BrowseFlag, const std::string& Filter,
-		                  ui4 StartingIndex, ui4 RequestedCount, const std::string& SortCriteria,
-		                  std::string& Result, ui4& NumberReturned, ui4& TotalMatches,
-		                  ui4& UpdateID) override;
+		error_code Browse(const client_info_ptr& client, const http::http_request& http_request,
+		                  const std::string& ObjectID, A_ARG_TYPE_BrowseFlag BrowseFlag,
+		                  const std::string& Filter, ui4 StartingIndex, ui4 RequestedCount,
+		                  const std::string& SortCriteria, std::string& Result, ui4& NumberReturned,
+		                  ui4& TotalMatches, ui4& UpdateID) override;
 	};
 
 	struct ConnectionManager : ConnectionManagerServerProxy
@@ -159,24 +161,25 @@ namespace net { namespace ssdp { namespace import { namespace av {
 		MediaServer* m_device;
 		ConnectionManager(MediaServer* device) : m_device(device) {}
 
-		error_code GetCurrentConnectionInfo(const http::http_request& http_request,
-			i4 ConnectionID, i4& RcsID, i4& AVTransportID,
-			std::string& ProtocolInfo, std::string& PeerConnectionManager,
-			i4& PeerConnectionID, A_ARG_TYPE_Direction& Direction,
-			A_ARG_TYPE_ConnectionStatus& Status) override;
+		error_code GetCurrentConnectionInfo(const client_info_ptr& client, const http::http_request& http_request,
+		                                    i4 ConnectionID, i4& RcsID, i4& AVTransportID,
+		                                    std::string& ProtocolInfo, std::string& PeerConnectionManager,
+		                                    i4& PeerConnectionID, A_ARG_TYPE_Direction& Direction,
+		                                    A_ARG_TYPE_ConnectionStatus& Status) override;
 
-		error_code ConnectionComplete(const http::http_request& http_request, i4 ConnectionID) override;
+		error_code ConnectionComplete(const client_info_ptr& client, const http::http_request& http_request,
+		                              i4 ConnectionID) override;
 
-		error_code PrepareForConnection(const http::http_request& http_request,
-			const std::string& RemoteProtocolInfo, const std::string& PeerConnectionManager,
-			i4 PeerConnectionID, A_ARG_TYPE_Direction Direction,
-			i4& ConnectionID, i4& AVTransportID, i4& RcsID) override;
+		error_code PrepareForConnection(const client_info_ptr& client, const http::http_request& http_request,
+		                                const std::string& RemoteProtocolInfo, const std::string& PeerConnectionManager,
+		                                i4 PeerConnectionID, A_ARG_TYPE_Direction Direction,
+		                                i4& ConnectionID, i4& AVTransportID, i4& RcsID) override;
 
-		error_code GetProtocolInfo(const http::http_request& http_request, std::string& Source,
-			std::string& Sink) override;
+		error_code GetProtocolInfo(const client_info_ptr& client, const http::http_request& http_request,
+		                           std::string& Source, std::string& Sink) override;
 
-		error_code GetCurrentConnectionIDs(const http::http_request& http_request,
-			std::string& ConnectionIDs) override;
+		error_code GetCurrentConnectionIDs(const client_info_ptr& client, const http::http_request& http_request,
+		                                   std::string& ConnectionIDs) override;
 	};
 
 	struct MediaServer : Device

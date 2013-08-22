@@ -186,6 +186,7 @@ struct printer
 		{
 			auto args = generate(action.m_args, [&](const action_arg& arg) { return arg.getCType(descr.m_variables, arg.m_input) + " " + arg.m_name; });
 			args.insert(args.begin(), "const http::http_request& http_request");
+			args.insert(args.begin(), "const client_info_ptr& client");
 
 			o <<
 				"\n\n";
@@ -307,12 +308,14 @@ struct printer
 	void print_proxy(header& o, const action& action)
 	{
 		std::vector<std::string> call;
+		call.emplace_back("const client_info_ptr& client");
 		call.emplace_back("const http::http_request& http_request");
 		call.emplace_back("const Raw" + action.m_name + "::request& request");
 		call.emplace_back("Raw" + action.m_name + "::response& response");
 
 		auto args = generate(action.m_args, [&](const action_arg& arg) { return (arg.m_input ? "request." : "response.") + arg.m_name; });
 		args.insert(args.begin(), "http_request");
+		args.insert(args.begin(), "client");
 
 		o <<
 			"\n";
@@ -434,6 +437,7 @@ struct printer
 		{
 			auto args = generate(action.m_args, [&](const action_arg& arg) { return arg.getCType(descr.m_variables, arg.m_input) + " " + arg.m_name; });
 			args.insert(args.begin(), "const http::http_request& http_request");
+			args.insert(args.begin(), "const client_info_ptr& client");
 
 			o <<
 				"\n";
@@ -458,6 +462,7 @@ struct printer
 		{
 			auto args = generate(action.m_args, [&](const action_arg& arg) { return (arg.m_input ? "/* IN  */ " : "/* OUT */ ") + arg.getCType(descr.m_variables, arg.m_input) + " " + arg.m_name; });
 			args.insert(args.begin(), "const http::http_request& http_request");
+			args.insert(args.begin(), "const client_info_ptr& client");
 
 			o <<
 				"\n"; print_func(o,

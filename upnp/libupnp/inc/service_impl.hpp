@@ -196,7 +196,7 @@ namespace net { namespace ssdp { namespace import {
 		virtual ~method_base() {}
 
 		virtual const std::string& name() const = 0;
-		virtual bool call(proxy_t* self, const http::http_request& req, const dom::XmlDocumentPtr& doc, http::response& response) = 0;
+		virtual bool call(proxy_t* self, const client_info_ptr& info, const http::http_request& req, const dom::XmlDocumentPtr& doc, http::response& response) = 0;
 		virtual void get_config(std::ostream& o) = 0;
 	};
 
@@ -206,7 +206,7 @@ namespace net { namespace ssdp { namespace import {
 		typedef Proxy proxy_t;
 		typedef Response response_t;
 		typedef Request request_t;
-		typedef error_code(proxy_t::* method_t)(const http::http_request& req, const request_t&, response_t&);
+		typedef error_code(proxy_t::* method_t)(const client_info_ptr&, const http::http_request&, const request_t&, response_t&);
 
 		struct accessor_base
 		{
@@ -337,7 +337,7 @@ namespace net { namespace ssdp { namespace import {
 
 		const std::string& name() const override { return m_name; }
 
-		bool call(proxy_t* self, const http::http_request& req, const dom::XmlDocumentPtr& doc, http::response& response) override
+		bool call(proxy_t* self, const client_info_ptr& info, const http::http_request& req, const dom::XmlDocumentPtr& doc, http::response& response) override
 		{
 			request_t call_req;
 			response_t call_resp;
@@ -350,7 +350,7 @@ namespace net { namespace ssdp { namespace import {
 			{
 				clean(call_resp);
 				load(elem, call_req);
-				result = (self->*m_method)(req, call_req, call_resp);
+				result = (self->*m_method)(info, req, call_req, call_resp);
 				if (result == error::no_error)
 				{
 					std::ostringstream out;
@@ -403,18 +403,18 @@ namespace net { namespace ssdp { namespace import {
 		methods_t m_methods;
 		variables_t m_variables;
 
-		bool answer(const std::string& name, const http::http_request& req, const dom::XmlDocumentPtr& doc, http::response& response) override
+		bool answer(const std::string& name, const client_info_ptr& info, const http::http_request& req, const dom::XmlDocumentPtr& doc, http::response& response) override
 		{
 			for (auto&& method: m_methods)
 			{
 				if (method->name() == name)
-					return method->call(static_cast<Proxy*>(this), req, doc, response);
+					return method->call(static_cast<Proxy*>(this), info, req, doc, response);
 			}
 
 			return false;
 		}
 		template <typename Request, typename Response>
-		method_info<Proxy, Request, Response>& add_method(const std::string& name, error_code (Proxy::* method)(const http::http_request&, const Request&, Response&))
+		method_info<Proxy, Request, Response>& add_method(const std::string& name, error_code (Proxy::* method)(const client_info_ptr&, const http::http_request&, const Request&, Response&))
 		{
 			auto m = std::make_shared<method_info<Proxy, Request, Response>>(name, method);
 			m_methods.push_back(m);
