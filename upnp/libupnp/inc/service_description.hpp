@@ -72,6 +72,7 @@ namespace net
 					if (m_values.empty())
 					{
 						if (m_type == "string") return "const std::string&";
+						if (m_type == "bin.base64") return "const base64&";
 						return m_type;
 					}
 					else
@@ -82,6 +83,7 @@ namespace net
 					if (m_values.empty())
 					{
 						if (m_type == "string") return "std::string&";
+						if (m_type == "bin.base64") return "base64&";
 						return m_type + "&";
 					}
 					else
@@ -93,6 +95,7 @@ namespace net
 				if (m_values.empty())
 				{
 					if (m_type == "string") return "std::string";
+					if (m_type == "bin.base64") return "base64";
 					return m_type;
 				}
 				else

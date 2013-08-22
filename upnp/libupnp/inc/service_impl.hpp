@@ -36,6 +36,18 @@ namespace net { namespace ssdp { namespace import {
 		}
 	};
 
+	struct base64 : std::string
+	{
+		base64() : std::string() {}
+		explicit base64(std::string && v) : std::string(std::move(v)) {}
+		explicit base64(const std::string & v) : std::string(v) {}
+		base64& operator=(std::string && v)
+		{
+			std::string::operator=(std::move(v));
+			return *this;
+		}
+	};
+
 	template <>
 	struct type_info<uri> {
 		static uri unknown_value() { return uri(); }
@@ -50,6 +62,22 @@ namespace net { namespace ssdp { namespace import {
 			return uri(rhs);
 		};
 		static void get_config(std::ostream& o) { o << "			<dataType>uri</dataType>\n"; }
+	};
+
+	template <>
+	struct type_info<base64> {
+		static base64 unknown_value() { return base64(); }
+
+		static std::string to_string(const base64& rhs)
+		{
+			return rhs;
+		};
+
+		static base64 from_string(const std::string& rhs)
+		{
+			return base64(rhs);
+		};
+		static void get_config(std::ostream& o) { o << "			<dataType>bin.base64</dataType>\n"; }
 	};
 
 	template <>
