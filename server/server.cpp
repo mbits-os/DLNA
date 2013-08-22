@@ -33,17 +33,75 @@
 #include <log.hpp>
 #include <config.hpp>
 #include <threads.hpp>
+#include <boost/date_time/posix_time/posix_time.hpp>
 
 namespace fs = boost::filesystem;
 namespace av = net::ssdp::import::av;
 
+#if defined(DBG_ALLOCS)
+static size_t all_allocs = 0;
+
+void* operator new (size_t size)
+{
+	void *out = ::malloc(size + sizeof(size_t));
+	if (!out) throw new std::bad_alloc();
+	size_t* p = (size_t*) out;
+	*p = size;
+	all_allocs += size;
+	return p + 1;
+}
+
+void operator delete (void* ptr)
+{
+	if (!ptr)
+		return;
+
+	size_t* p = (size_t*) ptr;
+	--p;
+	all_allocs -= *p;
+	::free(p);
+}
+
+void* operator new[] (size_t size)
+{
+	void *out = ::malloc(size + sizeof(size_t));
+	if (!out) throw new std::bad_alloc();
+	size_t* p = (size_t*) out;
+	*p = size;
+	all_allocs += size;
+	return p + 1;
+}
+
+void operator delete[] (void* ptr)
+{
+	if (!ptr)
+		return;
+
+	size_t* p = (size_t*) ptr;
+	--p;
+	all_allocs -= *p;
+	::free(p);
+}
+#endif // defined(DBG_ALLOCS)
+
 namespace lan
 {
 	extern Log::Module APP;
+#if defined(DBG_ALLOCS)
+	extern Log::Module Memory{ "Memory" };
+#endif
+
 	struct log : public Log::basic_log<log>
 	{
 		static const Log::Module& module() { return APP; }
 	};
+
+#if defined(DBG_ALLOCS)
+	struct memlog : public Log::basic_log<memlog>
+	{
+		static const Log::Module& module() { return Memory; }
+	};
+#endif
 
 	namespace item
 	{
@@ -55,6 +113,9 @@ namespace lan
 		radio(const net::ssdp::device_ptr& device, const net::config::config_ptr& config)
 			: m_service()
 			, m_signals(m_service)
+#if defined(DBG_ALLOCS)
+			, m_timer(m_service, boost::posix_time::seconds(1))
+#endif
 			, m_upnp(m_service, device, config)
 		{
 			m_signals.add(SIGINT);
@@ -65,7 +126,17 @@ namespace lan
 
 			m_signals.async_wait([&](boost::system::error_code, int) {
 				m_upnp.stop();
+#if defined(DBG_ALLOCS)
+				m_timer.cancel();
+#endif
 			});
+
+#if defined(DBG_ALLOCS)
+			m_timer.async_wait([this](const boost::system::error_code & /*e*/){
+				memlog::info() << all_allocs;
+				m_timer.expires_at(m_timer.expires_at() + boost::posix_time::seconds(30));
+			});
+#endif
 
 			m_upnp.start();
 		}
@@ -75,6 +146,9 @@ namespace lan
 	private:
 		boost::asio::io_service m_service;
 		boost::asio::signal_set m_signals;
+#if defined(DBG_ALLOCS)
+		boost::asio::deadline_timer m_timer;
+#endif
 		net::ssdp::server       m_upnp;
 	};
 }
@@ -134,6 +208,9 @@ int main(int argc, char* argv [])
 		lan::radio lanRadio(server, config);
 
 		lanRadio.run();
+#if defined(DBG_ALLOCS)
+		lan::memlog::info() << all_allocs;
+#endif
 	}
 	catch (std::exception& e)
 	{
