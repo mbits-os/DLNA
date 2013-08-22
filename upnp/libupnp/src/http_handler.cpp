@@ -281,6 +281,7 @@ namespace net
 
 		void http_handler::handle(const http_request& req, response& resp)
 		{
+			auto client = client_from_request(req);
 			auto SOAPAction = req.SOAPAction();
 			auto res = req.resource();
 			auto method = req.method();
@@ -444,6 +445,26 @@ namespace net
 			auto & header = resp.header();
 			header.clear(m_device->server());
 			header.m_status = 500;
+		}
+
+		ssdp::client_info_ptr http_handler::client_from_request(const http_request& req)
+		{
+			for (auto&& seen : m_clients_seen)
+			{
+				if (seen.m_address == req.m_remote_address && seen.m_client->matches(req))
+				{
+					log::debug() << "Returning client: \"" << seen.m_client->get_name() << "\" at " << to_string(seen.m_address);
+					return seen.m_client;
+				}
+			}
+
+			auto client = m_device->match_from_request(req);
+			if (client)
+			{
+				log::info() << "New client: \"" << client->get_name() << "\" at " << to_string(req.m_remote_address);
+				m_clients_seen.emplace_back(req.m_remote_address, client);
+			}
+			return client;
 		}
 	}
 }

@@ -29,16 +29,34 @@ namespace net
 {
 	namespace ssdp
 	{
+		struct log : public Log::basic_log<log>
+		{
+			static const Log::Module& module() { return Log::Module::SSDP; }
+		};
+
 		bool client_matcher::matches(const http::http_request& request) const
 		{
-			auto header = request.user_agent();
-			if (std::regex_match(header, m_user_agent))
-				return true;
+			log::debug log;
+			log << "[MATCHING] [" << m_ua_string << "]";
+			if (!m_ua_string.empty())
+			{
+				auto header = request.user_agent();
+				if (std::regex_search(header, m_user_agent))
+					return true;
+			}
+
+			log << " or [" << m_other_header << ": " << m_hm_string << "] ";
 
 			if (!m_other_header.empty())
 			{
-				auto other = request.simple(m_other_header);
-				if (std::regex_match(header, m_user_agent))
+				auto it = request.find(m_other_header);
+				if (it == request.end())
+					return false;
+				if (m_hm_string.empty())
+					return true;
+
+				log << it->value();
+				if (std::regex_search(it->value(), m_header_match))
 					return true;
 			}
 			return false;

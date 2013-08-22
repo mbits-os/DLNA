@@ -52,11 +52,15 @@ namespace net
 				: m_user_agent(user_agent_match)
 				, m_other_header(other_header)
 				, m_header_match(other_header_match)
+				, m_ua_string(user_agent_match)
+				, m_hm_string(other_header_match)
 			{}
 
 			bool matches(const http::http_request& request) const;
 		private:
 			std::string m_other_header;
+			std::string m_ua_string;
+			std::string m_hm_string;
 			std::regex m_user_agent;
 			std::regex m_header_match;
 		};

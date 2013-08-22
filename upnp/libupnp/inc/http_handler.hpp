@@ -39,14 +39,26 @@ namespace net
 		typedef std::vector<std::pair<std::string, std::string>> template_vars;
 		class http_handler: public request_handler, boost::noncopyable
 		{
+			struct client
+			{
+				boost::asio::ip::address m_address;
+				ssdp::client_info_ptr m_client;
+				client(const boost::asio::ip::address& address, const ssdp::client_info_ptr& client)
+					: m_address(address)
+					, m_client(client)
+				{}
+			};
+
 			template_vars      m_vars;
 			ssdp::device_ptr   m_device;
 			config::config_ptr m_config;
+			std::vector<client> m_clients_seen;
 
 			void make_templated(const char* tmplt, const char* content_type, response& resp);
 			void make_device_xml(response& resp);
 			void make_service_xml(response& resp, const ssdp::service_ptr& service);
 			void make_file(const boost::filesystem::path& path, response& resp);
+			ssdp::client_info_ptr client_from_request(const http_request& req);
 		public:
 			http_handler(const ssdp::device_ptr& device, const config::config_ptr& config);
 			void handle(const http_request& req, response& resp) override;

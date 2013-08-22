@@ -686,6 +686,7 @@ namespace net { namespace ssdp { namespace import { namespace av {
 
 	client_info_ptr MediaServer::match_from_request(const http::http_request& request) const
 	{
+		log::debug() << "[MATCHING] User agent: " << request.user_agent();
 		for (auto&& candidate : m_known_clients)
 			if (candidate->matches(request))
 				return candidate;
