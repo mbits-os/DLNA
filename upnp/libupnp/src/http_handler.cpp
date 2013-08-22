@@ -300,8 +300,9 @@ namespace net
 			{
 				if (root == "config")
 				{
+					auto client = client_from_request(req, false);
 					if (rest == "device.xml")
-						return make_device_xml(resp);
+						return make_device_xml(client, resp);
 					else if (rest.string().substr(0, 7) == "service")
 					{
 						auto id = rest.string().substr(7);
@@ -310,7 +311,7 @@ namespace net
 						for (auto&& service: ssdp::services(m_device))
 						{
 							if (id == std::to_string(int_id++))
-								return make_service_xml(resp, service);
+								return make_service_xml(client, resp, service);
 						}
 					}
 				}
@@ -381,20 +382,20 @@ namespace net
 			resp.content(std::make_shared<template_content>(tmplt, std::ref(m_vars)));
 		}
 
-		void http_handler::make_device_xml(response& resp)
+		void http_handler::make_device_xml(const ssdp::client_info_ptr& client, response& resp)
 		{
 			auto & header = resp.header();
 			header.clear(m_device->server());
 			header.append("content-type", "text/xml; charset=\"utf-8\"");
-			resp.content(content::from_string(m_device->get_configuration(to_string(m_config->iface) + ":" + std::to_string(m_config->port))));
+			resp.content(content::from_string(m_device->get_configuration(client, to_string(m_config->iface) + ":" + std::to_string(m_config->port))));
 		}
 
-		void http_handler::make_service_xml(response& resp, const ssdp::service_ptr& service)
+		void http_handler::make_service_xml(const ssdp::client_info_ptr& client, response& resp, const ssdp::service_ptr& service)
 		{
 			auto & header = resp.header();
 			header.clear(m_device->server());
 			header.append("content-type", "text/xml; charset=\"utf-8\"");
-			resp.content(content::from_string(service->get_configuration()));
+			resp.content(content::from_string(service->get_configuration(client)));
 		}
 
 		static struct
@@ -448,7 +449,7 @@ namespace net
 			header.m_status = 500;
 		}
 
-		ssdp::client_info_ptr http_handler::client_from_request(const http_request& req)
+		ssdp::client_info_ptr http_handler::client_from_request(const http_request& req, bool save)
 		{
 			for (auto&& seen : m_clients_seen)
 			{
@@ -457,7 +458,7 @@ namespace net
 			}
 
 			auto client = m_device->match_from_request(req);
-			if (client)
+			if (client && save)
 			{
 				log::info() << "New client at " << to_string(req.m_remote_address) <<": " << client->get_name();
 				m_clients_seen.emplace_back(req.m_remote_address, client);

@@ -437,8 +437,7 @@ namespace net { namespace ssdp { namespace import {
 			return *var.get();
 		}
 
-		std::string x();
-		std::string get_configuration() const override
+		std::string get_configuration(const ssdp::client_info_ptr& client) const override
 		{
 			std::ostringstream o;
 			o

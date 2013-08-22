@@ -55,10 +55,10 @@ namespace net
 			std::vector<client> m_clients_seen;
 
 			void make_templated(const char* tmplt, const char* content_type, response& resp);
-			void make_device_xml(response& resp);
-			void make_service_xml(response& resp, const ssdp::service_ptr& service);
+			void make_device_xml(const ssdp::client_info_ptr& client, response& resp);
+			void make_service_xml(const ssdp::client_info_ptr& client, response& resp, const ssdp::service_ptr& service);
 			void make_file(const boost::filesystem::path& path, response& resp);
-			ssdp::client_info_ptr client_from_request(const http_request& req);
+			ssdp::client_info_ptr client_from_request(const http_request& req, bool save = true);
 		public:
 			http_handler(const ssdp::device_ptr& device, const config::config_ptr& config);
 			void handle(const http_request& req, response& resp) override;

@@ -120,7 +120,7 @@ namespace net
 			virtual const char* get_type() const = 0;
 			virtual const char* get_id() const = 0;
 			virtual bool answer(const std::string& name, const client_info_ptr& info, const http::http_request& req, const dom::XmlDocumentPtr& doc, http::response& response) { return false; }
-			virtual std::string get_configuration() const { return std::string(); };
+			virtual std::string get_configuration(const ssdp::client_info_ptr& client) const { return std::string(); };
 		};
 		typedef std::shared_ptr<ServiceInterface> service_ptr;
 
@@ -140,7 +140,7 @@ namespace net
 			virtual const char* get_description() const = 0;
 			virtual size_t get_service_count() const { return m_services.size(); }
 			virtual service_ptr get_service(size_t i) const { return m_services[i]; }
-			virtual std::string get_configuration(const std::string& host) const;
+			virtual std::string get_configuration(const ssdp::client_info_ptr& client, const std::string& host) const;
 			virtual bool call_http(const http::http_request& req, const boost::filesystem::path& root, const boost::filesystem::path& rest, http::response& resp) = 0;
 			virtual client_info_ptr match_from_request(const http::http_request& request) const = 0;
 
