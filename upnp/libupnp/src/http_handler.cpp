@@ -350,7 +350,10 @@ namespace net
 					}
 
 					if (!service)
+					{
+						log::warning() << "Unknown service requested: " << soap_type;
 						return make_404(resp);
+					}
 
 					std::tie(root, rest) = pop(rest);
 					if (root == "control")
@@ -360,6 +363,7 @@ namespace net
 							resp.header().clear(m_device->server());
 							if (service->answer(soap_method, client, req, doc, resp))
 								return;
+							log::warning() << "Unimplemented SOAP method called: " << SOAPAction;
 						}
 						catch (std::exception& e)
 						{
