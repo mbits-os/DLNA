@@ -32,8 +32,31 @@ namespace net { namespace ssdp { namespace import { namespace av {
 
 	struct MediaServer;
 
-	typedef basic_client_info client;
-	typedef client_info_ptr   client_ptr;
+	struct client_interface: client_info
+	{
+		client_interface(const std::string& name) : client_info(name) {}
+		virtual ~client_interface() {}
+	};
+	typedef std::shared_ptr<client_interface> client_interface_ptr;
+
+	struct client : client_interface
+	{
+		client(const std::string& name,
+			const std::string& user_agent_match,
+			const std::string& other_header,
+			const std::string& other_header_match)
+			: client_interface(name)
+			, m_matcher(user_agent_match, other_header, other_header_match)
+		{}
+
+		virtual bool matches(const http::http_request& request) const
+		{
+			return m_matcher.matches(request);
+		}
+	private:
+		client_matcher m_matcher;
+	};
+	typedef std::shared_ptr<client> client_ptr;
 
 	namespace items
 	{
@@ -156,7 +179,7 @@ namespace net { namespace ssdp { namespace import { namespace av {
 		                  ui4& TotalMatches, ui4& UpdateID) override;
 	};
 
-	struct ConnectionManager : ConnectionManagerServerProxy
+	struct ConnectionManager: ConnectionManagerServerProxy
 	{
 		MediaServer* m_device;
 		ConnectionManager(MediaServer* device) : m_device(device) {}
@@ -216,7 +239,7 @@ namespace net { namespace ssdp { namespace import { namespace av {
 		time_t                             m_system_update_id;
 		std::vector<client_ptr>            m_known_clients;
 
-		static client_ptr create_default_client(const http::http_request& request);
+		static client_interface_ptr create_default_client(const http::http_request& request);
 		items::root_item_ptr create_root_item();
 	};
 

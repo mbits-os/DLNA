@@ -642,10 +642,10 @@ namespace net { namespace ssdp { namespace import { namespace av {
 		return root;
 	}
 
-	struct default_client_info : client_info
+	struct default_client_info : client_interface
 	{
 		default_client_info(const http::http_request& request)
-			: client_info("Unknown")
+			: client_interface("Unknown")
 			, m_request(request)
 		{}
 
@@ -668,7 +668,7 @@ namespace net { namespace ssdp { namespace import { namespace av {
 		http::http_request m_request;
 	};
 
-	client_ptr MediaServer::create_default_client(const http::http_request& request)
+	client_interface_ptr MediaServer::create_default_client(const http::http_request& request)
 	{
 		return std::make_shared<default_client_info>(request);
 	}

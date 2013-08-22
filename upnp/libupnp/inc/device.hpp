@@ -77,24 +77,6 @@ namespace net
 		};
 		typedef std::shared_ptr<client_info> client_info_ptr;
 
-		struct basic_client_info: client_info
-		{
-			basic_client_info(const std::string& name,
-				const std::string& user_agent_match,
-				const std::string& other_header,
-				const std::string& other_header_match)
-				: client_info(name)
-				, m_matcher(user_agent_match, other_header, other_header_match)
-			{}
-
-			virtual bool matches(const http::http_request& request) const
-			{
-				return m_matcher.matches(request);
-			}
-		private:
-			client_matcher m_matcher;
-		};
-
 		struct device_info
 		{
 			net::http::module_version m_server;
