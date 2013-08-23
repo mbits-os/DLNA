@@ -27,6 +27,11 @@
 
 #include <memory>
 #include <set>
+#include <vector>
+#include <deque>
+#include <mutex>
+#include <thread>
+#include <condition_variable>
 #include <boost/asio.hpp>
 #include <http/header_parser.hpp>
 #include <http/http.hpp>
@@ -37,12 +42,55 @@ namespace net
 {
 	namespace http
 	{
+		namespace queue
+		{
+			struct Event
+			{
+				std::function < void() > m_call;
+				void operator()() { m_call(); }
+
+				Event(const std::function< void() >& call)
+					: m_call(call)
+				{}
+			};
+
+			struct Queue: std::enable_shared_from_this<Queue>
+			{
+				Queue(const std::string& name);
+				void stop();
+				void run();
+				void post(const std::function< void() >& ev);
+
+				template <typename T>
+				void on_start(T ev) { m_onStart = ev; }
+
+				template <typename T>
+				void on_stop(T ev) { m_onStop = ev; }
+
+				const std::string& name() const { return m_name; }
+			private:
+				void call_next();
+
+				std::deque<Event> m_queue;
+				std::thread::id m_here;
+				std::mutex m_mutex;
+				std::condition_variable m_cv;
+				bool m_done;
+				std::string m_name;
+
+				std::function < void() > m_onStart, m_onStop;
+			};
+			typedef std::shared_ptr<Queue> worker_ptr;
+		}
+
 		struct connection;
 		typedef std::shared_ptr<connection> connection_ptr;
 
 		class connection_manager : private boost::noncopyable
 		{
 		public:
+			connection_manager();
+
 			/// Add the specified connection to the manager and start it.
 			void start(connection_ptr c);
 
@@ -55,6 +103,8 @@ namespace net
 		private:
 			/// The managed connections.
 			std::set<connection_ptr> m_connections;
+			std::vector<queue::worker_ptr> m_pool;
+			std::vector<queue::worker_ptr>::iterator m_worker;
 		};
 
 		struct connection : private boost::noncopyable, public std::enable_shared_from_this<connection>
@@ -62,9 +112,11 @@ namespace net
 			explicit connection(boost::asio::ip::tcp::socket && socket, connection_manager& manager, const request_handler_ptr& handler);
 
 			void start() { read_some_more(); }
+			void run();
 			void stop() { m_socket.close(); }
 		private:
 			void read_some_more();
+			bool parse_header(std::size_t bytes_transferred);
 			void send_reply(bool send_body);
 			static void continue_sending(connection_ptr self, response_buffer buffer, boost::system::error_code ec, std::size_t);
 
