@@ -53,10 +53,12 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\..\server\fs_items.cpp" />
+    <ClCompile Include="..\..\server\postmortem_win32.cpp" />
     <ClCompile Include="..\..\server\server.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\server\fs_items.hpp" />
+    <ClInclude Include="..\..\server\postmortem.hpp" />
     <ClInclude Include="Radio.rc.h" />
   </ItemGroup>
   <ItemGroup>

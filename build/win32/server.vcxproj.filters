@@ -3,12 +3,14 @@
   <ItemGroup>
     <ClCompile Include="..\..\server\server.cpp" />
     <ClCompile Include="..\..\server\fs_items.cpp" />
+    <ClCompile Include="..\..\server\postmortem_win32.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\server\fs_items.hpp" />
     <ClInclude Include="Radio.rc.h">
       <Filter>res</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\server\postmortem.hpp" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="res">

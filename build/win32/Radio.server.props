@@ -22,6 +22,9 @@
       <AdditionalDependencies>libdom.lib;libenv.lib;libnet.lib;libupnp.lib;libav.lib;mi.lib</AdditionalDependencies>
       <SubSystem>Console</SubSystem>
       <ProgramDatabaseFile>$(TargetDir)$(TargetName).pdb</ProgramDatabaseFile>
+      <GenerateMapFile>true</GenerateMapFile>
+      <MapFileName>$(TargetDir)$(TargetName).map</MapFileName>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
     <CustomBuildStep>
       <Command>copy "$(SolutionDir)..\..\bin\$(PlatformName)\MediaInfo\mi.dll" "$(SolutionDir)..\..\bin\$(PlatformName)\$(Configuration)\"</Command>

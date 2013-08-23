@@ -220,8 +220,7 @@ pip-log.txt
 /upnp/libav/inc/manager.hpp
 lanradio.conf
 
-/mi.*
-/mi_d.*
 /build/resources/renderers
 /build/build-*-Debug
 /build/build-*-Release
+/*.dmp

@@ -34,6 +34,7 @@
 #include <config.hpp>
 #include <threads.hpp>
 #include <boost/date_time/posix_time/posix_time.hpp>
+#include "postmortem.hpp"
 
 namespace fs = boost::filesystem;
 namespace av = net::ssdp::import::av;
@@ -175,6 +176,7 @@ int main(int argc, char* argv [])
 	try
 	{
 		threads::set_name("main");
+		dbg::postmortem guard;
 
 		lan::log::info() << "\nStarting...\n";
 
