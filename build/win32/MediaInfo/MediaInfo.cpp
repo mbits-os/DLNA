@@ -70,13 +70,28 @@ namespace MediaInfo
 				: m_info(info)
 				, m_path(path)
 				, m_printed(false)
+				, opened(false)
 			{
-				opened = m_info.Open(path) != 0;
+				try
+				{
+					opened = m_info.Open(path) != 0;
+				}
+				catch(...)
+				{
+					fwprintf(stderr, L"[EXCEPTION] MediaInfo::MediaInfoAPI::Session(%s)\n", path);
+				}
 			}
 			~Session()
 			{
-				if (opened)
-					m_info.Close();
+				try
+				{
+					if (opened)
+						m_info.Close();
+				}
+				catch(...)
+				{
+					std::cerr << "[EXCEPTION] MediaInfo::MediaInfoAPI::~Session();\n";
+				}
 			}
 
 			bool isOpened() const { return opened; }
@@ -86,8 +101,15 @@ namespace MediaInfo
 				if (!opened)
 					return nullptr;
 
-				if (m_text.empty())
-					m_text = m_info.Inform();
+				try
+				{
+					if (m_text.empty())
+						m_text = m_info.Inform();
+				}
+				catch(...)
+				{
+					std::cerr << "[EXCEPTION] MediaInfo::MediaInfoAPI::Session::text();\n";
+				}
 
 				return m_text.c_str();
 			}
@@ -107,8 +129,15 @@ namespace MediaInfo
 
 				if (!m_doc)
 				{
-					if (m_text.empty())
-						m_text = m_info.Inform();
+					try
+					{
+						if (m_text.empty())
+							m_text = m_info.Inform();
+					}
+					catch(...)
+					{
+						std::cerr << "[EXCEPTION] MediaInfo::MediaInfoAPI::Session::extract();\n";
+					}
 
 					size_t rest = m_text.length() * sizeof(wchar_t) ;
 					const char* data = (const char*) m_text.c_str();
@@ -147,9 +176,16 @@ namespace MediaInfo
 
 		MediaInfoAPI()
 		{
-			m_info.Option(L"Complete", L"1");
-			m_info.Option(L"Language", L"raw");
-			m_info.Option(L"Output", L"XML");
+			try
+			{
+				m_info.Option(L"Complete", L"1");
+				m_info.Option(L"Language", L"raw");
+				m_info.Option(L"Output", L"XML");
+			}
+			catch(...)
+			{
+				std::cerr << "[EXCEPTION] MediaInfo::MediaInfoAPI();\n";
+			}
 		}
 
 		HMEDIAINFO newSession(LPCWSTR path)
