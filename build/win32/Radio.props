@@ -10,6 +10,11 @@
     <IntDir>$(SolutionDir)..\..\int\$(PlatformName)\$(Configuration)\$(TargetName)$(TargetExt)\</IntDir>
     <LibraryPath>$(SolutionDir)..\..\bin\$(PlatformName)\$(Configuration)\;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
+  <ItemDefinitionGroup>
+    <ClCompile>
+      <WarningLevel>Level4</WarningLevel>
+    </ClCompile>
+  </ItemDefinitionGroup>
   <PropertyGroup Label="UserMacros" />
   <ItemGroup />
 </Project>
