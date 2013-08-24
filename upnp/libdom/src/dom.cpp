@@ -160,7 +160,7 @@ namespace dom
 
 			void* internalData() { return (XmlNodeImplInit*)this; }
 
-			bool appendAttr(const dom::XmlNodePtr& newChild) { return false; }
+			bool appendAttr(const dom::XmlNodePtr& /*newChild*/) { return false; }
 
 			XmlNodePtr find(const std::string& path, const Namespaces& ns)
 			{
@@ -419,7 +419,7 @@ namespace dom
 			}
 
 			XmlDocumentPtr ownerDocument() { return self.lock(); }
-			bool appendChild(const XmlNodePtr& newChild) { return false; }
+			bool appendChild(const XmlNodePtr& /*newChild*/) { return false; }
 			void* internalData() { return nullptr; }
 
 			dom::XmlElementPtr documentElement() { return root; }
@@ -474,7 +474,7 @@ namespace dom
 				return root->getElementsByTagName(tagName);
 			}
 
-			dom::XmlElementPtr getElementById(const std::string& elementId)
+			dom::XmlElementPtr getElementById(const std::string& /*elementId*/)
 			{
 				return nullptr;
 			}
@@ -538,7 +538,7 @@ namespace dom
 			elem = current;
 		}
 
-		void onEndElement(const XML_Char *name)
+		void onEndElement(const XML_Char* /*name*/)
 		{
 			addText();
 			if (!elem) return;
