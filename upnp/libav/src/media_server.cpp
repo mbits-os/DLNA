@@ -35,7 +35,7 @@ namespace net { namespace ssdp { namespace import { namespace av {
 
 	Log::Module Multimedia {"AVMS"};
 
-	bool MediaServer::call_http(const http::http_request& req, const boost::filesystem::path& root, const boost::filesystem::path& rest, http::response& resp)
+	bool MediaServer::call_http(const http::http_request& /*req*/, const boost::filesystem::path& root, const boost::filesystem::path& rest, http::response& resp)
 	{
 		bool main_resource = root == "media";
 		if (!main_resource && root != "thumb")

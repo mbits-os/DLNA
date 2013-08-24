@@ -53,7 +53,7 @@ namespace net { namespace ssdp { namespace import { namespace av {
 		std::vector<std::string> out;
 
 		std::string::size_type pos = 0;
-		while (true)
+		for (;;)
 		{
 			auto comma = filter.find(',', pos);
 			if (comma == std::string::npos)
@@ -68,55 +68,54 @@ namespace net { namespace ssdp { namespace import { namespace av {
 		return out;
 	}
 
-	error_code ContentDirectory::GetSystemUpdateID(const client_info_ptr& client,
-	                                               const http::http_request& http_request,
+	error_code ContentDirectory::GetSystemUpdateID(const client_info_ptr& /*client*/,
+	                                               const http::http_request& /*http_request*/,
 	                                               /* OUT */ ui4& Id)
 	{
 		Id = m_device->system_update_id();
-		log::debug() << "GetSystemUpdateID() = " << Id;
 		return error::no_error;
 	}
 
-	error_code ContentDirectory::Search(const client_info_ptr& client,
-	                                    const http::http_request& http_request,
-	                                    /* IN  */ const std::string& ContainerID,
-	                                    /* IN  */ const std::string& SearchCriteria,
-	                                    /* IN  */ const std::string& Filter,
-	                                    /* IN  */ ui4 StartingIndex,
-	                                    /* IN  */ ui4 RequestedCount,
-	                                    /* IN  */ const std::string& SortCriteria,
-	                                    /* OUT */ std::string& Result,
-	                                    /* OUT */ ui4& NumberReturned,
-	                                    /* OUT */ ui4& TotalMatches,
-	                                    /* OUT */ ui4& UpdateID)
+	error_code ContentDirectory::Search(const client_info_ptr& /*client*/,
+	                                    const http::http_request& /*http_request*/,
+	                                    /* IN  */ const std::string& /*ContainerID*/,
+	                                    /* IN  */ const std::string& /*SearchCriteria*/,
+	                                    /* IN  */ const std::string& /*Filter*/,
+	                                    /* IN  */ ui4 /*StartingIndex*/,
+	                                    /* IN  */ ui4 /*RequestedCount*/,
+	                                    /* IN  */ const std::string& /*SortCriteria*/,
+	                                    /* OUT */ std::string& /*Result*/,
+	                                    /* OUT */ ui4& /*NumberReturned*/,
+	                                    /* OUT */ ui4& /*TotalMatches*/,
+	                                    /* OUT */ ui4& /*UpdateID*/)
 	{
 		return error::not_implemented;
 	}
 
-	error_code ContentDirectory::GetSearchCapabilities(const client_info_ptr& client,
-	                                                   const http::http_request& http_request,
-	                                                   /* OUT */ std::string& SearchCaps)
+	error_code ContentDirectory::GetSearchCapabilities(const client_info_ptr& /*client*/,
+	                                                   const http::http_request& /*http_request*/,
+	                                                   /* OUT */ std::string& /*SearchCaps*/)
 	{
 		//SearchCaps = "*";
 		return error::no_error;
 	}
 
-	error_code ContentDirectory::GetSortCapabilities(const client_info_ptr& client,
-	                                                 const http::http_request& http_request,
-	                                                 /* OUT */ std::string& SortCaps)
+	error_code ContentDirectory::GetSortCapabilities(const client_info_ptr& /*client*/,
+	                                                 const http::http_request& /*http_request*/,
+	                                                 /* OUT */ std::string& /*SortCaps*/)
 	{
 		//SortCaps = "*";
 		return error::no_error;
 	}
 
-	error_code ContentDirectory::Browse(const client_info_ptr& client,
-	                                    const http::http_request& http_request,
+	error_code ContentDirectory::Browse(const client_info_ptr& /*client*/,
+	                                    const http::http_request& /*http_request*/,
 	                                    /* IN  */ const std::string& ObjectID,
 	                                    /* IN  */ A_ARG_TYPE_BrowseFlag BrowseFlag,
 	                                    /* IN  */ const std::string& Filter,
 	                                    /* IN  */ ui4 StartingIndex,
 	                                    /* IN  */ ui4 RequestedCount,
-	                                    /* IN  */ const std::string& SortCriteria,
+	                                    /* IN  */ const std::string& /*SortCriteria*/,
 	                                    /* OUT */ std::string& Result,
 	                                    /* OUT */ ui4& NumberReturned,
 	                                    /* OUT */ ui4& TotalMatches,

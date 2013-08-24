@@ -46,7 +46,7 @@ namespace net { namespace ssdp { namespace import { namespace av {
 			}
 
 			container_type list(ulong start_from, ulong max_count)           override;
-			ulong          predict_count(ulong served) const                 override { return m_children.size(); }
+			ulong          predict_count(ulong /*served*/) const             override { return m_children.size(); }
 			media_item_ptr get_item(const std::string& id)                   override;
 			bool           is_image() const                                  override { return false; }
 			bool           is_folder() const                                 override { return true; }

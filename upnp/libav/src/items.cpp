@@ -137,6 +137,11 @@ namespace net { namespace ssdp { namespace import { namespace av { namespace ite
 				o << "DLNA.ORG_OP=01\"";
 			}
 
+#ifdef _MSC_VER
+#pragma warning(push)
+#pragma warning(disable: 4127) // "conditional expression is constant" due to "do { ... } while(0)"
+#endif
+
 #define SIMPLE_RES_ATTR2(name, val) \
 	do { if (val && contains(filter, "res@" #name)) { o << " " #name "=\"" << val << "\""; } } while (0)
 
@@ -160,6 +165,10 @@ namespace net { namespace ssdp { namespace import { namespace av { namespace ite
 			SIMPLE_RES_ATTR2(sampleFrequency, sample_freq);
 			SIMPLE_RES_ATTR2(nrAudioChannels, channels);
 			SIMPLE_RES_ATTR(size);
+
+#ifdef _MSC_VER
+#pragma warning(pop)
+#endif
 
 			auto width = get_width();
 			auto height = get_height();
@@ -300,7 +309,7 @@ namespace net { namespace ssdp { namespace import { namespace av { namespace ite
 		if (path.has_extension())
 		{
 			std::string cmp = path.extension().string();
-			for (auto && c : cmp) c = std::tolower((unsigned char) c);
+			for (auto && c : cmp) c = (char) std::tolower((unsigned char) c);
 
 			for (auto && ext : s_extensions)
 				if (ext.ext == cmp)

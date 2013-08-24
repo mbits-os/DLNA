@@ -28,44 +28,44 @@
 
 namespace net { namespace ssdp { namespace import { namespace av {
 
-	error_code ConnectionManager::GetCurrentConnectionInfo(const client_info_ptr& client,
-	                                                       const http::http_request& http_request,
-	                                                       /* IN  */ i4 ConnectionID,
-	                                                       /* OUT */ i4& RcsID,
-	                                                       /* OUT */ i4& AVTransportID,
-	                                                       /* OUT */ std::string& ProtocolInfo,
-	                                                       /* OUT */ std::string& PeerConnectionManager,
-	                                                       /* OUT */ i4& PeerConnectionID,
-	                                                       /* OUT */ A_ARG_TYPE_Direction& Direction,
-	                                                       /* OUT */ A_ARG_TYPE_ConnectionStatus& Status)
+	error_code ConnectionManager::GetCurrentConnectionInfo(const client_info_ptr& /*client*/,
+	                                                       const http::http_request& /*http_request*/,
+	                                                       /* IN  */ i4 /*ConnectionID*/,
+	                                                       /* OUT */ i4& /*RcsID*/,
+	                                                       /* OUT */ i4& /*AVTransportID*/,
+	                                                       /* OUT */ std::string& /*ProtocolInfo*/,
+	                                                       /* OUT */ std::string& /*PeerConnectionManager*/,
+	                                                       /* OUT */ i4& /*PeerConnectionID*/,
+	                                                       /* OUT */ A_ARG_TYPE_Direction& /*Direction*/,
+	                                                       /* OUT */ A_ARG_TYPE_ConnectionStatus& /*Status*/)
 	{
 		return error::not_implemented;
 	}
 
-	error_code ConnectionManager::ConnectionComplete(const client_info_ptr& client,
-	                                                 const http::http_request& http_request,
-	                                                 /* IN  */ i4 ConnectionID)
+	error_code ConnectionManager::ConnectionComplete(const client_info_ptr& /*client*/,
+	                                                 const http::http_request& /*http_request*/,
+	                                                 /* IN  */ i4 /*ConnectionID*/)
 	{
 		return error::not_implemented;
 	}
 
-	error_code ConnectionManager::PrepareForConnection(const client_info_ptr& client,
-	                                                   const http::http_request& http_request,
-	                                                   /* IN  */ const std::string& RemoteProtocolInfo,
-	                                                   /* IN  */ const std::string& PeerConnectionManager,
-	                                                   /* IN  */ i4 PeerConnectionID,
-	                                                   /* IN  */ A_ARG_TYPE_Direction Direction,
-	                                                   /* OUT */ i4& ConnectionID,
-	                                                   /* OUT */ i4& AVTransportID,
-	                                                   /* OUT */ i4& RcsID)
+	error_code ConnectionManager::PrepareForConnection(const client_info_ptr& /*client*/,
+	                                                   const http::http_request& /*http_request*/,
+	                                                   /* IN  */ const std::string& /*RemoteProtocolInfo*/,
+	                                                   /* IN  */ const std::string& /*PeerConnectionManager*/,
+	                                                   /* IN  */ i4 /*PeerConnectionID*/,
+	                                                   /* IN  */ A_ARG_TYPE_Direction /*Direction*/,
+	                                                   /* OUT */ i4& /*ConnectionID*/,
+	                                                   /* OUT */ i4& /*AVTransportID*/,
+	                                                   /* OUT */ i4& /*RcsID*/)
 	{
 		return error::not_implemented;
 	}
 
-	error_code ConnectionManager::GetProtocolInfo(const client_info_ptr& client,
-	                                              const http::http_request& http_request,
+	error_code ConnectionManager::GetProtocolInfo(const client_info_ptr& /*client*/,
+	                                              const http::http_request& /*http_request*/,
 	                                              /* OUT */ std::string& Source,
-	                                              /* OUT */ std::string& Sink)
+	                                              /* OUT */ std::string& /*Sink*/)
 	{
 		Source =
 			"http-get:*:image/jpeg:DLNA.ORG_PN=JPEG_SM,"
@@ -104,9 +104,9 @@ namespace net { namespace ssdp { namespace import { namespace av {
 		return error::no_error;
 	}
 
-	error_code ConnectionManager::GetCurrentConnectionIDs(const client_info_ptr& client,
-	                                                      const http::http_request& http_request,
-	                                                      /* OUT */ std::string& ConnectionIDs)
+	error_code ConnectionManager::GetCurrentConnectionIDs(const client_info_ptr& /*client*/,
+	                                                      const http::http_request& /*http_request*/,
+	                                                      /* OUT */ std::string& /*ConnectionIDs*/)
 	{
 		return error::not_implemented;
 	}
