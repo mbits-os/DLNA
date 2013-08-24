@@ -90,6 +90,54 @@ namespace net
 			static const char* VIDEO_HD         = "HD";
 		}
 
+		namespace audio
+		{
+			enum class profile
+			{
+				INVALID = 0,
+
+				/* Advanced Audio Codec variants */
+				AAC,
+				AAC_320,
+				AAC_MULT5,
+				AAC_BSAC,
+				AAC_BSAC_MULT5,
+				AAC_HE_L2,
+				AAC_HE_L2_320,
+				AAC_HE_L3,
+				AAC_HE_MULT5,
+				AAC_HE_V2_L2,
+				AAC_HE_V2_L2_320,
+				AAC_HE_V2_L3,
+				AAC_HE_V2_MULT5,
+				AAC_LTP,
+				AAC_LTP_MULT5,
+				AAC_LTP_MULT7,
+
+				AC3,
+				AC3_EXTENDED,
+
+				AMR,
+				AMR_WB,
+
+				ATRAC,
+
+				G726,
+
+				LPCM,
+
+				/* MPEG audio variants */
+				MP2,
+				MP3,
+				MP3_EXTENDED,
+
+				/* Windows Media Audio variants */
+				WMA_BASELINE,
+				WMA_FULL,
+				WMA_PRO
+			};
+		}
+
 		namespace container
 		{
 			enum container_type
@@ -287,6 +335,7 @@ namespace net
 		}
 
 		void register_image_profiles();
+		void register_audio_profiles();
 	}
 }
 

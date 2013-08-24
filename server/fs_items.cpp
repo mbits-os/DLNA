@@ -303,7 +303,16 @@ namespace lan
 				, m_item(item)
 			{
 			}
-			const char* get_upnp_class() const override { return "object.item.imageItem.photo"; }
+			const char* get_upnp_class() const override
+			{
+				switch (m_item.m_class)
+				{
+				case net::dlna::Class::Image: return "object.item.imageItem.photo";
+				case net::dlna::Class::Audio: return "object.item.audioItem.musicTrack";
+				case net::dlna::Class::Video: return "object.item.videoItem";
+				}
+				return "object.item";
+			}
 			bool is_image() const override { return true; }
 
 			void           set_title(const std::string& title) override { m_item.m_meta.m_title = title; }
