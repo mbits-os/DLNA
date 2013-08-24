@@ -60,6 +60,7 @@ namespace net
 		struct state_variable : private xml_helper
 		{
 			bool m_event;
+			bool m_referenced;
 			std::string m_name;
 			std::string m_type;
 			std::vector<std::string> m_values;
@@ -109,6 +110,7 @@ namespace net
 				m_event = sendEvent == "1" || sendEvent == "yes";
 				m_name = find_string(variable, "svc:name", svc());
 				m_type = find_string(variable, "svc:dataType", svc());
+				m_referenced = false;
 
 				auto allowedValues = variable->findall("svc:allowedValueList/svc:allowedValue", svc());
 				for (auto&& value : allowedValues)
@@ -182,12 +184,31 @@ namespace net
 				}
 				return m_type_ref;
 			}
+
+			void mark_ref(std::vector<state_variable>& refs)
+			{
+				for (auto && ref : refs)
+				{
+					if (m_type_ref == ref.m_name)
+					{
+						ref.m_referenced = true;
+						return;
+					}
+				}
+
+			}
 		};
 
 		struct action : private xml_helper
 		{
 			std::string m_name;
 			std::vector<action_arg> m_args;
+
+			void mark_refs(std::vector<state_variable>& refs)
+			{
+				for (auto && arg : m_args)
+					arg.mark_ref(refs);
+			}
 
 			bool read_xml(const dom::XmlNodePtr& action)
 			{
@@ -282,7 +303,13 @@ namespace net
 				if (!action::read_xml(m_actions, doc))
 					return false;
 
-				return state_variable::read_xml(m_variables, doc);
+				if (!state_variable::read_xml(m_variables, doc))
+					return false;
+
+				for (auto& action : m_actions)
+					action.mark_refs(m_variables);
+
+				return true;
 			}
 		};
 	}

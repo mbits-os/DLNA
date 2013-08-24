@@ -494,6 +494,10 @@ namespace net { namespace ssdp { namespace import {
 			return o.str();
 		}
 	};
+
+	// for VC++ warning C4189 in .ipp;
+	// source: http://herbsutter.com/2009/10/18/mailbag-shutting-up-compiler-warnings/
+	template<typename T> void ignore(const T&) { }
 }}}
 
 #endif // __SSDP_SERVICE_IMPL_HPP__

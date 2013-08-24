@@ -308,10 +308,21 @@ struct printer
 	void print_proxy(header& o, const action& action)
 	{
 		std::vector<std::string> call;
+		int ins = 0;
+		int outs = 0;
+		for (auto && arg : action.m_args)
+			(arg.m_input ? ins : outs)++;
+
 		call.emplace_back("const client_info_ptr& client");
 		call.emplace_back("const http::http_request& http_request");
-		call.emplace_back("const Raw" + action.m_name + "::request& request");
-		call.emplace_back("Raw" + action.m_name + "::response& response");
+		if (ins > 0)
+			call.emplace_back("const Raw" + action.m_name + "::request& request");
+		else
+			call.emplace_back("const Raw" + action.m_name + "::request& /*request*/");
+		if (outs > 0)
+			call.emplace_back("Raw" + action.m_name + "::response& response");
+		else
+			call.emplace_back("Raw" + action.m_name + "::response& /*response*/");
 
 		auto args = generate(action.m_args, [&](const action_arg& arg) { return (arg.m_input ? "request." : "response.") + arg.m_name; });
 		args.insert(args.begin(), "http_request");
@@ -373,6 +384,15 @@ struct printer
 			for (size_t i = 0; i < len; ++i) o.o.put(' ');
 
 			o << " = add_" << (var.m_event ? "event" : "type") << "<" << var.getCType() << ">(\"" << var.m_name << "\");";
+		}
+		for (auto && var : descr.m_variables)
+		{
+			if (var.m_referenced)
+				continue;
+
+			o <<
+				"\n"
+				"			ignore(var_" << var.m_name << ");";
 		}
 
 		if (!descr.m_variables.empty() && !descr.m_actions.empty())
@@ -460,9 +480,9 @@ struct printer
 
 		for (auto && action : descr.m_actions)
 		{
-			auto args = generate(action.m_args, [&](const action_arg& arg) { return (arg.m_input ? "/* IN  */ " : "/* OUT */ ") + arg.getCType(descr.m_variables, arg.m_input) + " " + arg.m_name; });
-			args.insert(args.begin(), "const http::http_request& http_request");
-			args.insert(args.begin(), "const client_info_ptr& client");
+			auto args = generate(action.m_args, [&](const action_arg& arg) { return (arg.m_input ? "/* IN  */ " : "/* OUT */ ") + arg.getCType(descr.m_variables, arg.m_input) + " /*" + arg.m_name + "*/"; });
+			args.insert(args.begin(), "const http::http_request& /*http_request*/");
+			args.insert(args.begin(), "const client_info_ptr& /*client*/");
 
 			o <<
 				"\n"; print_func(o,
