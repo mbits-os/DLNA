@@ -171,6 +171,17 @@ namespace net
 			std::string ssdp_MAN() const { return quoted("man"); }
 			std::string ssdp_ST() const { return quoted("st"); }
 			std::string ssdp_USN() const { return quoted("usn"); }
+
+			bool expecting_continue() const
+			{
+				if (m_protocol != http::http_1_1)
+					return false;
+				auto it = find("expect");
+				if (it == end())
+					return false;
+
+				return it->value() == "100-continue";
+			}
 		};
 
 		inline std::ostream& operator << (std::ostream& o, const http_request& resp)

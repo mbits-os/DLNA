@@ -56,7 +56,7 @@ struct printer
 			for (auto&& c : guard)
 			{
 				if (std::isalnum((unsigned char) c))
-					c = std::toupper(c);
+					c = (char) std::toupper((unsigned char) c);
 				else
 					c = '_';
 			}
@@ -95,7 +95,7 @@ struct printer
 		for (auto&& c : safe_name)
 		{
 			if (std::isalnum((unsigned char) c))
-				c = std::tolower(c);
+				c = (char) std::tolower((unsigned char) c);
 			else
 				c = '_';
 		}
@@ -540,7 +540,7 @@ struct printer
 		for (auto && c : guard)
 		{
 			if (std::isalnum((unsigned char) c))
-				c = std::toupper(c);
+				c = (char) std::toupper((unsigned char) c);
 			else
 				c = '_';
 		}
@@ -565,6 +565,10 @@ struct printer
 
 		print_impl_code(o);
 	}
+
+private:
+	printer(const printer&);
+	printer& operator=(const printer&);
 };
 
 #endif // __PRINTER_HPP__
