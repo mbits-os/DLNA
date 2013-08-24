@@ -51,11 +51,13 @@ namespace net { namespace dlna {
 	{
 		const char* m_name; // ORG_PN
 		const char* m_mime;
+		const char* m_label;
 		Class m_class;
-		Profile() : m_name(nullptr), m_mime(nullptr), m_class(Class::Container) {}
-		Profile(const char* name, const char* mime, Class klass)
+		Profile() : m_name(nullptr), m_mime(nullptr), m_label(nullptr), m_class(Class::Container) {}
+		Profile(const char* name, const char* mime, const char* label, Class klass)
 			: m_name(name)
 			, m_mime(mime)
+			, m_label(label)
 			, m_class(klass)
 		{}
 	};

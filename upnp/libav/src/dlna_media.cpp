@@ -40,6 +40,8 @@ namespace net { namespace dlna {
 	{
 		av_log_set_level(AV_LOG_QUIET);
 		av_register_all();
+
+		register_image_profiles();
 	}
 
 	init::~init()

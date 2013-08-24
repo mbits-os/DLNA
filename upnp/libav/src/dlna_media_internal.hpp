@@ -140,11 +140,35 @@ namespace net
 			ff_codec m_audio;
 		};
 
+		static inline bool stream_is_image(AVFormatContext *ctx, container::container_type container, const stream_codec& codecs)
+		{
+			return
+				ctx->nb_streams == 1 &&
+				codecs.m_video.m_codec != nullptr &&
+				container == dlna::container::IMAGE;
+		}
+
+		static inline bool stream_is_audio(AVFormatContext *, container::container_type, const stream_codec& codecs)
+		{
+			return
+				codecs.m_video.m_codec == nullptr &&
+				codecs.m_audio.m_codec != nullptr;
+		}
+
+		static inline bool stream_is_video(AVFormatContext *, container::container_type, const stream_codec& codecs)
+		{
+			return
+				codecs.m_video.m_codec != nullptr &&
+				codecs.m_video.m_stream != nullptr &&
+				codecs.m_audio.m_codec != nullptr &&
+				codecs.m_audio.m_stream != nullptr;
+		}
+
 		struct profile_db
 		{
 			typedef const Profile * (*call_type)(AVFormatContext *ctx, container::container_type container, const stream_codec& codecs);
 
-			static void register_probe(call_type call, const char* exts)
+			static void register_profile(call_type call, const char* exts)
 			{
 				get().m_probes.emplace_back(call, exts);
 			}
@@ -189,6 +213,80 @@ namespace net
 
 			std::vector<profile_probe> m_probes;
 		};
+
+		struct boundary {
+			Profile* m_profile;
+			int m_max_width;
+			int m_max_height;
+
+			inline bool encases(const AVCodecContext* codec) const
+			{
+				return
+					codec->width <= m_max_width &&
+					codec->height <= m_max_height;
+			}
+		};
+
+		template <typename T1, typename T2>
+		struct codec_ids_or
+		{
+			static bool contains(AVCodecID id)
+			{
+				return T1::contains(id) || T2::contains(id);
+			}
+		};
+
+		template <AVCodecID tmplt, AVCodecID... args>
+		struct codec_id_list : codec_ids_or<codec_id_list<tmplt>, codec_id_list<args...>>
+		{
+		};
+
+		template <AVCodecID tmplt>
+		struct codec_id_list<tmplt>
+		{
+			static inline bool contains(AVCodecID id)
+			{
+				return tmplt == id;
+			}
+		};
+
+		namespace image
+		{
+			template <typename Final, AVCodecID... list>
+			struct image_module
+			{
+				template <size_t len>
+				static inline const Profile* probe(const boundary(&boundaries)[len], const AVCodecContext* codec)
+				{
+					for (const auto& boundary : boundaries)
+					{
+						if (boundary.encases(codec))
+							return boundary.m_profile;
+					}
+
+					return nullptr;
+				}
+
+				template <size_t len>
+				static inline const Profile * profiles(const boundary(&boundaries)[len], AVFormatContext *ctx, container::container_type container, const stream_codec& codecs)
+				{
+					if (!stream_is_image(ctx, container, codecs))
+						return nullptr;
+
+					if (!codec_id_list<list...>::contains(codecs.m_video.m_codec->codec_id))
+						return nullptr;
+
+					return probe(boundaries, codecs.m_video.m_codec);
+				}
+
+				static void register_profiles(const char* exts)
+				{
+					profile_db::register_profile(Final::probe, exts);
+				}
+			};
+		}
+
+		void register_image_profiles();
 	}
 }
 

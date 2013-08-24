@@ -33,6 +33,9 @@
     <ClCompile Include="..\..\upnp\libav\src\dlna_media.cpp">
       <Filter>src</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\upnp\libav\src\dlna_image.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\upnp\libav\pch\pch.h">

@@ -53,6 +53,7 @@
     </ClCompile>
     <ClCompile Include="..\..\upnp\libav\src\connection_manager.cpp" />
     <ClCompile Include="..\..\upnp\libav\src\content_directory.cpp" />
+    <ClCompile Include="..\..\upnp\libav\src\dlna_image.cpp" />
     <ClCompile Include="..\..\upnp\libav\src\dlna_media.cpp" />
     <ClCompile Include="..\..\upnp\libav\src\items.cpp" />
     <ClCompile Include="..\..\upnp\libav\src\media_server.cpp" />

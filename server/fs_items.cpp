@@ -307,7 +307,7 @@ namespace lan
 			bool is_image() const override { return true; }
 
 			void           set_title(const std::string& title) override { m_item.m_meta.m_title = title; }
-			std::string    get_title() const                   override { return m_item.m_meta.m_title; }
+			std::string    get_title() const                   override { return m_item.m_meta.m_title.empty() ? m_path.filename().string() : m_item.m_meta.m_title; }
 			void           set_mime(const std::string&)        override { }
 			std::string    get_mime() const                    override { return m_item.m_profile ? m_item.m_profile->m_mime : std::string(); }
 			net::ulong     get_bitrate() const                 override { return m_item.m_props.m_bitrate; }
