@@ -101,7 +101,7 @@ namespace Log
 		const char* e = c + msg.length();
 
 		bool line_start = true;
-		while (true)
+		for (;;)
 		{
 			auto save = c;
 			while (c != e && *c != '\n' && *c != '\r') ++c;
