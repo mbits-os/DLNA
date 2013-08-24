@@ -179,6 +179,9 @@ namespace net
 			{
 				resp.complete_header();
 			}
+		private:
+			complete(const complete&);
+			complete& operator=(const complete&);
 		};
 	}
 }

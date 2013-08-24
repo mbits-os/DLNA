@@ -83,7 +83,7 @@ namespace net
 			static inline std::string tolower(std::string s)
 			{
 				for (auto&& c : s)
-					c = std::tolower((unsigned char) c);
+					c = (char) std::tolower((unsigned char) c);
 				return s;
 			}
 			static inline std::string camel_case(std::string s)
@@ -92,7 +92,7 @@ namespace net
 				for (auto&& c : s)
 				{
 					if (capitalize)
-						c = std::toupper((unsigned char) c);
+						c = (char) std::toupper((unsigned char) c);
 					capitalize = c == '-' || c == '.'; // Dot for SSDP Extension '.' domain headers
 				}
 				return s;
