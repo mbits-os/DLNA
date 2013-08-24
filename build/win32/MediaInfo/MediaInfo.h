@@ -31,7 +31,7 @@ namespace MediaInfo
 	{
 		std::string s;
 		i >> s;
-		for (auto && c : s) c = std::tolower((unsigned char) c);
+		for (auto && c : s) c = (char) std::tolower((unsigned char) c);
 
 		if (s == "general")  { type = TrackType::General;  return i; }
 		if (s == "video")    { type = TrackType::Video;    return i; }

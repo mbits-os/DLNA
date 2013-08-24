@@ -39,7 +39,7 @@ namespace MediaInfo
 	template <typename T>
 	T get(const dom::XmlNodePtr& node, const std::string& xpath, const T& defaultValue)
 	{
-		T out;
+		T out{};
 		if (node && ref_get(node->find(xpath), out))
 			return out;
 		return defaultValue;
@@ -172,6 +172,10 @@ namespace MediaInfo
 
 			bool extract_track(ITrack* dst, const dom::XmlNodePtr& src);
 			bool analyze_tracks(IContainer* env);
+
+		private:
+			Session(const Session&);
+			Session& operator=(const Session&);
 		};
 
 		MediaInfoAPI()
@@ -376,7 +380,7 @@ namespace MediaInfo
 			typedef std::function<bool (ITrack* dst, const dom::XmlNodePtr& src)> function_type;
 			const char* m_name;
 			function_type m_setter;
-			static bool dummy(ITrack* dst, const dom::XmlNodePtr& src) { return true; }
+			static bool dummy(ITrack* /*dst*/, const dom::XmlNodePtr& /*src*/) { return true; }
 
 			Setter(const char* name)
 				: m_name(name)
@@ -423,7 +427,7 @@ namespace MediaInfo
 		bool set_format(ITrack* dst, const std::string& value)
 		{
 			std::string v = value;
-			for (auto && c : v) c = std::tolower((unsigned char) c);
+			for (auto && c : v) c = (char) std::tolower((unsigned char) c);
 
 			auto format = find_format(v.c_str());
 			if (!format)
@@ -472,14 +476,13 @@ namespace MediaInfo
 	bool MediaInfoAPI::Session::extract_track(ITrack* dst, const dom::XmlNodePtr& src)
 	{
 		std::ostringstream msg;
-		bool printed = false;
+		//bool printed = false;
 		for (auto && field : src->childNodes())
 		{
 			if (field->nodeType() != dom::ELEMENT_NODE)
 				continue;
 
 			std::string name = field->nodeName();
-			auto len = name.length();
 			bool show = false;
 
 			//if (name == "Cover_Data")
@@ -611,9 +614,9 @@ namespace MediaInfo
 
 		//std::cout << "[" << format << ":" << video_format << ":" << audio_format << "][" << mime << ":" << video_mime << ":" << audio_mime << "] -> ";
 
-		for (auto && c : format) c = std::tolower((unsigned char) c);
-		for (auto && c : video_format) c = std::tolower((unsigned char) c);
-		for (auto && c : audio_format) c = std::tolower((unsigned char) c);
+		for (auto && c : format) c = (char) std::tolower((unsigned char) c);
+		for (auto && c : video_format) c = (char) std::tolower((unsigned char) c);
+		for (auto && c : audio_format) c = (char) std::tolower((unsigned char) c);
 
 #define UNKNOWN_VIDEO_TYPEMIME "video/mpeg"
 #define UNKNOWN_IMAGE_TYPEMIME "image/jpeg"
