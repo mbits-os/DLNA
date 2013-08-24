@@ -109,10 +109,30 @@ namespace net { namespace ssdp { namespace import { namespace av { namespace ite
 		o << " parentId=\"" << get_parent_attr() << "\" restricted=\"true\">\n    <dc:title>" << net::xmlencode(get_title()) << "</dc:title>\n";
 	}
 
-	void common_props_item::output_close(std::ostream& o, const std::vector<std::string>& filter, const config::config_ptr& config) const
+	void common_props_item::output_close(std::ostream& o, const std::vector<std::string>& filter, const client_interface_ptr& client, const config::config_ptr& config) const
 	{
 		const char* name = is_folder() ? "container" : "item";
 		auto date = get_last_write_time();
+
+		if (date && contains(filter, "dc:date"))
+			o << "    <dc:date>" << to_iso8601(time::from_time_t(date)) << "</dc:date>\n";
+
+		main_res(o, filter, client, config);
+		cover(o, filter, client, config);
+
+
+		o << "    <upnp:class>" << get_upnp_class() << "</upnp:class>\n  </" << name << ">\n";
+	}
+
+	static void protocol_info(std::ostream& o, const std::string& mime, const client_interface_ptr& /*client*/)
+	{
+		o << "http-get:*:" << mime << ":";
+		//o << "*";
+		o << "DLNA.ORG_OP=01";
+	}
+
+	void common_props_item::main_res(std::ostream& o, const std::vector<std::string>& filter, const client_interface_ptr& client, const config::config_ptr& config) const
+	{
 		auto bitrate = get_bitrate();
 		auto duration = get_duration();
 		auto sample_freq = get_sample_freq();
@@ -120,21 +140,14 @@ namespace net { namespace ssdp { namespace import { namespace av { namespace ite
 		auto size = get_size();
 		auto mime = get_mime();
 
-		if (date && contains(filter, "dc:date"))
-			o << "    <dc:date>" << to_iso8601(time::from_time_t(date)) << "</dc:date>\n";
-
 		if (!is_folder() && contains(filter, "res"))
 		{
 			o << "    <res xmlns:dlna=\"urn:schemas-dlna-org:metadata-1-0/\"";
 			if (!mime.empty() && contains(filter, "res@protocolInfo"))
 			{
-				o << " protocolInfo=\"http-get:*:" << mime << ":";
-
-				std::string dlna_orgpn;
-				if (!dlna_orgpn.empty())
-					o << dlna_orgpn << ";";
-
-				o << "DLNA.ORG_OP=01\"";
+				o << " protocolInfo=\"";
+				protocol_info(o, mime, client);
+				o << "\"";
 			}
 
 #ifdef _MSC_VER
@@ -179,26 +192,23 @@ namespace net { namespace ssdp { namespace import { namespace av { namespace ite
 
 			o << ">http://" << net::to_string(config->iface) << ":" << (int) config->port << "/upnp/media/" << get_objectId_attr() << "</res>\n";
 		}
+	}
 
+	void common_props_item::cover(std::ostream& o, const std::vector<std::string>& filter, const client_interface_ptr& client, const config::config_ptr& config) const
+	{
 		//todo: do a proper 
 		if (!is_image() && contains(filter, "res"))
 		{
 			o << "    <res xmlns:dlna=\"urn:schemas-dlna-org:metadata-1-0/\"";
-			if (!mime.empty() && contains(filter, "res@protocolInfo"))
+			if (contains(filter, "res@protocolInfo"))
 			{
-				o << " protocolInfo=\"http-get:*:image/jpeg:";
-
-				std::string dlna_orgpn;
-				if (!dlna_orgpn.empty())
-					o << dlna_orgpn << ";";
-
-				o << "DLNA.ORG_OP=01\"";
+				o << " protocolInfo=\"";
+				protocol_info(o, "image/jpeg", client);
+				o << "\"";
 			}
 
 			o << ">http://" << net::to_string(config->iface) << ":" << (int) config->port << "/upnp/thumb/" << get_objectId_attr() << "</res>\n";
 		}
-
-		o << "    <upnp:class>" << get_upnp_class() << "</upnp:class>\n  </" << name << ">\n";
 	}
 
 	root_item::container_type root_item::list(ulong start_from, ulong max_count)
@@ -234,10 +244,10 @@ namespace net { namespace ssdp { namespace import { namespace av { namespace ite
 		return candidate->get_item(rest_of_id);
 	}
 
-	void root_item::output(std::ostream& o, const std::vector<std::string>& filter, const config::config_ptr& config) const
+	void root_item::output(std::ostream& o, const std::vector<std::string>& filter, const client_interface_ptr& client, const config::config_ptr& config) const
 	{
 		output_open(o, filter, m_children.size());
-		output_close(o, filter, config);
+		output_close(o, filter, client, config);
 	}
 
 	void root_item::add_child(media_item_ptr child)

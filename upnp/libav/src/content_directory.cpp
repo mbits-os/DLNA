@@ -108,7 +108,7 @@ namespace net { namespace ssdp { namespace import { namespace av {
 		return error::no_error;
 	}
 
-	error_code ContentDirectory::Browse(const client_info_ptr& /*client*/,
+	error_code ContentDirectory::Browse(const client_info_ptr& client,
 	                                    const http::http_request& /*http_request*/,
 	                                    /* IN  */ const std::string& ObjectID,
 	                                    /* IN  */ A_ARG_TYPE_BrowseFlag BrowseFlag,
@@ -140,6 +140,7 @@ namespace net { namespace ssdp { namespace import { namespace av {
 
 			if (item)
 			{
+				auto client_ptr = std::static_pointer_cast<client_interface>(client);
 				auto filter = parse_filter(Filter);
 
 				if (BrowseFlag == VALUE_BrowseDirectChildren)
@@ -148,7 +149,7 @@ namespace net { namespace ssdp { namespace import { namespace av {
 					for (auto && child : children)
 					{
 						log::debug() << "    [" << child->get_objectId_attr() << "] \"" << child->get_title() << "\"";
-						child->output(value, filter, m_device->config());
+						child->output(value, filter, client_ptr, m_device->config());
 					}
 
 					NumberReturned = children.size();
@@ -157,7 +158,7 @@ namespace net { namespace ssdp { namespace import { namespace av {
 				else
 				{
 					item->check_updates();
-					item->output(value, filter, m_device->config());
+					item->output(value, filter, client_ptr, m_device->config());
 					NumberReturned = 1;
 					TotalMatches = 1;
 				}

@@ -108,6 +108,7 @@ namespace lan
 			bool           is_folder() const                                               override { return false; }
 			media_ptr      get_media(bool main_resource)                                   override;
 			void           output(std::ostream& o, const std::vector<std::string>& filter,
+			                      const net::ssdp::import::av::client_interface_ptr& client,
 			                      const net::config::config_ptr& config) const             override;
 			virtual void   attrs(std::ostream& /*o*/, const std::vector<std::string>& /*filter*/,
 			                      const net::config::config_ptr& /*config*/) const                  {};
@@ -191,6 +192,7 @@ namespace lan
 			bool           is_image() const                                                override { return false; }
 			bool           is_folder() const                                               override { return true; }
 			void           output(std::ostream& o, const std::vector<std::string>& filter,
+			                      const net::ssdp::import::av::client_interface_ptr& client,
 			                      const net::config::config_ptr& config) const             override;
 			const char*    get_upnp_class() const                                          override { return "object.container.storageFolder"; }
 

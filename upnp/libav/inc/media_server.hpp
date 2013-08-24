@@ -100,7 +100,10 @@ namespace net { namespace ssdp { namespace import { namespace av {
 			//output
 			virtual bool           is_folder() const                                = 0;
 			virtual bool           is_image() const                                 = 0;
-			virtual void           output(std::ostream& o, const std::vector<std::string>& filter, const config::config_ptr& config) const = 0;
+			virtual void           output(std::ostream& o,
+			                              const std::vector<std::string>& filter,
+			                              const client_interface_ptr& client,
+			                              const config::config_ptr& config) const   = 0;
 
 			//attributes
 			virtual void           set_objectId_attr(const std::string& object_id) { m_object_id = object_id; }
@@ -145,7 +148,9 @@ namespace net { namespace ssdp { namespace import { namespace av {
 			virtual time_t      get_last_write_time() const { return 0; }
 		protected:
 			void output_open(std::ostream& o, const std::vector<std::string>& filter, ulong child_count = 0) const;
-			void output_close(std::ostream& o, const std::vector<std::string>& filter, const config::config_ptr& config) const;
+			void output_close(std::ostream& o, const std::vector<std::string>& filter, const client_interface_ptr& client, const config::config_ptr& config) const;
+			void main_res(std::ostream& o, const std::vector<std::string>& filter, const client_interface_ptr& client, const config::config_ptr& config) const;
+			void cover(std::ostream& o, const std::vector<std::string>& filter, const client_interface_ptr& client, const config::config_ptr& config) const;
 		};
 	}
 

@@ -22,7 +22,12 @@
  * SOFTWARE.
  */
 #include "fs_items.hpp"
+
+#define MEDIAINFO
+#if defined(MEDIAINFO)
 #include <MediaInfo.h>
+#else
+#endif
 #include <regex>
 #include <future>
 #include <threads.hpp>
@@ -297,6 +302,7 @@ namespace lan
 				return ret;
 			}
 
+#if defined(MEDIAINFO)
 			Media::MetadataContainer env;
 			if (!MI::extract(path, &env))
 			{
@@ -309,6 +315,8 @@ namespace lan
 			case Media::Class::Audio: return create<audio_file>(device, path, env);
 			case Media::Class::Image: return create<photo_file>(device, path, env);
 			}
+#else
+#endif
 			return nullptr;
 		}
 
@@ -426,11 +434,11 @@ namespace lan
 			return m_cover;
 		}
 
-		void common_file::output(std::ostream& o, const std::vector<std::string>& filter, const net::config::config_ptr& config) const
+		void common_file::output(std::ostream& o, const std::vector<std::string>& filter, const net::ssdp::import::av::client_interface_ptr& client, const net::config::config_ptr& config) const
 		{
 			output_open(o, filter, 0);
 			attrs(o, filter, config);
-			output_close(o, filter, config);
+			output_close(o, filter, client, config);
 		}
 
 		bool contains(const std::vector<std::string>& filter, const char* key)
@@ -572,10 +580,10 @@ namespace lan
 			return candidate->get_item(rest_of_id);
 		}
 
-		void container_file::output(std::ostream& o, const std::vector<std::string>& filter, const net::config::config_ptr& config) const
+		void container_file::output(std::ostream& o, const std::vector<std::string>& filter, const net::ssdp::import::av::client_interface_ptr& client, const net::config::config_ptr& config) const
 		{
 			output_open(o, filter, m_children.size());
-			output_close(o, filter, config);
+			output_close(o, filter, client, config);
 		}
 
 		void container_file::folder_changed()
