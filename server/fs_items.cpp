@@ -439,7 +439,7 @@ namespace lan
 			return std::find(filter.begin(), filter.end(), key) != filter.end();
 		}
 
-		void audio_file::attrs(std::ostream& o, const std::vector<std::string>& filter, const net::config::config_ptr& config) const
+		void audio_file::attrs(std::ostream& o, const std::vector<std::string>& filter, const net::config::config_ptr& /*config*/) const
 		{
 #define SDISPLAY(name, item) \
 	auto name = get_##name(); \
@@ -646,7 +646,6 @@ namespace lan
 			std::vector<std::pair<fs::path, av::items::media_item_ptr>> current;
 			for (auto && ptr : m_children)
 				current.emplace_back(get_path(ptr), ptr);
-			auto update = m_update_id + 1;
 
 			std::sort(entries.begin(), entries.end(), [](const std::pair<fs::path, int>& lhs, const std::pair<fs::path, int>& rhs) { return less(lhs.first, rhs.first); });
 			std::sort(current.begin(), current.end(), [](const std::pair<fs::path, av::items::media_item_ptr>& lhs, const std::pair<fs::path, av::items::media_item_ptr>& rhs) { return less(lhs.first, rhs.first); });

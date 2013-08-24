@@ -80,7 +80,7 @@ namespace lan
 			}
 			time_t     get_last_write_time() const override { return m_last_write; }
 			net::ulong get_duration() const        override { return m_duration; }
-			net::ulong get_size() const            override { return fs::is_directory(m_path) ? 0 : fs::file_size(m_path); }
+			net::ulong get_size() const            override { return fs::is_directory(m_path) ? 0 : (net::ulong)fs::file_size(m_path); }
 			fs::path   get_path() const                     { return m_path; }
 			void       set_cover(const std::string& base64);
 			void       set_cover(const fs::path& cover)     { m_cover = media::from_file(cover, false); }
@@ -100,17 +100,17 @@ namespace lan
 				: path_item(device, path, duration)
 			{
 			}
-			container_type list(net::ulong start_from, net::ulong max_count)               override { return container_type(); }
+			container_type list(net::ulong /*start_from*/, net::ulong /*max_count*/)       override { return container_type(); }
 			net::ulong     predict_count(net::ulong served) const                          override { return served; }
 			net::ulong     update_id() const                                               override { return 0; }
-			item_ptr       get_item(const std::string& id)                                 override { return nullptr; }
+			item_ptr       get_item(const std::string& /*id*/)                             override { return nullptr; }
 			bool           is_image() const                                                override { return false; }
 			bool           is_folder() const                                               override { return false; }
 			media_ptr      get_media(bool main_resource)                                   override;
 			void           output(std::ostream& o, const std::vector<std::string>& filter,
 			                      const net::config::config_ptr& config) const             override;
-			virtual void   attrs(std::ostream& o, const std::vector<std::string>& filter,
-			                      const net::config::config_ptr& config) const                      {};
+			virtual void   attrs(std::ostream& /*o*/, const std::vector<std::string>& /*filter*/,
+			                      const net::config::config_ptr& /*config*/) const                  {};
 
 		};
 
@@ -186,7 +186,7 @@ namespace lan
 
 			container_type list(net::ulong start_from, net::ulong max_count)               override;
 			net::ulong     predict_count(net::ulong served) const                          override;
-			net::ulong     update_id() const                                               override { return m_update_id; }
+			net::ulong     update_id() const                                               override { return (net::ulong)m_update_id; }
 			item_ptr       get_item(const std::string& id)                                 override;
 			bool           is_image() const                                                override { return false; }
 			bool           is_folder() const                                               override { return true; }
