@@ -292,6 +292,16 @@ namespace net
 				doc = create_from_socket(req.request_data());
 
 			//log_request __{ resp, req, SOAPAction, doc };
+			//__.client(client_from_request(req, false));
+			//__.withHeader().print();
+
+			if (req.expecting_continue())
+			{
+				auto & header = resp.header();
+				header.clear(m_device->server());
+				header.m_status = 100;
+				return;
+			}
 
 			fs::path root, rest;
 			std::tie(root, rest) = pop(res); // pop leading slash
@@ -469,10 +479,10 @@ namespace net
 				m_clients_seen.emplace_back(req.m_remote_address, client);
 				if (!client->from_config())
 				{
-					log::info() << (const mime::headers&)req;
+					log::info() << req;
 				}
 				else
-					std::cout << "Found " << client->get_name() << " at " << to_string(req.m_remote_address) << std::endl;
+					std::cout << to_string(req.m_remote_address) << ": " << client->get_name() << std::endl;
 			}
 			return client;
 		}

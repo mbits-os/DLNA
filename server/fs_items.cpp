@@ -21,25 +21,30 @@
  * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
+
 #include "fs_items.hpp"
 
-#define MEDIAINFO
-#if defined(MEDIAINFO)
-#include <MediaInfo.h>
-#else
-#endif
 #include <regex>
 #include <future>
 #include <threads.hpp>
 
-#pragma comment(lib, "mi.lib")
+//#define MEDIAINFO
+#if defined(MEDIAINFO)
+#include <MediaInfo.h>
+#else
+#include <dlna_media.hpp>
+#endif
 
+#if defined(MEDIAINFO)
+#pragma comment(lib, "mi.lib")
 namespace mi = MediaInfo;
+#endif
 
 namespace lan
 {
 	Log::Module APP { "APPL" };
 
+#if defined(MEDIAINFO)
 	struct MI
 	{
 		static bool extract(const fs::path& file, mi::IContainer* env)
@@ -53,9 +58,11 @@ namespace lan
 			return s_mi;
 		}
 	};
+#endif
 
 	namespace item
 	{
+#if defined(MEDIAINFO)
 		namespace Media
 		{
 			enum class Class
@@ -286,9 +293,11 @@ namespace lan
 
 			return ret;
 		}
+#endif //defined(MEDIAINFO)
 
 		av::items::media_item_ptr from_path(av::MediaServer* device, const fs::path& path)
 		{
+#if defined(MEDIAINFO)
 			if (fs::is_directory(path))
 			{
 				if (path.filename() == ".")
@@ -302,7 +311,6 @@ namespace lan
 				return ret;
 			}
 
-#if defined(MEDIAINFO)
 			Media::MetadataContainer env;
 			if (!MI::extract(path, &env))
 			{
@@ -316,6 +324,23 @@ namespace lan
 			case Media::Class::Image: return create<photo_file>(device, path, env);
 			}
 #else
+			if (path.filename() == ".")
+				return nullptr;
+
+			net::dlna::Item item;
+			if (!item.open(path))
+				return nullptr;
+
+			if (item.m_class == net::dlna::Class::Container)
+			{
+				auto ret = std::make_shared<directory_item>(device, path);
+
+				fs::path cover = path / "Folder.jpg";
+				if (fs::exists(cover))
+					ret->set_cover(cover);
+
+				return ret;
+			}
 #endif
 			return nullptr;
 		}
@@ -641,8 +666,87 @@ namespace lan
 			return lhs < rhs;
 		}
 
+		struct statistics
+		{
+			long long start;
+			static statistics* ptr;
+
+			statistics()
+			{
+				ptr = this;
+				LARGE_INTEGER S;
+				QueryPerformanceCounter(&S);
+				start = S.QuadPart;
+			}
+			~statistics()
+			{
+				ptr = nullptr;
+				LARGE_INTEGER stop, F;
+				QueryPerformanceCounter(&stop);
+				QueryPerformanceFrequency(&F);
+
+				now(stop.QuadPart - start, F.QuadPart, " total");
+			}
+
+			static void now(long long ticks, long long second, const char* msg)
+			{
+				long long seconds = ticks / second;
+				const char* freq = "s";
+				log::warning log;
+				if (seconds > 59)
+				{
+					ticks -= (seconds / 60) * 60 * second;
+					log << (seconds / 60) << 'm';
+				}
+				else
+				{
+					if (ticks * 10 / second < 9)
+					{
+						freq = "ms";
+						ticks *= 1000;
+						if (ticks * 10 / second < 9)
+						{
+							freq = "us";
+							ticks *= 1000;
+						}
+					}
+				}
+				log << (ticks / second) << '.' << std::setw(3) << std::setfill('0') << ((ticks * 1000 / second) % 1000) << freq << msg;
+			}
+		};
+
+		statistics* statistics::ptr = nullptr;
+
+		struct sub_stat
+		{
+			long long start;
+			const fs::path& path;
+
+			sub_stat(const fs::path& path)
+				: path(path)
+			{
+				LARGE_INTEGER S;
+				QueryPerformanceCounter(&S);
+				start = S.QuadPart;
+			}
+			~sub_stat()
+			{
+				if (!statistics::ptr) return;
+				LARGE_INTEGER stop, F;
+				QueryPerformanceCounter(&stop);
+				QueryPerformanceFrequency(&F);
+				long long ticks = stop.QuadPart - start;
+				if (ticks / 2 > F.QuadPart) // it took more than 2s?
+					statistics::now(ticks, F.QuadPart, (" for " + path.filename().string()).c_str());
+			}
+		private:
+			sub_stat& operator=(const sub_stat&);
+		};
+
 		void directory_item::rescan()
 		{
+			statistics stats;
+
 			log::info() << "Scanning " << m_path;
 
 			m_last_scan = fs::last_write_time(m_path);
@@ -687,6 +791,7 @@ namespace lan
 			for (auto && entry : entries)
 				if (entry.second)
 				{
+					sub_stat sub(entry.first);
 					auto item = from_path(m_device, entry.first);
 					if (item)
 						add_child(item);

@@ -35,6 +35,7 @@
 #include <threads.hpp>
 #include <boost/date_time/posix_time/posix_time.hpp>
 #include "postmortem.hpp"
+#include <dlna_media.hpp>
 
 namespace fs = boost::filesystem;
 namespace av = net::ssdp::import::av;
@@ -177,6 +178,8 @@ int main(int argc, char* argv [])
 	{
 		threads::set_name("main");
 		dbg::postmortem guard;
+
+		net::dlna::init init;
 
 		lan::log::info() << "\nStarting...\n";
 

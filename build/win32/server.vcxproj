@@ -49,6 +49,7 @@
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
+      <ImageHasSafeExceptionHandlers Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">false</ImageHasSafeExceptionHandlers>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
