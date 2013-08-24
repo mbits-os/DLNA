@@ -67,7 +67,7 @@ namespace net { namespace ssdp { namespace import { namespace av {
 		struct media
 		{
 			virtual ~media() {}
-			virtual bool prep_response(http::response& resp) { return true; }
+			virtual bool prep_response(http::response& /*resp*/) { return true; }
 			static media_ptr from_file(const boost::filesystem::path& path, bool main_resource);
 			static media_ptr from_file(const boost::filesystem::path& path, const std::string& mime, bool main_resource);
 		};
@@ -120,7 +120,7 @@ namespace net { namespace ssdp { namespace import { namespace av {
 			virtual int            get_ref_frame_count() const                     { return 0; }
 
 			//media
-			virtual media_ptr      get_media(bool main_resource)                   { return nullptr; }
+			virtual media_ptr      get_media(bool /*main_resource*/)               { return nullptr; }
 
 		private:
 			uint m_id;

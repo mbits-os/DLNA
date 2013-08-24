@@ -21,6 +21,15 @@
     <ClCompile Include="..\..\upnp\libav\src\media_server.cpp">
       <Filter>src</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\upnp\libav\src\connection_manager.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\upnp\libav\src\content_directory.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\upnp\libav\src\items.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\upnp\libav\pch\pch.h">
@@ -40,6 +49,9 @@
     </ClInclude>
     <ClInclude Include="..\..\upnp\libav\inc\media_server.hpp">
       <Filter>inc</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\upnp\libav\src\media_server_internal.hpp">
+      <Filter>src</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

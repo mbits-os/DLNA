@@ -51,6 +51,9 @@
     <ClCompile Include="..\..\upnp\libav\pch\pch.cpp">
       <PrecompiledHeader>Create</PrecompiledHeader>
     </ClCompile>
+    <ClCompile Include="..\..\upnp\libav\src\connection_manager.cpp" />
+    <ClCompile Include="..\..\upnp\libav\src\content_directory.cpp" />
+    <ClCompile Include="..\..\upnp\libav\src\items.cpp" />
     <ClCompile Include="..\..\upnp\libav\src\media_server.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -60,6 +63,7 @@
     <ClInclude Include="..\..\upnp\libav\pch\pch.h" />
     <ClInclude Include="..\..\upnp\libav\inc\directory.ipp" />
     <ClInclude Include="..\..\upnp\libav\inc\manager.ipp" />
+    <ClInclude Include="..\..\upnp\libav\src\media_server_internal.hpp" />
   </ItemGroup>
   <ItemGroup>
     <CustomBuild Include="..\..\upnp\libav\configs\directory.spcd">
