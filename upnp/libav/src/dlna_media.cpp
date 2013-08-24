@@ -153,7 +153,7 @@ namespace net { namespace dlna {
 				return false;
 
 			AVDictionaryEntry *t = nullptr;
-			while (t = av_dict_get(m_ctx->metadata, "", t, AV_DICT_IGNORE_SUFFIX))
+			while ((t = av_dict_get(m_ctx->metadata, "", t, AV_DICT_IGNORE_SUFFIX)) != nullptr)
 			{
 				if (!strcmp(t->key, "title")) meta.m_title = t->value;
 				else if (!strcmp(t->key, "artist")) meta.m_artist = t->value;

@@ -293,6 +293,38 @@ namespace lan
 
 			return ret;
 		}
+#else //defined(MEDIAINFO)
+
+		struct ffmpeg_file : common_file
+		{
+			net::dlna::Item m_item;
+			ffmpeg_file(av::MediaServer* device, const fs::path& path, const net::dlna::Item& item, net::ulong duration)
+				: common_file(device, path, duration)
+				, m_item(item)
+			{
+			}
+			const char* get_upnp_class() const override { return "object.item.imageItem.photo"; }
+			bool is_image() const override { return true; }
+
+			void           set_title(const std::string& title) override { m_item.m_meta.m_title = title; }
+			std::string    get_title() const                   override { return m_item.m_meta.m_title; }
+			void           set_mime(const std::string&)        override { }
+			std::string    get_mime() const                    override { return m_item.m_profile ? m_item.m_profile->m_mime : std::string(); }
+			net::ulong     get_bitrate() const                 override { return m_item.m_props.m_bitrate; }
+			net::ulong     get_sample_freq() const             override { return m_item.m_props.m_sample_freq; }
+			net::ulong     get_channels() const                override { return m_item.m_props.m_channels; }
+			net::ulong     get_size() const                    override { return (net::ulong) m_item.m_props.m_size; }
+			net::ulong     get_height() const                  override { return m_item.m_props.m_height; }
+			net::ulong     get_width() const                   override { return m_item.m_props.m_width; }
+			int            get_ref_frame_count() const         override { return 0; }
+		};
+
+		std::shared_ptr<ffmpeg_file> create(av::MediaServer* device, const fs::path& path, net::dlna::Item& item)
+		{
+			net::ulong duration = item.m_class == net::dlna::Class::Image ? 0 : item.m_props.m_duration;
+			return std::make_shared<ffmpeg_file>(device, path, item, duration);
+		}
+
 #endif //defined(MEDIAINFO)
 
 		av::items::media_item_ptr from_path(av::MediaServer* device, const fs::path& path)
@@ -331,15 +363,22 @@ namespace lan
 			if (!item.open(path))
 				return nullptr;
 
-			if (item.m_class == net::dlna::Class::Container)
+			switch (item.m_class)
 			{
-				auto ret = std::make_shared<directory_item>(device, path);
+			case net::dlna::Class::Video:
+			case net::dlna::Class::Audio:
+			case net::dlna::Class::Image:
+				return create(device, path, item);
+			case net::dlna::Class::Container:
+				{
+					auto ret = std::make_shared<directory_item>(device, path);
 
-				fs::path cover = path / "Folder.jpg";
-				if (fs::exists(cover))
-					ret->set_cover(cover);
+					fs::path cover = path / "Folder.jpg";
+					if (fs::exists(cover))
+						ret->set_cover(cover);
 
-				return ret;
+					return ret;
+				}
 			}
 #endif
 			return nullptr;
@@ -797,7 +836,7 @@ namespace lan
 						add_child(item);
 				}
 
-			log::info() << "Finished scanning " << m_path;
+				log::info() << "Finished scanning " << m_path << "; found " << m_children.size() << " item(s)";
 		}
 	}
 }
