@@ -269,8 +269,8 @@ namespace net { namespace ssdp { namespace import {
 			variable_t& m_ref;
 			accessor_load(const std::string& name, variable_t& ref, ptr_t field) : m_name(name), m_ref(ref), m_field(field) {}
 
-			void clean(response_t& dst) override {}
-			void store(const response_t& src, std::ostream& out) override {}
+			void clean(response_t& /*dst*/) override {}
+			void store(const response_t& /*src*/, std::ostream& /*out*/) override {}
 			void load(const dom::XmlNodePtr& src, request_t& dst) override
 			{
 				auto node = src->find(m_name);
@@ -283,7 +283,7 @@ namespace net { namespace ssdp { namespace import {
 			{
 				accessor_base::get_config(o, m_name.c_str(), "in", m_ref.m_name.c_str());
 			}
-			void debug(const response_t& src, std::ostream& o) override {}
+			void debug(const response_t& /*src*/, std::ostream& /*o*/) override {}
 		};
 
 		template <typename T>
@@ -298,7 +298,7 @@ namespace net { namespace ssdp { namespace import {
 			variable_t& m_ref;
 			accessor_store(const std::string& name, variable_t& ref, ptr_t field) : m_name(name), m_ref(ref), m_field(field) {}
 
-			void load(const dom::XmlNodePtr& src, request_t& dst) override {}
+			void load(const dom::XmlNodePtr& /*src*/, request_t& /*dst*/) override {}
 			void clean(response_t& dst) override
 			{
 				dst.*m_field = type_info<field_t>::unknown_value();
@@ -465,7 +465,7 @@ namespace net { namespace ssdp { namespace import {
 			return *var.get();
 		}
 
-		std::string get_configuration(const ssdp::client_info_ptr& client) const override
+		std::string get_configuration(const ssdp::client_info_ptr& /*client*/) const override
 		{
 			std::ostringstream o;
 			o

@@ -177,19 +177,13 @@ namespace net
 			m_vars.emplace_back("uuid", m_device->usn());
 		}
 
-		static dom::XmlNodeListPtr env_body(const dom::XmlDocumentPtr& doc)
-		{
-			dom::NSData ns [] = { { "s", "http://schemas.xmlsoap.org/soap/envelope/" } };
-			auto body = doc->find("/s:Envelope/s:Body", ns);
-			return body ? body->childNodes() : nullptr;
-		}
-
 		struct log_request
 		{
 			response& resp;
 			const http_request& header;
 			const std::string& SOAPAction;
 			dom::XmlDocumentPtr doc;
+			ssdp::client_info_ptr _client;
 			bool with_header;
 			bool printed;
 
@@ -213,6 +207,7 @@ namespace net
 				}
 			}
 
+			log_request& client(const ssdp::client_info_ptr& cli) { _client = cli; return *this; }
 			log_request& withHeader() { with_header = true; return *this; }
 			log_request& print(bool finished = false)
 			{
@@ -223,7 +218,10 @@ namespace net
 				log::debug dbg;
 				log::info info;
 
-				info << to_string(header.m_remote_address) << " \"" << header.m_method << " " << header.m_resource << " " << header.m_protocol << "\"";
+				info << to_string(header.m_remote_address);
+				if (_client)
+					info << " [" << _client->get_name() << "]";
+				info << " \"" << header.m_method << " " << header.m_resource << " " << header.m_protocol << "\"";
 
 				if (!SOAPAction.empty())
 					info << " \"" << SOAPAction << "\"";
@@ -253,6 +251,9 @@ namespace net
 
 				return *this;
 			}
+		private:
+			log_request(const log_request&);
+			log_request& operator=(const log_request&);
 		};
 
 		std::pair<fs::path, fs::path> pop(const fs::path& p)
@@ -420,7 +421,7 @@ namespace net
 			if (path.has_extension())
 			{
 				std::string cmp = path.extension().string();
-				for (auto&& c : cmp) c = std::tolower((unsigned char) c);
+				for (auto&& c : cmp) c = (char) std::tolower((unsigned char) c);
 
 				for (auto&& ext : s_extensions)
 					if (ext.ext == cmp)

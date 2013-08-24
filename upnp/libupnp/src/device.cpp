@@ -90,7 +90,7 @@ namespace net
 			}
 		};
 
-		std::string Device::get_configuration(const ssdp::client_info_ptr& client, const std::string& host) const
+		std::string Device::get_configuration(const ssdp::client_info_ptr& /*client*/, const std::string& host) const
 		{
 			std::ostringstream o;
 			o

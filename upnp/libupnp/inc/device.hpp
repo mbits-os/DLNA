@@ -101,8 +101,8 @@ namespace net
 			virtual ~ServiceInterface() {}
 			virtual const char* get_type() const = 0;
 			virtual const char* get_id() const = 0;
-			virtual bool answer(const std::string& name, const client_info_ptr& info, const http::http_request& req, const dom::XmlDocumentPtr& doc, http::response& response) { return false; }
-			virtual std::string get_configuration(const ssdp::client_info_ptr& client) const { return std::string(); };
+			virtual bool answer(const std::string& /*name*/, const client_info_ptr& /*info*/, const http::http_request& /*req*/, const dom::XmlDocumentPtr& /*doc*/, http::response& /*response*/) { return false; }
+			virtual std::string get_configuration(const ssdp::client_info_ptr& /*client*/) const { return std::string(); };
 		};
 		typedef std::shared_ptr<ServiceInterface> service_ptr;
 
@@ -140,6 +140,9 @@ namespace net
 			std::vector<service_ptr> m_services;
 			const device_info m_info;
 			const std::string m_usn;
+
+			Device(const Device&);
+			Device& operator=(const Device&);
 
 			static std::string get_usn(const config::config_ptr& config)
 			{
