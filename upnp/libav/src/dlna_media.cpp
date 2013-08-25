@@ -30,11 +30,7 @@ namespace fs = boost::filesystem;
 
 namespace net { namespace dlna {
 
-	static Log::Module DLNA {"DLNA"};
-	struct log : public Log::basic_log<log>
-	{
-		static const Log::Module& module() { return DLNA; }
-	};
+	Log::Module DLNA {"DLNA"};
 
 	init::init()
 	{
@@ -120,6 +116,7 @@ namespace net { namespace dlna {
 			format_mapping [] =
 			{
 				{ "image2",                  container::IMAGE     },
+				{ "gif",                     container::IMAGE     },
 				{ "asf",                     container::ASF       },
 				{ "amr",                     container::AMR       },
 				{ "aac",                     container::AAC       },
@@ -267,8 +264,7 @@ namespace net { namespace dlna {
 	};
 	bool Item::open(const boost::filesystem::path& path)
 	{
-		m_profile = nullptr;
-
+		m_profile.clear();
 		m_meta.clear();
 
 		boost::system::error_code ec;
@@ -290,7 +286,10 @@ namespace net { namespace dlna {
 		m_class = Class::Unknown;
 		av_format_contex ctx { path };
 		if (!ctx)
+		{
+			log::error() << "can't open: " << path.string().c_str();
 			return false;
+		}
 
 		if (!ctx.find_stream_info())
 		{
@@ -312,11 +311,26 @@ namespace net { namespace dlna {
 			return false;
 		}
 
-		m_profile = profile_db::guess_profile(ctx.get(), container, codecs);
-		if (!m_profile)
+		auto profile = profile_db::guess_profile(ctx.get(), container, codecs);
+		if (!profile)
+		{
+			log::error log;
+			log << "can't find profile: " << path.string().c_str();
+			log << "\n  CONTAINER: " << container << "; streams=" << ctx.get()->nb_streams;
+			if (codecs.m_video.m_codec)
+			{
+				log << "\n  VIDEO: " << codecs.m_video.m_codec->codec_id << "; " << codecs.m_video.m_codec->width << "x" << codecs.m_video.m_codec->height;
+			}
+			if (codecs.m_audio.m_codec)
+			{
+				log << "\n  AUDIO: " << codecs.m_video.m_codec->codec_id << "; channels=" << codecs.m_audio.m_codec->channels
+					<< "; sample_rate=" << codecs.m_audio.m_codec->sample_rate << "; bit_rate=" << codecs.m_audio.m_codec->bit_rate;
+			}
 			return false;
+		}
 
-		m_class = m_profile->m_class;
+		m_profile = *profile;
+		m_class = m_profile.m_class;
 		ctx.get_metadata(m_meta);
 		ctx.get_properties(m_props);
 		m_props.m_size = fs::file_size(path, ec);

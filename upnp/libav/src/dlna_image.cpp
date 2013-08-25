@@ -53,7 +53,7 @@ namespace net
 					{ &jpeg_lrg,     4096, 4096 }
 				};
 
-				struct module : image_module<module, CODEC_ID_MJPEG, CODEC_ID_MJPEGB, CODEC_ID_LJPEG, CODEC_ID_JPEGLS>
+				struct module : image_module<module, AV_CODEC_ID_MJPEG, AV_CODEC_ID_MJPEGB, AV_CODEC_ID_LJPEG, AV_CODEC_ID_JPEGLS>
 				{
 					static const Profile * probe(AVFormatContext *ctx, container::container_type container, const stream_codec& codecs)
 					{
@@ -77,7 +77,55 @@ namespace net
 					{ &png_lrg,    4096, 4096 }
 				};
 
-				struct module : image_module<module, CODEC_ID_PNG>
+				struct module : image_module<module, AV_CODEC_ID_PNG>
+				{
+					static const Profile * probe(AVFormatContext *ctx, container::container_type container, const stream_codec& codecs)
+					{
+						return profiles(boundaries, ctx, container, codecs);
+					}
+				};
+			}
+
+			namespace gif
+			{
+				static Profile gif_sm_ico  { "GIF_SM_ICO",  mime::IMAGE_GIF, labels::IMAGE__ICON,   Class::Image };
+				static Profile gif_lrg_ico { "GIF_LRG_ICO", mime::IMAGE_GIF, labels::IMAGE__ICON,   Class::Image };
+				static Profile gif_tn      { "GIF_TN",      mime::IMAGE_GIF, labels::IMAGE__ICON,   Class::Image };
+				static Profile gif_lrg     { "GIF_LRG",     mime::IMAGE_GIF, labels::IMAGE_PICTURE, Class::Image };
+
+				static const boundary boundaries [] =
+				{
+					{ &gif_sm_ico,    48,   48 },
+					{ &gif_lrg_ico,  120,  120 },
+					{ &gif_tn,       160,  160 },
+					{ &gif_lrg,     4096, 4096 }
+				};
+
+				struct module : image_module<module, AV_CODEC_ID_GIF>
+				{
+					static const Profile * probe(AVFormatContext *ctx, container::container_type container, const stream_codec& codecs)
+					{
+						return profiles(boundaries, ctx, container, codecs);
+					}
+				};
+			}
+
+			namespace bmp
+			{
+				static Profile bmp_sm_ico  { "BMP_SM_ICO",  mime::IMAGE_BMP, labels::IMAGE__ICON,   Class::Image };
+				static Profile bmp_lrg_ico { "BMP_LRG_ICO", mime::IMAGE_BMP, labels::IMAGE__ICON,   Class::Image };
+				static Profile bmp_tn      { "BMP_TN",      mime::IMAGE_BMP, labels::IMAGE__ICON,   Class::Image };
+				static Profile bmp_lrg     { "BMP_LRG",     mime::IMAGE_BMP, labels::IMAGE_PICTURE, Class::Image };
+
+				static const boundary boundaries [] =
+				{
+					{ &bmp_sm_ico,    48,   48 },
+					{ &bmp_lrg_ico,  120,  120 },
+					{ &bmp_tn,       160,  160 },
+					{ &bmp_lrg,     4096, 4096 }
+				};
+
+				struct module : image_module<module, AV_CODEC_ID_BMP>
 				{
 					static const Profile * probe(AVFormatContext *ctx, container::container_type container, const stream_codec& codecs)
 					{
@@ -91,6 +139,8 @@ namespace net
 		{
 			image::jpeg::module::register_profiles("jpg,jpe,jpeg");
 			image::png::module::register_profiles("png");
+			image::gif::module::register_profiles("gif");
+			image::bmp::module::register_profiles("bmp");
 		}
 	}
 }

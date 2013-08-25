@@ -51,10 +51,17 @@ namespace net
 {
 	namespace dlna
 	{
+		extern Log::Module DLNA;
+		struct log : public Log::basic_log<log>
+		{
+			static const Log::Module& module() { return DLNA; }
+		};
 		namespace mime
 		{
 			static const char* IMAGE_JPEG          = "image/jpeg";
 			static const char* IMAGE_PNG           = "image/png";
+			static const char* IMAGE_GIF           = "image/gif";
+			static const char* IMAGE_BMP           = "image/bmp";
 
 			static const char* AUDIO_3GP           = "audio/3gpp";
 			static const char* AUDIO_ADTS          = "audio/vnd.dlna.adts";
@@ -130,6 +137,8 @@ namespace net
 				MP2,
 				MP3,
 				MP3_EXTENDED,
+				MP3_UPNP,
+				MP3_EXTENDED_UPNP,
 
 				/* Windows Media Audio variants */
 				WMA_BASELINE,
@@ -161,6 +170,34 @@ namespace net
 				MPEG_TRANSPORT_STREAM_DLNA,
 				MPEG_TRANSPORT_STREAM_DLNA_NO_TS,
 			};
+
+			inline std::ostream& operator <<(std::ostream& o, container_type container)
+			{
+#define ENUM_STR(x) case x: return o << #x
+				switch (container)
+				{
+					ENUM_STR(UNKNOWN);
+					ENUM_STR(IMAGE);
+					ENUM_STR(ASF);
+					ENUM_STR(AMR);
+					ENUM_STR(AAC);
+					ENUM_STR(AC3);
+					ENUM_STR(MP3);
+					ENUM_STR(WAV);
+					ENUM_STR(MOV);
+					ENUM_STR(_3GP);
+					ENUM_STR(MP4);
+					ENUM_STR(FF_MPEG);
+					ENUM_STR(FF_MPEG_TS);
+					ENUM_STR(MPEG_ELEMENTARY_STREAM);
+					ENUM_STR(MPEG_PROGRAM_STREAM);
+					ENUM_STR(MPEG_TRANSPORT_STREAM);
+					ENUM_STR(MPEG_TRANSPORT_STREAM_DLNA);
+					ENUM_STR(MPEG_TRANSPORT_STREAM_DLNA_NO_TS);
+				default: return o << "UNKNOWN-CONTAINER(" << (int) container << ")";
+				}
+#undef ENUM_STR
+			}
 		}
 
 		struct ff_codec
@@ -196,11 +233,30 @@ namespace net
 				container == dlna::container::IMAGE;
 		}
 
-		static inline bool stream_is_audio(AVFormatContext *, container::container_type, const stream_codec& codecs)
+		static inline bool stream_has_cover(AVFormatContext *, container::container_type container, const stream_codec& codecs)
+		{
+			if (codecs.m_video.m_codec == nullptr)
+				return false;
+			switch (container)
+			{
+			case container::ASF:
+			case container::AMR:
+			case container::AAC:
+			case container::AC3:
+			case container::MP3:
+			case container::WAV:
+				return true;
+			default:
+				break;
+			}
+			return false;
+		}
+
+		static inline bool stream_is_audio(AVFormatContext * ctx, container::container_type container, const stream_codec& codecs)
 		{
 			return
-				codecs.m_video.m_codec == nullptr &&
-				codecs.m_audio.m_codec != nullptr;
+				codecs.m_audio.m_codec != nullptr && 
+				(codecs.m_video.m_codec == nullptr || stream_has_cover(ctx, container, codecs));
 		}
 
 		static inline bool stream_is_video(AVFormatContext *, container::container_type, const stream_codec& codecs)
@@ -338,5 +394,7 @@ namespace net
 		void register_audio_profiles();
 	}
 }
+
+#include "codec_ostream.hpp"
 
 #endif //__DLNA_MEDIA_INTERNAL_HPP__

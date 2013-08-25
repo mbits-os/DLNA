@@ -36,17 +36,19 @@ namespace net
 		{
 			namespace mp3
 			{
-				static Profile mp3  { "MP3",  mime::AUDIO_MPEG, labels::AUDIO_2CH, Class::Audio };
-				static Profile mp3x { "MP3X", mime::AUDIO_MPEG, labels::AUDIO_2CH, Class::Audio };
+				static Profile mp3       { "MP3",  mime::AUDIO_MPEG, labels::AUDIO_2CH, Class::Audio };
+				static Profile mp3x      { "MP3X", mime::AUDIO_MPEG, labels::AUDIO_2CH, Class::Audio };
+				static Profile mp3_upnp  { "MP3",  mime::AUDIO_MPEG, labels::AUDIO_2CH, Class::Audio, mp3 };
+				static Profile mp3x_upnp { "MP3X", mime::AUDIO_MPEG, labels::AUDIO_2CH, Class::Audio, mp3x };
 
 				static bool is_valid_mp3_common(AVCodecContext *ac)
 				{
-					if (ac->codec_id != CODEC_ID_MP3) return false;
+					if (ac->codec_id != AV_CODEC_ID_MP3) return false;
 					if (ac->channels > 2) return false;
 					return true;
 				}
 
-				static bool is_valid_mp3(AVCodecContext *ac)
+				static bool is_valid_mp3_upnp(AVCodecContext *ac)
 				{
 					if (!ac)
 						return false;
@@ -57,6 +59,17 @@ namespace net
 					if (ac->sample_rate != 32000 &&
 						ac->sample_rate != 44100 &&
 						ac->sample_rate != 48000)
+						return false;
+
+					return true;
+				}
+
+				static bool is_valid_mp3(AVCodecContext *ac)
+				{
+					if (!ac)
+						return false;
+
+					if (!is_valid_mp3_upnp(ac))
 						return false;
 
 					switch (ac->bit_rate)
@@ -83,7 +96,7 @@ namespace net
 					return false;
 				}
 
-				static bool is_valid_mp3x(AVCodecContext *ac)
+				static bool is_valid_mp3x_upnp(AVCodecContext *ac)
 				{
 					if (!ac)
 						return false;
@@ -94,6 +107,17 @@ namespace net
 					if (ac->sample_rate != 16000 &&
 						ac->sample_rate != 22050 &&
 						ac->sample_rate != 24000)
+						return false;
+
+					return true;
+				}
+
+				static bool is_valid_mp3x(AVCodecContext *ac)
+				{
+					if (!ac)
+						return false;
+
+					if (!is_valid_mp3x_upnp(ac))
 						return false;
 
 					switch (ac->bit_rate)
@@ -134,6 +158,15 @@ namespace net
 					if (is_valid_mp3(ac))
 						return profile::MP3;
 
+					if (is_valid_mp3x_upnp(ac))
+						return profile::MP3_EXTENDED_UPNP;
+
+					if (is_valid_mp3_upnp(ac))
+						return profile::MP3_UPNP;
+
+					if (is_valid_mp3_common(ac))
+						return profile::MP3_UPNP;
+
 					return profile::INVALID;
 				}
 
@@ -151,11 +184,15 @@ namespace net
 						return &mp3;
 					case profile::MP3_EXTENDED:
 						return &mp3x;
+					case profile::MP3_UPNP:
+						return &mp3_upnp;
+					case profile::MP3_EXTENDED_UPNP:
+						return &mp3x_upnp;
 					default:
 						break;
 					}
 
-					return NULL;
+					return nullptr;
 				}
 			}
 		}

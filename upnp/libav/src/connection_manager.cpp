@@ -70,6 +70,8 @@ namespace net { namespace ssdp { namespace import { namespace av {
 		Source =
 			"http-get:*:image/jpeg:*,"
 			"http-get:*:image/png:*,"
+			"http-get:*:image/gif:*,"
+			"http-get:*:image/bmp:*,"
 
 			"http-get:*:audio/vnd.dolby.dd-raw:*,"
 			"http-get:*:audio/mp4:*,"
