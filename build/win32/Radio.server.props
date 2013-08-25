@@ -26,11 +26,7 @@
       <MapFileName>$(TargetDir)$(TargetName).map</MapFileName>
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
-    <CustomBuildStep>
-      <Command>copy "$(SolutionDir)..\..\bin\$(PlatformName)\MediaInfo\mi.dll" "$(SolutionDir)..\..\bin\$(PlatformName)\$(Configuration)\"</Command>
-      <Outputs>$(SolutionDir)..\..\bin\$(PlatformName)\$(Configuration)\mi.dll</Outputs>
-      <Inputs>$(SolutionDir)..\..\bin\$(PlatformName)\MediaInfo\mi.dll</Inputs>
-    </CustomBuildStep>
+    <CustomBuildStep />
   </ItemDefinitionGroup>
   <ItemGroup />
 </Project>

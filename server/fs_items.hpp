@@ -80,8 +80,6 @@ namespace lan
 				m_last_write = fs::last_write_time(m_path);
 			}
 			time_t     get_last_write_time() const override { return m_last_write; }
-			net::ulong get_duration() const        override { return m_duration; }
-			net::ulong get_size() const            override { return fs::is_directory(m_path) ? 0 : (net::ulong)fs::file_size(m_path); }
 			fs::path   get_path() const                     { return m_path; }
 			void       set_cover(const std::string& base64);
 			void       set_cover(const fs::path& cover)     { m_cover = media::from_file(cover, false); }
@@ -114,50 +112,6 @@ namespace lan
 			virtual void   attrs(std::ostream& /*o*/, const std::vector<std::string>& /*filter*/,
 			                      const net::config::config_ptr& /*config*/) const                  {};
 
-		};
-
-		struct photo_file : common_file
-		{
-			photo_file(av::MediaServer* device, const fs::path& path, net::ulong)
-				: common_file(device, path, 0)
-			{
-			}
-			const char* get_upnp_class() const override { return "object.item.imageItem.photo"; }
-			bool is_image() const override { return true; }
-
-			ITEM_PROP_V(net::ulong, width);
-			ITEM_PROP_V(net::ulong, height);
-		};
-
-		struct video_file : common_file
-		{
-			video_file(av::MediaServer* device, const fs::path& path, net::ulong duration)
-				: common_file(device, path, duration)
-			{
-			}
-			const char* get_upnp_class() const override { return "object.item.videoItem"; }
-
-			ITEM_PROP_V(net::ulong, width);
-			ITEM_PROP_V(net::ulong, height);
-			ITEM_PROP_V(int, ref_frame_count);
-		};
-
-		struct audio_file : common_file
-		{
-			audio_file(av::MediaServer* device, const fs::path& path, net::ulong duration)
-				: common_file(device, path, duration)
-			{
-			}
-			const char* get_upnp_class() const override { return "object.item.audioItem.musicTrack"; }
-			void attrs(std::ostream& o, const std::vector<std::string>& filter, const net::config::config_ptr& config) const override;
-
-			ITEM_SPROP(artist);
-			ITEM_SPROP(album);
-			ITEM_SPROP(genre);
-			ITEM_PROP(int, track_position);
-			ITEM_PROP_V(net::ulong, bitrate);
-			ITEM_PROP_V(net::ulong, sample_freq);
-			ITEM_PROP_V(net::ulong, channels);
 		};
 
 		struct container_file : path_item, std::enable_shared_from_this<container_file>

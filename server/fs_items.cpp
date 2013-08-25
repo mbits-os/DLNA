@@ -27,273 +27,14 @@
 #include <regex>
 #include <future>
 #include <threads.hpp>
-
-//#define MEDIAINFO
-#if defined(MEDIAINFO)
-#include <MediaInfo.h>
-#else
 #include <dlna_media.hpp>
-#endif
-
-#if defined(MEDIAINFO)
-#pragma comment(lib, "mi.lib")
-namespace mi = MediaInfo;
-#endif
 
 namespace lan
 {
 	Log::Module APP { "APPL" };
 
-#if defined(MEDIAINFO)
-	struct MI
-	{
-		static bool extract(const fs::path& file, mi::IContainer* env)
-		{
-			return get()->extract(fs::absolute(file).native(), env);
-		}
-	private:
-		static std::shared_ptr<mi::API> get()
-		{
-			static auto s_mi = std::make_shared<mi::API>();
-			return s_mi;
-		}
-	};
-#endif
-
 	namespace item
 	{
-#if defined(MEDIAINFO)
-		namespace Media
-		{
-			enum class Class
-			{
-				Other,
-				Image,
-				Audio,
-				Video
-			};
-
-#define TPROPERTY(type, name) \
-		private: \
-		type m_##name; \
-		public: \
-		type get_##name() const override { /*std::cout << "Reading " #name ": " << m_ ## name << "\n";*/ return m_ ## name; }\
-		bool set_##name(type val) override { /*std::cout << "Setting " #name ": " << val << "\n";*/ m_ ## name = val; return true; }
-#define SPROPERTY(name) \
-		private: \
-		std::string m_##name; \
-		public: \
-		const std::string& get_##name() const override { /*std::cout << "Reading " #name ": " << m_ ## name << "\n";*/ return m_ ## name; }\
-		const char* get_##name##_c() const override { return m_ ## name.c_str(); }\
-		bool set_##name(const char* val) override { /*std::cout << "Setting " #name ": " << val << "\n";*/ m_ ## name = val; return true; }
-
-			struct MediaTrack : mi::ITrack
-			{
-				mi::TrackType m_type;
-				int m_id;
-
-				MediaTrack(mi::TrackType type, int id)
-					: m_type(type)
-					, m_id(id)
-					, m_duration(0)
-					, m_bitrate(0)
-					, m_sample_freq(0)
-					, m_channels(0)
-					, m_width(0)
-					, m_height(0)
-					, m_track_position(0)
-					, m_ref_frame_count(0)
-				{
-				}
-				mi::TrackType get_type() const override { return m_type; }
-				int get_id() const override { return m_id; }
-
-				TPROPERTY(unsigned long, duration);
-				TPROPERTY(unsigned long, bitrate);
-				TPROPERTY(unsigned long, sample_freq);
-				TPROPERTY(unsigned long, channels);
-				TPROPERTY(unsigned long, width);
-				TPROPERTY(unsigned long, height);
-				SPROPERTY(mime);
-				SPROPERTY(title);
-				SPROPERTY(artist);
-				SPROPERTY(album);
-				SPROPERTY(genre);
-				SPROPERTY(cover);
-				TPROPERTY(int, track_position);
-				TPROPERTY(int, ref_frame_count);
-				SPROPERTY(format);
-			};
-			typedef std::shared_ptr<MediaTrack> track_ptr;
-
-			struct MetadataContainer : mi::IContainer, MediaTrack
-			{
-				Class m_class;
-				std::vector<track_ptr> m_tracks;
-				MetadataContainer()
-					: m_class(Class::Other)
-					, MediaTrack(mi::TrackType::General, 0)
-				{
-				}
-
-				Class fileClass() const { return m_class; }
-
-				mi::ITrack* create_track(mi::TrackType type, int id) override
-				{
-					switch (type)
-					{
-					case mi::TrackType::Image:
-					case mi::TrackType::Audio:
-					case mi::TrackType::Video:
-						break;
-					case mi::TrackType::General:
-						return this;
-					default:
-						return nullptr;
-					}
-
-					auto ptr = std::make_shared<MediaTrack>(type, id);
-					if (!ptr)
-						return nullptr;
-
-					m_tracks.push_back(ptr);
-
-					if (type == mi::TrackType::Image && m_class == Class::Other)
-						m_class = Class::Image;
-
-					if (type == mi::TrackType::Audio && m_class != Class::Video)
-						m_class = Class::Audio;
-
-					if (type == mi::TrackType::Video)
-						m_class = Class::Video;
-
-					return ptr.get();
-				}
-				size_t get_length() const override { return 1 + m_tracks.size(); }
-				ITrack* get_item(size_t track) const override { return track == 0 ? const_cast<MetadataContainer*>(this) : m_tracks[track - 1].get(); }
-			};
-		}
-
-		template <typename T> struct track_type;
-		template <> struct track_type<video_file> { enum { value = MediaInfo::TrackType::Video }; };
-		template <> struct track_type<audio_file> { enum { value = MediaInfo::TrackType::Audio }; };
-		template <> struct track_type<photo_file> { enum { value = MediaInfo::TrackType::Image }; };
-
-#define GET(name) \
-	auto name = env.get_ ## name(); \
-	if (!name) name = primary->get_ ## name(); \
-	if (!name && secondary) name = secondary->get_ ## name()
-#define GETS(name) \
-	auto name = env.get_ ## name(); \
-	if (name.empty()) name = primary->get_ ## name(); \
-	if (name.empty() && secondary) name = secondary->get_ ## name()
-
-#define MOVE(name) \
-	GET(name); \
-	item->set_ ## name(name);
-
-#define MOVES(name) \
-	GETS(name); \
-	item->set_ ## name(name);
-
-		template <typename T>
-		void item_specific(T* item, Media::MetadataContainer& env, const Media::track_ptr& primary, const Media::track_ptr& secondary)
-		{
-		}
-
-		void item_specific(video_file* item, Media::MetadataContainer& env, const Media::track_ptr& primary, const Media::track_ptr& secondary)
-		{
-			MOVE(width);
-			MOVE(height);
-			MOVE(ref_frame_count);
-
-			if (!env.get_cover().empty()) item->set_cover(env.get_cover());
-			else if (!primary->get_cover().empty()) item->set_cover(primary->get_cover());
-		}
-
-		void item_specific(audio_file* item, Media::MetadataContainer& env, const Media::track_ptr& primary, const Media::track_ptr& secondary)
-		{
-			MOVES(album);
-			MOVES(artist);
-			MOVES(genre);
-			MOVE(track_position);
-
-			MOVE(bitrate);
-			MOVE(sample_freq);
-			MOVE(channels);
-
-			auto title = env.get_title();
-			if (title.empty()) title = primary->get_title();
-			if (!title.empty())
-				item->set_title(title);
-
-			if (!env.get_cover().empty()) item->set_cover(env.get_cover());
-			else if (!primary->get_cover().empty()) item->set_cover(primary->get_cover());
-		}
-
-		void item_specific(photo_file* item, Media::MetadataContainer& env, const Media::track_ptr& primary, const Media::track_ptr& secondary)
-		{
-			MOVE(width);
-			MOVE(height);
-		}
-
-		template <typename T>
-		std::shared_ptr<T> create(av::MediaServer* device, const fs::path& path, Media::MetadataContainer& env)
-		{
-			Media::track_ptr primary, secondary;
-			for (auto&& track : env.m_tracks)
-			{
-				if ((int)track->get_type() == track_type<T>::value)
-				{
-					primary = track;
-					break;
-				}
-			}
-
-			if (track_type<T>::value == (int) MediaInfo::TrackType::Video)
-			{
-				for (auto && track : env.m_tracks)
-				{
-					if (track->get_type() == MediaInfo::TrackType::Audio)
-					{
-						secondary = track;
-						break;
-					}
-				}
-			}
-
-			if (!primary)
-				return nullptr;
-
-			GET(duration);
-			GETS(mime);
-
-			auto ret = std::make_shared<T>(device, path, duration);
-
-			if (mime.empty())
-				mime = "video/mpeg";
-			ret->set_mime(mime);
-
-			item_specific(ret.get(), env, primary, secondary);
-
-			if (!ret->get_cover())
-			{
-				fs::path cover;
-				if (env.fileClass() == Media::Class::Video ||
-					env.fileClass() == Media::Class::Audio)
-				{
-					cover = path.string() + ".cover.png";
-					if (!fs::exists(cover))
-						cover = path.string() + ".cover.jpg";
-				}
-
-				if (fs::exists(cover))
-					ret->set_cover(cover);
-			}
-
-			return ret;
-		}
-#else //defined(MEDIAINFO)
 
 		struct ffmpeg_file : common_file
 		{
@@ -315,17 +56,11 @@ namespace lan
 			}
 			bool is_image() const override { return true; }
 
-			void           set_title(const std::string& title) override { m_item.m_meta.m_title = title; }
-			std::string    get_title() const                   override { return m_item.m_meta.m_title.empty() ? m_path.filename().string() : m_item.m_meta.m_title; }
-			void           set_mime(const std::string&)        override { }
-			std::string    get_mime() const                    override { return m_item.m_profile.m_mime; }
-			net::ulong     get_bitrate() const                 override { return m_item.m_props.m_bitrate; }
-			net::ulong     get_sample_freq() const             override { return m_item.m_props.m_sample_freq; }
-			net::ulong     get_channels() const                override { return m_item.m_props.m_channels; }
-			net::ulong     get_size() const                    override { return (net::ulong) m_item.m_props.m_size; }
-			net::ulong     get_height() const                  override { return m_item.m_props.m_height; }
-			net::ulong     get_width() const                   override { return m_item.m_props.m_width; }
-			int            get_ref_frame_count() const         override { return 0; }
+			void           set_title(const std::string& title)      override { m_item.m_meta.m_title = title; }
+			std::string    get_title() const                        override { return m_item.m_meta.m_title.empty() ? m_path.filename().string() : m_item.m_meta.m_title; }
+			const net::dlna::ItemMetadata* get_metadata() const     override { return &m_item.m_meta; }
+			const net::dlna::ItemProperties* get_properties() const override { return &m_item.m_props; }
+			const net::dlna::Profile* get_profile() const           override { return &m_item.m_profile; }
 		};
 
 		std::shared_ptr<ffmpeg_file> create(av::MediaServer* device, const fs::path& path, net::dlna::Item& item)
@@ -334,37 +69,8 @@ namespace lan
 			return std::make_shared<ffmpeg_file>(device, path, item, duration);
 		}
 
-#endif //defined(MEDIAINFO)
-
 		av::items::media_item_ptr from_path(av::MediaServer* device, const fs::path& path)
 		{
-#if defined(MEDIAINFO)
-			if (fs::is_directory(path))
-			{
-				if (path.filename() == ".")
-					return nullptr;
-				auto ret = std::make_shared<directory_item>(device, path);
-
-				fs::path cover = path / "Folder.jpg";
-				if (fs::exists(cover))
-					ret->set_cover(cover);
-
-				return ret;
-			}
-
-			Media::MetadataContainer env;
-			if (!MI::extract(path, &env))
-			{
-				log::error() << "Could not extract metadata from " << path;
-			}
-
-			switch (env.fileClass())
-			{
-			case Media::Class::Video: return create<video_file>(device, path, env);
-			case Media::Class::Audio: return create<audio_file>(device, path, env);
-			case Media::Class::Image: return create<photo_file>(device, path, env);
-			}
-#else
 			if (path.filename() == ".")
 				return nullptr;
 
@@ -389,7 +95,7 @@ namespace lan
 					return ret;
 				}
 			}
-#endif
+
 			return nullptr;
 		}
 
@@ -502,7 +208,12 @@ namespace lan
 		common_file::media_ptr common_file::get_media(bool main_resource)
 		{
 			if (main_resource)
-				return media::from_file(get_path(), get_mime(), true);
+			{
+				auto profile = get_profile();
+				if (profile)
+					return media::from_file(get_path(), profile->m_mime, true);
+				return media::from_file(get_path(), true);
+			}
 
 			return m_cover;
 		}
@@ -518,20 +229,6 @@ namespace lan
 		{
 			if (filter.empty()) return true;
 			return std::find(filter.begin(), filter.end(), key) != filter.end();
-		}
-
-		void audio_file::attrs(std::ostream& o, const std::vector<std::string>& filter, const net::config::config_ptr& /*config*/) const
-		{
-#define SDISPLAY(name, item) \
-	auto name = get_##name(); \
-	if (!name.empty() && contains(filter, item)) \
-		o << "    <" item ">" << net::xmlencode(name) << "</" item ">\n";
-
-			SDISPLAY(album, "upnp:album");
-			SDISPLAY(artist, "upnp:artist");
-			if (!artist.empty() && contains(filter, "dc:creator"))
-				o << "    <dc:creator>" << net::xmlencode(artist) << "</dc:creator>\n";
-			SDISPLAY(genre, "upnp:genre");
 		}
 
 #pragma region container_file
