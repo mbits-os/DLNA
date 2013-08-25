@@ -39,8 +39,8 @@ namespace lan
 		struct ffmpeg_file : common_file
 		{
 			net::dlna::Item m_item;
-			ffmpeg_file(av::MediaServer* device, const fs::path& path, const net::dlna::Item& item, net::ulong duration)
-				: common_file(device, path, duration)
+			ffmpeg_file(av::MediaServer* device, const fs::path& path, const net::dlna::Item& item)
+				: common_file(device, path)
 				, m_item(item)
 			{
 			}
@@ -65,8 +65,7 @@ namespace lan
 
 		std::shared_ptr<ffmpeg_file> create(av::MediaServer* device, const fs::path& path, net::dlna::Item& item)
 		{
-			net::ulong duration = item.m_class == net::dlna::Class::Image ? 0 : item.m_props.m_duration * 1000;
-			return std::make_shared<ffmpeg_file>(device, path, item, duration);
+			return std::make_shared<ffmpeg_file>(device, path, item);
 		}
 
 		av::items::media_item_ptr from_path(av::MediaServer* device, const fs::path& path)

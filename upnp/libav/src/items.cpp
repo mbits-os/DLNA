@@ -173,12 +173,34 @@ namespace net { namespace ssdp { namespace import { namespace av { namespace ite
 		o << "    <upnp:class>" << get_upnp_class() << "</upnp:class>\n  </" << name << ">\n";
 	}
 
-	static void protocol_info(std::ostream& o, const dlna::Profile* profile, const client_interface_ptr& /*client*/)
+	/*item->u.resource.cnv*/
+	namespace dlna_org
 	{
+		enum flag: unsigned int
+		{
+			SENDER_PACED               = (1U << 31),
+			TIME_BASED_SEEK            = (1U << 30),
+			BYTE_BASED_SEEK            = (1U << 29),
+			PLAY_CONTAINER             = (1U << 28),
+			S0_INCREASE                = (1U << 27),
+			SN_INCREASE                = (1U << 26),
+			RTSP_PAUSE                 = (1U << 25),
+			STREAMING_TRANSFER_MODE    = (1U << 24),
+			INTERACTIVE_TRANSFERT_MODE = (1U << 23),
+			BACKGROUND_TRANSFERT_MODE  = (1U << 22),
+			CONNECTION_STALL           = (1U << 21),
+			DLNA_V15                   = (1U << 20),
+		};
+	}
+
+	static void protocol_info(std::ostream& o, const dlna::Profile* profile, const client_interface_ptr & /*client*/)
+	{
+		static const unsigned int flags = dlna_org::DLNA_V15 | dlna_org::BYTE_BASED_SEEK | dlna_org::STREAMING_TRANSFER_MODE;
 		auto mime = profile && profile->m_mime && *profile->m_mime ? profile->m_mime : "video/mpeg";
-		o << "http-get:*:" << mime << ":";
-		//o << "*";
-		o << "DLNA.ORG_OP=01";
+		o << "http-get:*:" << mime << ":" << "DLNA.ORG_PS=1;DLNA.ORG_CI=0;DLNA.ORG_OP=01;";
+		if (profile)
+			o << "DLNA.ORG_PN=" << profile->m_name << ";";
+		o << "DLNA.ORG_FLAGS=" << std::setfill('0') << std::setw(8) << std::hex << flags << "000000000000000000000000" << std::dec;
 	}
 
 	void common_props_item::main_res(std::ostream& o, const std::vector<std::string>& filter, const client_interface_ptr& client, const config::config_ptr& config) const
@@ -188,7 +210,7 @@ namespace net { namespace ssdp { namespace import { namespace av { namespace ite
 
 		auto size        = properties ? properties->m_size : 0;
 		auto bitrate     = properties ? properties->m_bitrate : 0;
-		auto duration    = properties ? properties->m_duration : 0;
+		auto duration    = properties ? properties->m_duration * 1000 : 0;
 		auto sample_freq = properties ? properties->m_sample_freq : 0;
 		auto channels    = properties ? properties->m_channels : 0;
 		auto width       = properties ? properties->m_width : 0;
@@ -246,12 +268,12 @@ namespace net { namespace ssdp { namespace import { namespace av { namespace ite
 		}
 	}
 
-	void common_props_item::cover(std::ostream& o, const std::vector<std::string>& filter, const client_interface_ptr& client, const config::config_ptr& config) const
+	void common_props_item::cover(std::ostream& /*o*/, const std::vector<std::string>& filter, const client_interface_ptr& /*client*/, const config::config_ptr& /*config*/) const
 	{
 		//todo: do a proper 
 		if (!is_image() && contains(filter, "res"))
 		{
-			o << "    <res xmlns:dlna=\"urn:schemas-dlna-org:metadata-1-0/\"";
+			/*o << "    <res xmlns:dlna=\"urn:schemas-dlna-org:metadata-1-0/\"";
 			if (contains(filter, "res@protocolInfo"))
 			{
 				o << " protocolInfo=\"";
@@ -259,7 +281,7 @@ namespace net { namespace ssdp { namespace import { namespace av { namespace ite
 				o << "\"";
 			}
 
-			o << ">http://" << net::to_string(config->iface) << ":" << (int) config->port << "/upnp/thumb/" << get_objectId_attr() << "</res>\n";
+			o << ">http://" << net::to_string(config->iface) << ":" << (int) config->port << "/upnp/thumb/" << get_objectId_attr() << "</res>\n";*/
 		}
 	}
 

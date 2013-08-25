@@ -70,10 +70,9 @@ namespace lan
 
 		struct path_item : av::items::common_props_item
 		{
-			path_item(av::MediaServer* device, const fs::path& path, net::ulong duration)
+			path_item(av::MediaServer* device, const fs::path& path)
 				: av::items::common_props_item(device)
 				, m_path(path)
-				, m_duration(duration)
 			{
 				set_title(m_path.filename().string());
 				set_token(CRC().update(m_path.string()).str());
@@ -89,14 +88,12 @@ namespace lan
 			fs::path   m_path;
 			media_ptr  m_cover;
 			time_t     m_last_write;
-
-			net::ulong m_duration;
 		};
 
 		struct common_file : path_item
 		{
-			common_file(av::MediaServer* device, const fs::path& path, net::ulong duration)
-				: path_item(device, path, duration)
+			common_file(av::MediaServer* device, const fs::path& path)
+				: path_item(device, path)
 			{
 			}
 			container_type list(net::ulong /*start_from*/, net::ulong /*max_count*/)       override { return container_type(); }
@@ -133,7 +130,7 @@ namespace lan
 			};
 
 			container_file(av::MediaServer* device, const fs::path& path)
-				: path_item(device, path, 0)
+				: path_item(device, path)
 				, m_update_id(1)
 				, m_current_max(0)
 				, m_running(false)
