@@ -76,7 +76,6 @@ namespace net { namespace dlna {
 		}
 
 		static const Profile* guess_from_file(const boost::filesystem::path& path);
-		static const Profile* guess_from_memory(const void* data, ::size_t length);
 	};
 
 	struct ItemMetadata

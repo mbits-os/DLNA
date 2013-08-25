@@ -100,6 +100,37 @@ namespace lan
 			std::size_t read(void* buffer, std::size_t size) override;
 		};
 
+		static net::dlna::Profile jpeg_tn { "JPEG_TN", "image/jpeg", "", net::dlna::Class::Image };
+		static net::dlna::Profile png_tn  { "PNG_TN", "image/png", "", net::dlna::Class::Image };
+		static net::dlna::Profile gif_tn  { "GIF_TN", "image/gif", "", net::dlna::Class::Image };
+		static net::dlna::Profile bmp_tn  { "BMP_TN", "image/bmp", "", net::dlna::Class::Image };
+
+		struct magic
+		{
+			const net::dlna::Profile* m_profile;
+			size_t m_length;
+			const char* m_mask;
+			magic(const net::dlna::Profile& profile, size_t length, const char* mask)
+				: m_profile(&profile)
+				, m_length(length)
+				, m_mask(mask)
+			{}
+		};
+
+		static const magic tests [] =
+		{
+			magic(png_tn, 8, "\x89PNG\x0D\x0A\x1A\x0A"),
+			magic(gif_tn, 6, "GIF87a"),
+			magic(gif_tn, 6, "GIF89a"),
+			magic(bmp_tn, 2, "BM"),
+			magic(jpeg_tn, 4, "\xFF\xD8\xFF\xDB"),
+			magic(jpeg_tn, 4, "\xFF\xD8\xFF\xE0"),
+			magic(jpeg_tn, 4, "\xFF\xD8\xFF\xE1"),
+			magic(jpeg_tn, 4, "\xFF\xD8\xFF\xE2"),
+			magic(jpeg_tn, 4, "\xFF\xD8\xFF\xE3"),
+			magic(jpeg_tn, 4, "\xFF\xD8\xFF\xE8")
+		};
+
 		struct embedded_cover : av::items::media, std::enable_shared_from_this<embedded_cover>
 		{
 			std::vector<char> m_text;
@@ -117,10 +148,25 @@ namespace lan
 
 			void set_profile()
 			{
-				auto profile = net::dlna::Profile::guess_from_memory(m_text.data(), m_text.size());
-				if (profile)
+				for (auto && magic : tests)
 				{
-					m_profile = *profile;
+					if (m_text.size() < magic.m_length)
+						continue;
+
+					bool fits = true;
+					for (size_t i = 0; i < magic.m_length; ++i)
+					{
+						if (m_text[i] != magic.m_mask[i])
+						{
+							fits = false;
+							break;
+						}
+					}
+
+					if (!fits)
+						continue;
+
+					m_profile = *magic.m_profile;
 					return;
 				}
 

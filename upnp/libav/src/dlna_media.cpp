@@ -47,9 +47,9 @@ namespace net { namespace dlna {
 
 	struct av_format_contex
 	{
-		av_format_contex() : m_ctx(nullptr), m_ok(false), m_allocated(false) {}
+		av_format_contex() : m_ctx(nullptr), m_ok(false) {}
 		av_format_contex(const boost::filesystem::path& path)
-			: m_ctx(nullptr), m_ok(false), m_allocated(false)
+			: m_ctx(nullptr), m_ok(false)
 		{
 			open(path);
 		}
@@ -61,24 +61,6 @@ namespace net { namespace dlna {
 		{
 			close();
 			m_ok = (avformat_open_input(&m_ctx, path.string().c_str(), nullptr, nullptr) == 0);
-			return m_ok;
-		}
-
-		bool open_from_memory(const void* data, ::size_t length)
-		{
-			close();
-			m_allocated = true;
-			m_ctx = avformat_alloc_context();
-			if (!m_ctx)
-				return false;
-			m_io = std::make_shared<io>(data, length);
-			m_buffer = std::shared_ptr<unsigned char>(reinterpret_cast<unsigned char*>(av_malloc(8192)), &av_free);
-			m_ioContext = std::shared_ptr<AVIOContext>(
-				avio_alloc_context(m_buffer.get(), 8192, 0, reinterpret_cast<void*>(m_io.get()), io::read, nullptr, nullptr), &av_free
-				);
-
-			m_ctx->pb = m_ioContext.get();
-			m_ok = (avformat_open_input(&m_ctx, "MEMORY", nullptr, nullptr) == 0);
 			return m_ok;
 		}
 
@@ -273,55 +255,16 @@ namespace net { namespace dlna {
 		void close()
 		{
 			if (m_ctx)
-			{
 				av_close_input_file(m_ctx);
-				if (m_allocated)
-					avformat_free_context(m_ctx);
-			}
-			m_buffer.reset();
-			m_ioContext.reset();
 			m_ctx = nullptr;
 			m_ok = false;
-			m_allocated = false;
 		}
 
 		AVFormatContext* get() const { return m_ctx; }
 
 	private:
-		struct io
-		{
-			const uint8_t* data;
-			const uint8_t* end;
-
-			::size_t _read(uint8_t* ptr, ::size_t len)
-			{
-				::size_t rest = end - data;
-				if (rest > len)
-					rest = len;
-				memcpy(ptr, data, rest);
-				data += rest;
-				return rest;
-			}
-
-			io(const void* data, ::size_t length)
-			{
-				this->data = (const uint8_t*) data;
-				this->end = this->data + length;
-			}
-
-			static int read(void* opaque, uint8_t* buf, int buf_size)
-			{
-				io* _this = reinterpret_cast<io*>(opaque);
-				return (int) _this->_read(buf, buf_size);
-			}
-		};
-
 		AVFormatContext* m_ctx;
 		bool m_ok;
-		bool m_allocated;
-		std::shared_ptr<unsigned char> m_buffer;
-		std::shared_ptr<AVIOContext> m_ioContext;
-		std::shared_ptr<io> m_io;
 
 		container::container_type get_mpeg_container(const fs::path& path)
 		{
@@ -390,18 +333,6 @@ namespace net { namespace dlna {
 			return nullptr;
 
 		return ctx.guess_profile(path);
-	}
-
-	const Profile* Profile::guess_from_memory(const void* data, ::size_t length)
-	{
-		av_format_contex ctx;
-		if (!ctx.open_from_memory(data, length))
-			return nullptr;
-
-		if (!ctx.find_stream_info())
-			return nullptr;
-
-		return ctx.guess_profile("MEMORY");
 	}
 
 	bool Item::open(const boost::filesystem::path& path)
