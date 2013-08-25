@@ -128,7 +128,7 @@ namespace net { namespace ssdp { namespace import { namespace av {
 
 	void MediaServer::add_renderer_conf(const boost::filesystem::path& conf)
 	{
-		auto ptr = net::config::base::file_config(conf);
+		auto ptr = net::config::base::file_config(conf, true);
 		if (!ptr)
 			return;
 

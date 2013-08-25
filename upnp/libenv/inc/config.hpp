@@ -56,7 +56,7 @@ namespace net
 			};
 			typedef std::shared_ptr<config> config_ptr;
 
-			config_ptr file_config(const boost::filesystem::path&);
+			config_ptr file_config(const boost::filesystem::path&, bool);
 		}
 
 		namespace wrapper
@@ -252,7 +252,7 @@ namespace net
 
 			static inline config_ptr from_file(const boost::filesystem::path& path)
 			{
-				auto impl = base::file_config(path);
+				auto impl = base::file_config(path, false);
 				if (!impl)
 					return nullptr;
 

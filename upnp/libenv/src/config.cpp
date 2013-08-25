@@ -237,11 +237,12 @@ namespace net
 
 		namespace base
 		{
-			config_ptr file_config(const fs::path& path)
+			config_ptr file_config(const fs::path& path, bool must_exist)
 			{
 				auto cfg = std::make_shared<file::config>();
-				if (cfg && !cfg->open(path))
-					return nullptr;
+				if (must_exist)
+					if (cfg && !cfg->open(path))
+						return nullptr;
 				return cfg;
 			}
 		}
