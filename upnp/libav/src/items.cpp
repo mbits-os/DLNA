@@ -56,6 +56,9 @@ namespace net { namespace ssdp { namespace import { namespace av { namespace ite
 			case SEP:
 				return make_pair(current_id, std::string(data + 1, end));
 
+			case ',':
+				return make_pair(current_id, std::string(data, end));
+
 			default:
 				return make_pair(INVALID_ID, std::string());
 			}
@@ -78,7 +81,16 @@ namespace net { namespace ssdp { namespace import { namespace av { namespace ite
 
 		for (auto && item : items)
 			if (item->get_id() == current_id)
+			{
+				if (!rest_of_id.empty() && rest_of_id[0] == ',')
+				{
+					if (item->get_token() == rest_of_id.c_str() + 1)
+						return make_pair(item, std::string());
+					else
+						return make_pair(media_item_ptr(), rest_of_id);
+				}
 				return make_pair(item, rest_of_id);
+			}
 
 		return make_pair(media_item_ptr(), rest_of_id);
 	}
@@ -255,7 +267,8 @@ namespace net { namespace ssdp { namespace import { namespace av { namespace ite
 		m_children.push_back(child);
 		auto id = ++m_current_max;
 		child->set_id(id);
-		child->set_objectId_attr(get_objectId_attr() + SEP + std::to_string(id));
+		child->set_objectId_attr(get_raw_objectId_attr() + SEP + std::to_string(id));
+		child->set_parent_attr("0");
 	}
 
 	void root_item::remove_child(media_item_ptr child)
@@ -263,14 +276,6 @@ namespace net { namespace ssdp { namespace import { namespace av { namespace ite
 		auto pos = std::find(m_children.begin(), m_children.end(), child);
 		if (pos != m_children.end())
 			m_children.erase(pos);
-	}
-
-	std::string media_item::get_parent_attr() const
-	{
-		auto pos = m_object_id.find_last_of(items::SEP);
-		if (pos == std::string::npos)
-			return "-1";
-		return m_object_id.substr(0, pos);
 	}
 
 	struct media_file : media

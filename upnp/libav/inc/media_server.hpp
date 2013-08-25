@@ -27,6 +27,58 @@
 #include <device.hpp>
 #include <directory.hpp>
 #include <manager.hpp>
+#include <zlib.h>
+
+#ifdef _MSC_VER
+#pragma comment(lib, "libz.lib")
+#endif
+
+namespace zlib
+{
+	extern "C" uLong __stdcall crc32(uLong crc, const Bytef *buf, uInt len);
+}
+
+class CRC
+{
+	net::uint _val;
+public:
+	CRC() : _val(zlib::crc32(0L, nullptr, 0))
+	{
+	}
+	CRC& update(const net::uchar *buf, size_t len)
+	{
+		_val = zlib::crc32(_val, buf, (uInt) len);
+		return *this;
+	}
+
+	template <class T>
+	CRC& update(const T& val)
+	{
+		return update((net::uchar*) (void*) &val, sizeof(T));
+	}
+
+	CRC& update(const std::string& str)
+	{
+		return update((const net::uchar*)str.c_str(), str.length());
+	}
+
+	operator net::uint() const { return _val; }
+
+	std::string str()
+	{
+		char buffer[20];
+
+#ifndef _MSC_VER
+#define sprintf_s _snprintf
+#endif
+		sprintf_s(buffer, sizeof(buffer), "%08X", _val);
+
+#ifndef _MSC_VER
+#undef sprintf_s
+#endif
+		return buffer;
+	}
+};
 
 namespace net { namespace ssdp { namespace import { namespace av {
 
@@ -107,8 +159,12 @@ namespace net { namespace ssdp { namespace import { namespace av {
 
 			//attributes
 			virtual void           set_objectId_attr(const std::string& object_id) { m_object_id = object_id; }
-			virtual std::string    get_objectId_attr() const                       { return m_object_id; }
-			virtual std::string    get_parent_attr() const;
+			virtual std::string    get_objectId_attr() const                       { return m_token.empty() ? m_object_id : m_object_id + "," + m_token; }
+			virtual std::string    get_raw_objectId_attr() const                   { return m_object_id; }
+			virtual void           set_token(const std::string& token)             { m_token = token; }
+			virtual std::string    get_token() const                               { return m_token; }
+			virtual void           set_parent_attr(const std::string& id)          { m_parent_id = id; }
+			virtual std::string    get_parent_attr() const                         { return m_parent_id; }
 			virtual void           set_title(const std::string& title)             { m_title = title; }
 			virtual std::string    get_title() const                               { return m_title; }
 			virtual void           set_mime(const std::string& mime)               { m_mime = mime; }
@@ -128,6 +184,8 @@ namespace net { namespace ssdp { namespace import { namespace av {
 		private:
 			uint m_id;
 			std::string m_object_id;
+			std::string m_parent_id;
+			std::string m_token;
 			std::string m_title;
 			std::string m_mime;
 		};

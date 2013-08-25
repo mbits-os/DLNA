@@ -76,6 +76,7 @@ namespace lan
 				, m_duration(duration)
 			{
 				set_title(m_path.filename().string());
+				set_token(CRC().update(m_path.string()).str());
 				m_last_write = fs::last_write_time(m_path);
 			}
 			time_t     get_last_write_time() const override { return m_last_write; }

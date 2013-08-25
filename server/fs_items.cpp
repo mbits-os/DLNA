@@ -318,7 +318,7 @@ namespace lan
 			void           set_title(const std::string& title) override { m_item.m_meta.m_title = title; }
 			std::string    get_title() const                   override { return m_item.m_meta.m_title.empty() ? m_path.filename().string() : m_item.m_meta.m_title; }
 			void           set_mime(const std::string&)        override { }
-			std::string    get_mime() const                    override { return m_item.m_profile ? m_item.m_profile->m_mime : std::string(); }
+			std::string    get_mime() const                    override { return m_item.m_profile.m_mime; }
 			net::ulong     get_bitrate() const                 override { return m_item.m_props.m_bitrate; }
 			net::ulong     get_sample_freq() const             override { return m_item.m_props.m_sample_freq; }
 			net::ulong     get_channels() const                override { return m_item.m_props.m_channels; }
@@ -330,7 +330,7 @@ namespace lan
 
 		std::shared_ptr<ffmpeg_file> create(av::MediaServer* device, const fs::path& path, net::dlna::Item& item)
 		{
-			net::ulong duration = item.m_class == net::dlna::Class::Image ? 0 : item.m_props.m_duration;
+			net::ulong duration = item.m_class == net::dlna::Class::Image ? 0 : item.m_props.m_duration * 1000;
 			return std::make_shared<ffmpeg_file>(device, path, item, duration);
 		}
 
@@ -541,7 +541,7 @@ namespace lan
 			rescan_if_needed();
 			auto future = async_list(start_from, max_count);
 			auto data = std::move(future.get());
-			//log::info() << "Got slice " << get_path().filename() << " (" << start_from << ", " << max_count << ")";
+			//log::info() << "Got slice " << get_filename().filename() << " (" << start_from << ", " << max_count << ")";
 			return data;
 		}
 
@@ -600,7 +600,7 @@ namespace lan
 		{
 			try
 			{
-				log::info() << "Returning slice " << get_path().filename() << " (" << start_from << ", " << max_count << ")";
+				log::info() << "Returning slice " << get_path().filename() << " (" << start_from << ", " << start_from + max_count << ")";
 				container_type out;
 				if (start_from > m_children.size())
 					start_from = m_children.size();
@@ -664,6 +664,7 @@ namespace lan
 			::time(&m_update_id);
 			m_device->object_changed();
 		}
+
 		void container_file::add_child(av::items::media_item_ptr child)
 		{
 			remove_child(child);
@@ -673,7 +674,8 @@ namespace lan
 			m_children.push_back(child);
 			auto id = ++m_current_max;
 			child->set_id(id);
-			child->set_objectId_attr(get_objectId_attr() + av::items::SEP + std::to_string(id));
+			child->set_objectId_attr(get_raw_objectId_attr() + av::items::SEP + std::to_string(id));
+			child->set_parent_attr(get_objectId_attr());
 
 			if (is_running())
 				fulfill_promises(false);

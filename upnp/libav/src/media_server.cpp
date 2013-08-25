@@ -74,6 +74,7 @@ namespace net { namespace ssdp { namespace import { namespace av {
 		auto root = std::make_shared<items::root_item>(this);
 		root->set_title("root");
 		root->set_objectId_attr("0");
+		root->set_parent_attr("-1");
 		return root;
 	}
 

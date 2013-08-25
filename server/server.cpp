@@ -177,11 +177,11 @@ int main(int argc, char* argv [])
 	try
 	{
 		threads::set_name("main");
+		lan::log::info() << "\nStarting...\n";
+
 		dbg::postmortem guard;
 
 		net::dlna::init init;
-
-		lan::log::info() << "\nStarting...\n";
 
 		net::ssdp::device_info info = {
 			{ "lanRadio", 0, 1 },
@@ -228,6 +228,9 @@ int main(int argc, char* argv [])
 				server->add_renderer_conf(entry.path());
 			}
 		}
+
+		lan::log::info() << "Ready";
+		std::cout << "Ready\n";
 
 		lan::radio lanRadio(server, config);
 

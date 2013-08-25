@@ -53,13 +53,27 @@ namespace net { namespace dlna {
 		const char* m_mime;
 		const char* m_label;
 		Class m_class;
-		Profile() : m_name(nullptr), m_mime(nullptr), m_label(nullptr), m_class(Class::Container) {}
+		const Profile* m_transcode_to;
+		Profile() : m_name(nullptr), m_mime(nullptr), m_label(nullptr), m_class(Class::Container), m_transcode_to(nullptr) {}
 		Profile(const char* name, const char* mime, const char* label, Class klass)
 			: m_name(name)
 			, m_mime(mime)
 			, m_label(label)
 			, m_class(klass)
+			, m_transcode_to(nullptr)
 		{}
+		Profile(const char* name, const char* mime, const char* label, Class klass, const Profile& transcode_to)
+			: m_name(name)
+			, m_mime(mime)
+			, m_label(label)
+			, m_class(klass)
+			, m_transcode_to(&transcode_to)
+		{}
+
+		void clear()
+		{
+			*this = Profile();
+		}
 	};
 
 	struct ItemMetadata
@@ -129,12 +143,11 @@ namespace net { namespace dlna {
 	{
 		ItemMetadata m_meta;
 		ItemProperties m_props;
-		const Profile* m_profile;
+		Profile m_profile;
 		Class m_class;
 
 		Item()
-			: m_profile(nullptr)
-			, m_class(Class::Unknown)
+			: m_class(Class::Unknown)
 		{
 		}
 
