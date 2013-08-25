@@ -35,35 +35,6 @@ namespace lan
 
 	namespace item
 	{
-
-		struct ffmpeg_file : common_file
-		{
-			net::dlna::Item m_item;
-			ffmpeg_file(av::MediaServer* device, const fs::path& path, const net::dlna::Item& item)
-				: common_file(device, path)
-				, m_item(item)
-			{
-			}
-			const char* get_upnp_class() const override
-			{
-				switch (m_item.m_class)
-				{
-				case net::dlna::Class::Image: return "object.item.imageItem.photo";
-				case net::dlna::Class::Audio: return "object.item.audioItem.musicTrack";
-				case net::dlna::Class::Video: return "object.item.videoItem";
-				}
-				return "object.item";
-			}
-			bool is_folder() const override { return m_item.m_class == net::dlna::Class::Container; }
-			bool is_image() const override { return m_item.m_class == net::dlna::Class::Image; }
-
-			void           set_title(const std::string& title)      override { m_item.m_meta.m_title = title; }
-			std::string    get_title() const                        override { return m_item.m_meta.m_title.empty() ? m_path.filename().string() : m_item.m_meta.m_title; }
-			const net::dlna::ItemMetadata* get_metadata() const     override { return &m_item.m_meta; }
-			const net::dlna::ItemProperties* get_properties() const override { return &m_item.m_props; }
-			const net::dlna::Profile* get_profile() const           override { return &m_item.m_profile; }
-		};
-
 		std::shared_ptr<ffmpeg_file> create(av::MediaServer* device, const fs::path& path, net::dlna::Item& item)
 		{
 			std::vector<char> cover = std::move(item.m_cover);
@@ -154,7 +125,7 @@ namespace lan
 				}
 
 				m_profile.m_class = net::dlna::Class::Image;
-				m_profile.m_name = "JPEG_LRG";
+				m_profile.m_name = "JPEG_TN";
 				m_profile.m_label = "";
 				m_profile.m_mime = "image/jpeg";
 				m_profile.m_transcode_to = nullptr;
@@ -252,19 +223,6 @@ namespace lan
 				return media::from_file(get_path(), true);
 
 			return m_cover;
-		}
-
-		void common_file::output(std::ostream& o, const std::vector<std::string>& filter, const net::ssdp::import::av::client_interface_ptr& client, const net::config::config_ptr& config) const
-		{
-			output_open(o, filter, 0);
-			attrs(o, filter, config);
-			output_close(o, filter, client, config);
-		}
-
-		bool contains(const std::vector<std::string>& filter, const char* key)
-		{
-			if (filter.empty()) return true;
-			return std::find(filter.begin(), filter.end(), key) != filter.end();
 		}
 
 #pragma region container_file
@@ -384,12 +342,6 @@ namespace lan
 				return nullptr;
 
 			return candidate->get_item(rest_of_id);
-		}
-
-		void container_file::output(std::ostream& o, const std::vector<std::string>& filter, const net::ssdp::import::av::client_interface_ptr& client, const net::config::config_ptr& config) const
-		{
-			output_open(o, filter, m_children.size());
-			output_close(o, filter, client, config);
 		}
 
 		void container_file::folder_changed()

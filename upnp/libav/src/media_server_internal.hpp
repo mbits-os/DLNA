@@ -50,10 +50,7 @@ namespace net { namespace ssdp { namespace import { namespace av {
 			media_item_ptr get_item(const std::string& id)                   override;
 			bool           is_image() const                                  override { return false; }
 			bool           is_folder() const                                 override { return true; }
-			void           output(std::ostream& o,
-			                   const std::vector<std::string>& filter,
-			                   const client_interface_ptr& client,
-			                   const config::config_ptr& config) const       override;
+			size_t         child_count() const                               override { return m_children.size(); }
 			const char*    get_upnp_class() const                            override { return "object.container.storageFolder"; }
 			ulong          update_id() const                                 override { return m_device->system_update_id(); }
 			virtual void   add_child(media_item_ptr);

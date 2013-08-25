@@ -49,25 +49,6 @@ namespace lan
 
 	namespace item
 	{
-#define ITEM_PROP(type, name) \
-	private: \
-	type m_##name; \
-	public: \
-	type get_##name() const { return m_ ## name; }\
-	bool set_##name(type val) { m_ ## name = val; return true; }
-#define ITEM_PROP_V(type, name) \
-	private: \
-	type m_##name; \
-	public: \
-	type get_##name() const override { return m_ ## name; }\
-	bool set_##name(type val) { m_ ## name = val; return true; }
-#define ITEM_SPROP(name) \
-	private: \
-	std::string m_##name; \
-	public: \
-	std::string get_##name() const { return m_ ## name; }\
-	bool set_##name(const std::string& val) { m_ ## name = val; return true; }
-
 		struct path_item : av::items::common_props_item
 		{
 			path_item(av::MediaServer* device, const fs::path& path)
@@ -83,7 +64,7 @@ namespace lan
 			void       set_cover(std::vector<char>&& data);
 			void       set_cover(const std::string& base64);
 			void       set_cover(const fs::path& cover)     { m_cover = media::from_file(cover, false); }
-			media_ptr  get_cover()                          { return m_cover; }
+			media_ptr  get_cover() const                    { return m_cover; }
 
 		protected:
 			fs::path   m_path;
@@ -104,12 +85,35 @@ namespace lan
 			bool           is_image() const                                                override { return false; }
 			bool           is_folder() const                                               override { return false; }
 			media_ptr      get_media(bool main_resource) const                             override;
-			void           output(std::ostream& o, const std::vector<std::string>& filter,
-			                      const net::ssdp::import::av::client_interface_ptr& client,
-			                      const net::config::config_ptr& config) const             override;
-			virtual void   attrs(std::ostream& /*o*/, const std::vector<std::string>& /*filter*/,
-			                      const net::config::config_ptr& /*config*/) const                  {};
+		};
 
+		struct ffmpeg_file : common_file
+		{
+			net::dlna::Item m_item;
+			ffmpeg_file(av::MediaServer* device, const fs::path& path, const net::dlna::Item& item)
+				: common_file(device, path)
+				, m_item(item)
+			{
+			}
+			const char* get_upnp_class() const override
+			{
+				switch (m_item.m_class)
+				{
+				case net::dlna::Class::Image: return "object.item.imageItem.photo";
+				case net::dlna::Class::Audio: return "object.item.audioItem.musicTrack";
+				case net::dlna::Class::Video: return "object.item.videoItem";
+				}
+				return "object.item";
+			}
+			bool is_folder() const override { return m_item.m_class == net::dlna::Class::Container; }
+			bool is_image() const override { return m_item.m_class == net::dlna::Class::Image; }
+
+			void           set_title(const std::string& title)      override { m_item.m_meta.m_title = title; }
+			std::string    get_title() const                        override { return m_item.m_meta.m_title.empty() ? m_path.filename().string() : m_item.m_meta.m_title; }
+			size_t         child_count() const                      override { return 0; }
+			const net::dlna::ItemMetadata* get_metadata() const     override { return &m_item.m_meta; }
+			const net::dlna::ItemProperties* get_properties() const override { return &m_item.m_props; }
+			const net::dlna::Profile* get_profile() const           override { return &m_item.m_profile; }
 		};
 
 		struct container_file : path_item, std::enable_shared_from_this<container_file>
@@ -144,10 +148,9 @@ namespace lan
 			item_ptr       get_item(const std::string& id)                                 override;
 			bool           is_image() const                                                override { return false; }
 			bool           is_folder() const                                               override { return true; }
-			void           output(std::ostream& o, const std::vector<std::string>& filter,
-			                      const net::ssdp::import::av::client_interface_ptr& client,
-			                      const net::config::config_ptr& config) const             override;
+			size_t         child_count() const                                             override { return m_children.size(); }
 			const char*    get_upnp_class() const                                          override { return "object.container.storageFolder"; }
+			media_ptr      get_media(bool main_resource) const                             override { return main_resource ? nullptr : get_cover(); }
 
 			void           rescan_if_needed();
 			virtual bool   rescan_needed()         { return false; }

@@ -196,11 +196,14 @@ namespace net { namespace ssdp { namespace import { namespace av {
 		{
 			common_props_item(MediaServer* device) : media_item(device) {}
 
-			virtual const char* get_upnp_class() const      = 0;
-			virtual time_t      get_last_write_time() const { return 0; }
+			void output(std::ostream& o,
+				const std::vector<std::string>& filter,
+				const client_interface_ptr& client,
+				const net::config::config_ptr& config) const  override;
+			virtual const char* get_upnp_class() const        = 0;
+			virtual size_t      child_count() const           = 0;
+			virtual time_t      get_last_write_time() const   { return 0; }
 		protected:
-			void output_open(std::ostream& o, const std::vector<std::string>& filter, ulong child_count = 0) const;
-			void output_close(std::ostream& o, const std::vector<std::string>& filter, const client_interface_ptr& client, const config::config_ptr& config) const;
 			void main_res(std::ostream& o, const std::vector<std::string>& filter, const client_interface_ptr& client, const config::config_ptr& config) const;
 			void cover(std::ostream& o, const std::vector<std::string>& filter, const client_interface_ptr& client, const config::config_ptr& config) const;
 		};

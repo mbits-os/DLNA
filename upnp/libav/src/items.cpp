@@ -112,15 +112,6 @@ namespace net { namespace ssdp { namespace import { namespace av { namespace ite
 		return o << std::setfill('0') << std::setw(op.w) << op.val;
 	}
 
-	void common_props_item::output_open(std::ostream& o, const std::vector<std::string>& filter, ulong child_count) const
-	{
-		const char* name = is_folder() ? "container" : "item";
-		o << "  <" << name << " id=\"" << get_objectId_attr() << "\"";
-		if (is_folder() && contains(filter, "@childCount"))
-			o << " childCount=\"" << child_count << "\"";
-		o << " parentId=\"" << get_parent_attr() << "\" restricted=\"true\">\n    <dc:title>" << net::xmlencode(get_title()) << "</dc:title>\n";
-	}
-
 	template <typename T>
 	bool is_empty(T t){ return t == 0; }
 	bool is_empty(const std::string& t){ return t.empty(); }
@@ -129,15 +120,6 @@ namespace net { namespace ssdp { namespace import { namespace av { namespace ite
 	void output(std::ostream& o, T t){ o << t; }
 	void output(std::ostream& o, const std::string& t){ o << net::xmlencode(t); }
 
-	void common_props_item::output_close(std::ostream& o, const std::vector<std::string>& filter, const client_interface_ptr& client, const config::config_ptr& config) const
-	{
-		const char* name = is_folder() ? "container" : "item";
-		auto date = get_last_write_time();
-		auto metadata = get_metadata();
-
-		if (date && contains(filter, "dc:date"))
-			o << "    <dc:date>" << to_iso8601(time::from_time_t(date)) << "</dc:date>\n";
-
 #define PROPERTY(name, item) \
 	if (!is_empty(metadata->name) && contains(filter, item)) \
 	{\
@@ -145,6 +127,20 @@ namespace net { namespace ssdp { namespace import { namespace av { namespace ite
 		items::output(o, metadata->name); \
 		o << "</" item ">\n"; \
 	}
+
+	void common_props_item::output(std::ostream& o, const std::vector<std::string>& filter, const client_interface_ptr& client, const config::config_ptr& config) const
+	{
+		const char* name = is_folder() ? "container" : "item";
+		auto date = get_last_write_time();
+		auto metadata = get_metadata();
+
+		o << "  <" << name << " id=\"" << get_objectId_attr() << "\"";
+		if (is_folder() && contains(filter, "@childCount"))
+			o << " childCount=\"" << child_count() << "\"";
+		o << " parentId=\"" << get_parent_attr() << "\" restricted=\"true\">\n    <dc:title>" << net::xmlencode(get_title()) << "</dc:title>\n";
+
+		if (date && contains(filter, "dc:date"))
+			o << "    <dc:date>" << to_iso8601(time::from_time_t(date)) << "</dc:date>\n";
 
 		if (metadata)
 		{
@@ -165,13 +161,14 @@ namespace net { namespace ssdp { namespace import { namespace av { namespace ite
 			PROPERTY(m_track,        "upnp:originalTrackNumber");
 		}
 
-#undef PROPERTY
+		o << "    <upnp:class>" << get_upnp_class() << "</upnp:class>\n";
 
-		main_res(o, filter, client, config);
 		cover(o, filter, client, config);
+		main_res(o, filter, client, config);
 
-		o << "    <upnp:class>" << get_upnp_class() << "</upnp:class>\n  </" << name << ">\n";
+		o << "  </" << name << ">\n";
 	}
+#undef PROPERTY
 
 	/*item->u.resource.cnv*/
 	namespace dlna_org
@@ -277,9 +274,25 @@ namespace net { namespace ssdp { namespace import { namespace av { namespace ite
 		if (!cover)
 			return;
 
+		dlna::Profile tn_profile { "JPEG_TN", "image/jpeg", "", dlna::Class::Image };
+		std::string forced_pn;
 		auto profile = cover->profile();
-		if (!profile)
-			return;
+		if (profile)
+		{
+			tn_profile = *profile;
+			forced_pn = tn_profile.m_name;
+			auto pos = forced_pn.find('_');
+			forced_pn = forced_pn.substr(0, pos) + "_TN";
+			tn_profile.m_name = forced_pn.c_str();
+		}
+
+		if (contains(filter, "upnp:albumArtURI"))
+		{
+			o << "    <upnp:albumArtURI";
+			if (contains(filter, "upnp:albumArtURI@dlna:profileID"))
+				o << " dlna:profileID=\"" << tn_profile.m_name << "\"";
+			o << ">http://" << net::to_string(config->iface) << ":" << (int) config->port << "/upnp/thumb/" << get_objectId_attr() << "</upnp:albumArtURI>\n";
+		}
 
 		if (contains(filter, "res"))
 		{
@@ -287,19 +300,11 @@ namespace net { namespace ssdp { namespace import { namespace av { namespace ite
 			if (contains(filter, "res@protocolInfo"))
 			{
 				o << " protocolInfo=\"";
-				protocol_info(o, profile, client);
+				protocol_info(o, &tn_profile, client);
 				o << "\"";
 			}
 
 			o << ">http://" << net::to_string(config->iface) << ":" << (int) config->port << "/upnp/thumb/" << get_objectId_attr() << "</res>\n";
-		}
-
-		if (contains(filter, "upnp:albumArtURI"))
-		{
-			o << "    <upnp:albumArtURI";
-			if (contains(filter, "upnp:albumArtURI@dlna:profileID"))
-				o << " dlna:profileID=\"" << profile->m_name << "\"";
-			o << ">http://" << net::to_string(config->iface) << ":" << (int) config->port << "/upnp/thumb/" << get_objectId_attr() << "</upnp:albumArtURI>\n";
 		}
 	}
 
@@ -334,12 +339,6 @@ namespace net { namespace ssdp { namespace import { namespace av { namespace ite
 			return nullptr;
 
 		return candidate->get_item(rest_of_id);
-	}
-
-	void root_item::output(std::ostream& o, const std::vector<std::string>& filter, const client_interface_ptr& client, const config::config_ptr& config) const
-	{
-		output_open(o, filter, m_children.size());
-		output_close(o, filter, client, config);
 	}
 
 	void root_item::add_child(media_item_ptr child)
