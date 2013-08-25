@@ -121,23 +121,61 @@ namespace net { namespace ssdp { namespace import { namespace av { namespace ite
 		o << " parentId=\"" << get_parent_attr() << "\" restricted=\"true\">\n    <dc:title>" << net::xmlencode(get_title()) << "</dc:title>\n";
 	}
 
+	template <typename T>
+	bool is_empty(T t){ return t == 0; }
+	bool is_empty(const std::string& t){ return t.empty(); }
+
+	template <typename T>
+	void output(std::ostream& o, T t){ o << t; }
+	void output(std::ostream& o, const std::string& t){ o << net::xmlencode(t); }
+
 	void common_props_item::output_close(std::ostream& o, const std::vector<std::string>& filter, const client_interface_ptr& client, const config::config_ptr& config) const
 	{
 		const char* name = is_folder() ? "container" : "item";
 		auto date = get_last_write_time();
+		auto metadata = get_metadata();
 
 		if (date && contains(filter, "dc:date"))
 			o << "    <dc:date>" << to_iso8601(time::from_time_t(date)) << "</dc:date>\n";
 
+#define PROPERTY(name, item) \
+	if (!is_empty(metadata->name) && contains(filter, item)) \
+	{\
+		o << "    <" item ">"; \
+		items::output(o, metadata->name); \
+		o << "</" item ">\n"; \
+	}
+
+		if (metadata)
+		{
+			if (!is_empty(metadata->m_artist) && contains(filter, "upnp:artist"))
+			{
+				o << "    <" "upnp:artist" ">";
+				items::output(o, metadata->m_artist);
+				o << "</" "upnp:artist" ">\n";
+			};
+			PROPERTY(m_artist,       "upnp:artist");
+			PROPERTY(m_artist,       "dc:creator");
+			//PROPERTY(m_album_artist, "");
+			//PROPERTY(m_composer,     "");
+			PROPERTY(m_album,        "upnp:album");
+			PROPERTY(m_genre,        "upnp:genre");
+			//PROPERTY(m_date,         "");
+			PROPERTY(m_comment,      "dc:description");
+			PROPERTY(m_track,        "upnp:originalTrackNumber");
+		}
+
+#undef PROPERTY
+
 		main_res(o, filter, client, config);
 		cover(o, filter, client, config);
-
 
 		o << "    <upnp:class>" << get_upnp_class() << "</upnp:class>\n  </" << name << ">\n";
 	}
 
-	static void protocol_info(std::ostream& o, const std::string& mime, const client_interface_ptr& /*client*/)
+	static void protocol_info(std::ostream& o, const dlna::Profile* profile, const client_interface_ptr& /*client*/)
 	{
+		auto mime = profile && profile->m_mime && *profile->m_mime ? profile->m_mime : "video/mpeg";
 		o << "http-get:*:" << mime << ":";
 		//o << "*";
 		o << "DLNA.ORG_OP=01";
@@ -145,20 +183,24 @@ namespace net { namespace ssdp { namespace import { namespace av { namespace ite
 
 	void common_props_item::main_res(std::ostream& o, const std::vector<std::string>& filter, const client_interface_ptr& client, const config::config_ptr& config) const
 	{
-		auto bitrate = get_bitrate();
-		auto duration = get_duration();
-		auto sample_freq = get_sample_freq();
-		auto channels = get_channels();
-		auto size = get_size();
-		auto mime = get_mime();
+		auto properties = get_properties();
+		auto profile = get_profile();
+
+		auto size        = properties ? properties->m_size : 0;
+		auto bitrate     = properties ? properties->m_bitrate : 0;
+		auto duration    = properties ? properties->m_duration : 0;
+		auto sample_freq = properties ? properties->m_sample_freq : 0;
+		auto channels    = properties ? properties->m_channels : 0;
+		auto width       = properties ? properties->m_width : 0;
+		auto height      = properties ? properties->m_height : 0;
 
 		if (!is_folder() && contains(filter, "res"))
 		{
 			o << "    <res xmlns:dlna=\"urn:schemas-dlna-org:metadata-1-0/\"";
-			if (!mime.empty() && contains(filter, "res@protocolInfo"))
+			if (contains(filter, "res@protocolInfo"))
 			{
 				o << " protocolInfo=\"";
-				protocol_info(o, mime, client);
+				protocol_info(o, profile, client);
 				o << "\"";
 			}
 
@@ -195,8 +237,6 @@ namespace net { namespace ssdp { namespace import { namespace av { namespace ite
 #pragma warning(pop)
 #endif
 
-			auto width = get_width();
-			auto height = get_height();
 			if (width && height && contains(filter, "res@resolution"))
 			{
 				o << " resolution=\"" << width << "x" << height << "\"";
@@ -215,7 +255,7 @@ namespace net { namespace ssdp { namespace import { namespace av { namespace ite
 			if (contains(filter, "res@protocolInfo"))
 			{
 				o << " protocolInfo=\"";
-				protocol_info(o, "image/jpeg", client);
+				protocol_info(o, nullptr, client);
 				o << "\"";
 			}
 

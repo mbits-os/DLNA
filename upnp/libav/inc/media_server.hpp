@@ -27,6 +27,7 @@
 #include <device.hpp>
 #include <directory.hpp>
 #include <manager.hpp>
+#include <dlna_media.hpp>
 #include <zlib.h>
 
 #ifdef _MSC_VER
@@ -167,16 +168,9 @@ namespace net { namespace ssdp { namespace import { namespace av {
 			virtual std::string    get_parent_attr() const                         { return m_parent_id; }
 			virtual void           set_title(const std::string& title)             { m_title = title; }
 			virtual std::string    get_title() const                               { return m_title; }
-			virtual void           set_mime(const std::string& mime)               { m_mime = mime; }
-			virtual std::string    get_mime() const                                { return m_mime; }
-			virtual net::ulong     get_bitrate() const                             { return 0; }
-			virtual net::ulong     get_duration() const                            { return 0; }
-			virtual net::ulong     get_sample_freq() const                         { return 0; }
-			virtual net::ulong     get_channels() const                            { return 0; }
-			virtual net::ulong     get_size() const                                { return 0; }
-			virtual net::ulong     get_height() const                              { return 0; }
-			virtual net::ulong     get_width() const                               { return 0; }
-			virtual int            get_ref_frame_count() const                     { return 0; }
+			virtual const dlna::ItemMetadata* get_metadata() const                 { return nullptr; }
+			virtual const dlna::ItemProperties* get_properties() const             { return nullptr; }
+			virtual const dlna::Profile* get_profile() const                       { return nullptr; }
 
 			//media
 			virtual media_ptr      get_media(bool /*main_resource*/)               { return nullptr; }
