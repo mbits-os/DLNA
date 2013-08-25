@@ -42,6 +42,7 @@ namespace net
 		{
 			Queue::Queue(const std::string& name)
 				: m_done(false)
+				, m_valid(true)
 				, m_name(name)
 			{
 			}
@@ -59,24 +60,37 @@ namespace net
 				auto shared = shared_from_this();
 				auto th = std::thread([this, shared]
 				{
-					threads::set_name(m_name);
-					m_here = std::this_thread::get_id();
-					m_cv.notify_one();
+					try
+					{
+						threads::set_name(m_name);
+						m_here = std::this_thread::get_id();
+						m_cv.notify_one();
 
-					log::info() << "Worker started";
+						log::info() << "Worker started";
 
-					if (m_onStart)
-						m_onStart();
+						if (m_onStart)
+							m_onStart();
 
-					while (!m_done)
-						call_next();
+						while (!m_done)
+							call_next();
 
-					if (m_onStop)
-						m_onStop();
+						if (m_onStop)
+							m_onStop();
 
-					log::info() << "Worker stopped";
-					m_here = std::thread::id();
-					m_cv.notify_one();
+						log::info() << "Worker stopped";
+						m_here = std::thread::id();
+						m_cv.notify_one();
+					}
+					catch (std::exception& e)
+					{
+						log::error() << "Exception: " << e.what();
+						m_valid = false;
+					}
+					catch (...)
+					{
+						log::error() << "Unknown exception";
+						m_valid = false;
+					}
 				});
 
 				{
@@ -118,7 +132,18 @@ namespace net
 
 				m_mutex.unlock();
 
-				ev();
+				try
+				{
+					ev();
+				}
+				catch (std::exception& e)
+				{
+					log::error() << "Exception: " << e.what();
+				}
+				catch (...)
+				{
+					log::error() << "Unknown exception";
+				}
 			}
 		}
 
@@ -136,8 +161,14 @@ namespace net
 
 		void connection_manager::start(connection_ptr c)
 		{
+			std::lock_guard<std::mutex> lock(m_guard);
+
 			if (m_worker == m_pool.end())
+			{
 				m_worker = m_pool.begin();
+				while (m_worker != m_pool.end() && !(*m_worker)->is_valid())
+					m_worker++;
+			}
 
 			m_connections.insert(c);
 
@@ -145,6 +176,8 @@ namespace net
 			{
 				(*m_worker)->post([c]{ c->run(); });
 				++m_worker;
+				while (m_worker != m_pool.end() && !(*m_worker)->is_valid())
+					m_worker++;
 			}
 			else
 				c->start();
@@ -152,12 +185,16 @@ namespace net
 
 		void connection_manager::stop(connection_ptr c)
 		{
+			std::lock_guard<std::mutex> lock(m_guard);
+
 			m_connections.erase(c);
 			c->stop();
 		}
 
 		void connection_manager::stop_all()
 		{
+			std::lock_guard<std::mutex> lock(m_guard);
+
 			for (auto c : m_connections)
 				c->stop();
 			m_connections.clear();

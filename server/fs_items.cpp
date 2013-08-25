@@ -300,13 +300,24 @@ namespace lan
 
 			auto shared = shared_from_this();
 			auto thread = std::thread([shared, this]{
-				static std::atomic<int> count;
-				threads::set_name("I/O Thread #" + std::to_string(count++));
+				try
+				{
+					static std::atomic<int> count;
+					threads::set_name("I/O Thread #" + std::to_string(count++));
 
-				rescan();
-				fulfill_promises(true); // release all remaining futures
+					rescan();
+					fulfill_promises(true); // release all remaining futures
 
-				mark_stop();
+					mark_stop();
+				}
+				catch (std::exception& e)
+				{
+					log::error() << "Exception: " << e.what();
+				}
+				catch (...)
+				{
+					log::error() << "Unknown exception";
+				}
 			});
 
 			thread.detach();

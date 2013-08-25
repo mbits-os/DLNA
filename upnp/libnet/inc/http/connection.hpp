@@ -68,6 +68,7 @@ namespace net
 				void on_stop(T ev) { m_onStop = ev; }
 
 				const std::string& name() const { return m_name; }
+				bool is_valid() const { return m_valid; }
 			private:
 				void call_next();
 
@@ -76,6 +77,7 @@ namespace net
 				std::mutex m_mutex;
 				std::condition_variable m_cv;
 				bool m_done;
+				bool m_valid;
 				std::string m_name;
 
 				std::function < void() > m_onStart, m_onStop;
@@ -105,6 +107,7 @@ namespace net
 			std::set<connection_ptr> m_connections;
 			std::vector<queue::worker_ptr> m_pool;
 			std::vector<queue::worker_ptr>::iterator m_worker;
+			std::mutex m_guard;
 		};
 
 		struct connection : private boost::noncopyable, public std::enable_shared_from_this<connection>
