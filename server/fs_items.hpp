@@ -80,6 +80,7 @@ namespace lan
 			}
 			time_t     get_last_write_time() const override { return m_last_write; }
 			fs::path   get_path() const                     { return m_path; }
+			void       set_cover(std::vector<char>&& data);
 			void       set_cover(const std::string& base64);
 			void       set_cover(const fs::path& cover)     { m_cover = media::from_file(cover, false); }
 			media_ptr  get_cover()                          { return m_cover; }
@@ -102,7 +103,7 @@ namespace lan
 			item_ptr       get_item(const std::string& /*id*/)                             override { return nullptr; }
 			bool           is_image() const                                                override { return false; }
 			bool           is_folder() const                                               override { return false; }
-			media_ptr      get_media(bool main_resource)                                   override;
+			media_ptr      get_media(bool main_resource) const                             override;
 			void           output(std::ostream& o, const std::vector<std::string>& filter,
 			                      const net::ssdp::import::av::client_interface_ptr& client,
 			                      const net::config::config_ptr& config) const             override;

@@ -74,6 +74,9 @@ namespace net { namespace dlna {
 		{
 			*this = Profile();
 		}
+
+		static const Profile* guess_from_file(const boost::filesystem::path& path);
+		static const Profile* guess_from_memory(const void* data, ::size_t length);
 	};
 
 	struct ItemMetadata
@@ -145,6 +148,7 @@ namespace net { namespace dlna {
 		ItemProperties m_props;
 		Profile m_profile;
 		Class m_class;
+		std::vector<char> m_cover;
 
 		Item()
 			: m_class(Class::Unknown)

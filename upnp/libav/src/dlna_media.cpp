@@ -47,9 +47,9 @@ namespace net { namespace dlna {
 
 	struct av_format_contex
 	{
-		av_format_contex() : m_ctx(nullptr), m_ok(false) {}
+		av_format_contex() : m_ctx(nullptr), m_ok(false), m_allocated(false) {}
 		av_format_contex(const boost::filesystem::path& path)
-			: m_ctx(nullptr), m_ok(false)
+			: m_ctx(nullptr), m_ok(false), m_allocated(false)
 		{
 			open(path);
 		}
@@ -61,6 +61,24 @@ namespace net { namespace dlna {
 		{
 			close();
 			m_ok = (avformat_open_input(&m_ctx, path.string().c_str(), nullptr, nullptr) == 0);
+			return m_ok;
+		}
+
+		bool open_from_memory(const void* data, ::size_t length)
+		{
+			close();
+			m_allocated = true;
+			m_ctx = avformat_alloc_context();
+			if (!m_ctx)
+				return false;
+			m_io = std::make_shared<io>(data, length);
+			m_buffer = std::shared_ptr<unsigned char>(reinterpret_cast<unsigned char*>(av_malloc(8192)), &av_free);
+			m_ioContext = std::shared_ptr<AVIOContext>(
+				avio_alloc_context(m_buffer.get(), 8192, 0, reinterpret_cast<void*>(m_io.get()), io::read, nullptr, nullptr), &av_free
+				);
+
+			m_ctx->pb = m_ioContext.get();
+			m_ok = (avformat_open_input(&m_ctx, "MEMORY", nullptr, nullptr) == 0);
 			return m_ok;
 		}
 
@@ -195,19 +213,115 @@ namespace net { namespace dlna {
 			return true;
 		}
 
+		const Profile* guess_profile(const boost::filesystem::path& dbg_path)
+		{
+			stream_codec codecs;
+			if (!get_codecs(codecs))
+				return nullptr;
+
+			auto container = get_container();
+			if (container == dlna::container::UNKNOWN)
+			{
+				log::error() << "can't find container description: " << dbg_path.string().c_str();
+				return false;
+			}
+
+			auto profile = profile_db::guess_profile(m_ctx, container, codecs);
+			if (!profile)
+			{
+				log::error log;
+				log << "can't find profile: " << dbg_path.string().c_str();
+				log << "\n  CONTAINER: " << container << "; streams=" << m_ctx->nb_streams;
+				if (codecs.m_video.m_codec)
+				{
+					log << "\n  VIDEO: " << codecs.m_video.m_codec->codec_id << "; " << codecs.m_video.m_codec->width << "x" << codecs.m_video.m_codec->height;
+				}
+				if (codecs.m_audio.m_codec)
+				{
+					log << "\n  AUDIO: " << codecs.m_video.m_codec->codec_id << "; channels=" << codecs.m_audio.m_codec->channels
+						<< "; sample_rate=" << codecs.m_audio.m_codec->sample_rate << "; bit_rate=" << codecs.m_audio.m_codec->bit_rate;
+				}
+				return nullptr;
+			}
+
+			return profile;
+		}
+
+		bool get_cover(std::vector<char>& dst)
+		{
+			stream_codec codecs;
+			if (!get_codecs(codecs))
+				return false;
+
+			auto container = get_container();
+			if (container == dlna::container::UNKNOWN)
+				return false;
+
+			if (!stream_has_cover(m_ctx, container, codecs))
+				return false;
+
+			auto att = codecs.m_video.m_stream->attached_pic;
+
+			dst.resize(att.size);
+			if (dst.size() != (size_t)att.size)
+				return false;
+
+			memcpy((unsigned char*) dst.data(), att.data, dst.size());
+			return true;
+		}
+
 		void close()
 		{
 			if (m_ctx)
+			{
 				av_close_input_file(m_ctx);
+				if (m_allocated)
+					avformat_free_context(m_ctx);
+			}
+			m_buffer.reset();
+			m_ioContext.reset();
 			m_ctx = nullptr;
 			m_ok = false;
+			m_allocated = false;
 		}
 
 		AVFormatContext* get() const { return m_ctx; }
 
 	private:
+		struct io
+		{
+			const uint8_t* data;
+			const uint8_t* end;
+
+			::size_t _read(uint8_t* ptr, ::size_t len)
+			{
+				::size_t rest = end - data;
+				if (rest > len)
+					rest = len;
+				memcpy(ptr, data, rest);
+				data += rest;
+				return rest;
+			}
+
+			io(const void* data, ::size_t length)
+			{
+				this->data = (const uint8_t*) data;
+				this->end = this->data + length;
+			}
+
+			static int read(void* opaque, uint8_t* buf, int buf_size)
+			{
+				io* _this = reinterpret_cast<io*>(opaque);
+				return (int) _this->_read(buf, buf_size);
+			}
+		};
+
 		AVFormatContext* m_ctx;
 		bool m_ok;
+		bool m_allocated;
+		std::shared_ptr<unsigned char> m_buffer;
+		std::shared_ptr<AVIOContext> m_ioContext;
+		std::shared_ptr<io> m_io;
 
 		container::container_type get_mpeg_container(const fs::path& path)
 		{
@@ -262,6 +376,34 @@ namespace net { namespace dlna {
 			return path.empty() ? container::UNKNOWN : container::MP4;
 		}
 	};
+
+	const Profile* Profile::guess_from_file(const boost::filesystem::path& path)
+	{
+		if (fs::is_directory(path))
+			return nullptr;
+
+		av_format_contex ctx { path };
+		if (!ctx)
+			return nullptr;
+
+		if (!ctx.find_stream_info())
+			return nullptr;
+
+		return ctx.guess_profile(path);
+	}
+
+	const Profile* Profile::guess_from_memory(const void* data, ::size_t length)
+	{
+		av_format_contex ctx;
+		if (!ctx.open_from_memory(data, length))
+			return nullptr;
+
+		if (!ctx.find_stream_info())
+			return nullptr;
+
+		return ctx.guess_profile("MEMORY");
+	}
+
 	bool Item::open(const boost::filesystem::path& path)
 	{
 		m_profile.clear();
@@ -286,48 +428,17 @@ namespace net { namespace dlna {
 		m_class = Class::Unknown;
 		av_format_contex ctx { path };
 		if (!ctx)
-		{
-			log::error() << "can't open: " << path.string().c_str();
 			return false;
-		}
 
 		if (!ctx.find_stream_info())
-		{
-			log::error() << "can't find stream info: " << path.string().c_str();
 			return false;
-		}
 
-		stream_codec codecs;
-		if (!ctx.get_codecs(codecs))
-		{
-			log::error() << "can't find codecs description: " << path.string().c_str();
-			return false;
-		}
-
-		auto container = ctx.get_container();
-		if (container == dlna::container::UNKNOWN)
-		{
-			log::error() << "can't find container description: " << path.string().c_str();
-			return false;
-		}
-
-		auto profile = profile_db::guess_profile(ctx.get(), container, codecs);
+		auto profile = ctx.guess_profile(path);
 		if (!profile)
-		{
-			log::error log;
-			log << "can't find profile: " << path.string().c_str();
-			log << "\n  CONTAINER: " << container << "; streams=" << ctx.get()->nb_streams;
-			if (codecs.m_video.m_codec)
-			{
-				log << "\n  VIDEO: " << codecs.m_video.m_codec->codec_id << "; " << codecs.m_video.m_codec->width << "x" << codecs.m_video.m_codec->height;
-			}
-			if (codecs.m_audio.m_codec)
-			{
-				log << "\n  AUDIO: " << codecs.m_video.m_codec->codec_id << "; channels=" << codecs.m_audio.m_codec->channels
-					<< "; sample_rate=" << codecs.m_audio.m_codec->sample_rate << "; bit_rate=" << codecs.m_audio.m_codec->bit_rate;
-			}
 			return false;
-		}
+
+		if (!ctx.get_cover(m_cover))
+			m_cover.clear();
 
 		m_profile = *profile;
 		m_class = m_profile.m_class;

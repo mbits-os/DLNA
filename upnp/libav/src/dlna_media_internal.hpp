@@ -233,23 +233,12 @@ namespace net
 				container == dlna::container::IMAGE;
 		}
 
-		static inline bool stream_has_cover(AVFormatContext *, container::container_type container, const stream_codec& codecs)
+		static inline bool stream_has_cover(AVFormatContext *, container::container_type, const stream_codec& codecs)
 		{
-			if (codecs.m_video.m_codec == nullptr)
+			if (codecs.m_video.m_codec == nullptr || codecs.m_video.m_stream == nullptr)
 				return false;
-			switch (container)
-			{
-			case container::ASF:
-			case container::AMR:
-			case container::AAC:
-			case container::AC3:
-			case container::MP3:
-			case container::WAV:
-				return true;
-			default:
-				break;
-			}
-			return false;
+			return
+				(codecs.m_video.m_stream->disposition & AV_DISPOSITION_ATTACHED_PIC) == AV_DISPOSITION_ATTACHED_PIC;
 		}
 
 		static inline bool stream_is_audio(AVFormatContext * ctx, container::container_type container, const stream_codec& codecs)

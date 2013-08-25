@@ -54,7 +54,8 @@ namespace lan
 				}
 				return "object.item";
 			}
-			bool is_image() const override { return true; }
+			bool is_folder() const override { return m_item.m_class == net::dlna::Class::Container; }
+			bool is_image() const override { return m_item.m_class == net::dlna::Class::Image; }
 
 			void           set_title(const std::string& title)      override { m_item.m_meta.m_title = title; }
 			std::string    get_title() const                        override { return m_item.m_meta.m_title.empty() ? m_path.filename().string() : m_item.m_meta.m_title; }
@@ -65,7 +66,21 @@ namespace lan
 
 		std::shared_ptr<ffmpeg_file> create(av::MediaServer* device, const fs::path& path, net::dlna::Item& item)
 		{
-			return std::make_shared<ffmpeg_file>(device, path, item);
+			std::vector<char> cover = std::move(item.m_cover);
+
+			auto ret = std::make_shared<ffmpeg_file>(device, path, item);
+			if (cover.size())
+				ret->set_cover(std::move(cover));
+			else
+			{
+				fs::path cover = path.string() + ".cover.png";
+				if (!fs::exists(cover))
+					cover = path.string() + ".cover.jpg";
+				if (fs::exists(cover))
+					ret->set_cover(cover);
+			}
+
+			return ret;
 		}
 
 		av::items::media_item_ptr from_path(av::MediaServer* device, const fs::path& path)
@@ -116,16 +131,33 @@ namespace lan
 
 		struct embedded_cover : av::items::media, std::enable_shared_from_this<embedded_cover>
 		{
-			std::string m_mime;
 			std::vector<char> m_text;
+			net::dlna::Profile m_profile;
 
 			bool prep_response(net::http::response& resp) override
 			{
 				auto& header = resp.header();
-				header.append("content-type", m_mime);
+				header.append("content-type", m_profile.m_mime);
 				resp.content(std::make_shared<referenced_content>(shared_from_this()));
 
 				return true;
+			}
+			const net::dlna::Profile* profile() const override { return &m_profile; }
+
+			void set_profile()
+			{
+				auto profile = net::dlna::Profile::guess_from_memory(m_text.data(), m_text.size());
+				if (profile)
+				{
+					m_profile = *profile;
+					return;
+				}
+
+				m_profile.m_class = net::dlna::Class::Image;
+				m_profile.m_name = "JPEG_LRG";
+				m_profile.m_label = "";
+				m_profile.m_mime = "image/jpeg";
+				m_profile.m_transcode_to = nullptr;
 			}
 		};
 
@@ -152,6 +184,16 @@ namespace lan
 			memcpy(buffer, m_ref->m_text.data() + m_pointer, size);
 			m_pointer += size;
 			return size;
+		}
+
+		void path_item::set_cover(std::vector<char> && data)
+		{
+			auto ret = std::make_shared<embedded_cover>();
+
+			ret->m_text = std::move(data);
+			ret->set_profile();
+
+			m_cover = ret;
 		}
 
 		int decode_char(char c)
@@ -199,20 +241,15 @@ namespace lan
 			auto ret = std::make_shared<embedded_cover>();
 
 			base64_decode(base64, ret->m_text);
-			ret->m_mime = "image/png"; // TODO: detect jpg
+			ret->set_profile();
 
 			m_cover = ret;
 		}
 
-		common_file::media_ptr common_file::get_media(bool main_resource)
+		common_file::media_ptr common_file::get_media(bool main_resource) const
 		{
 			if (main_resource)
-			{
-				auto profile = get_profile();
-				if (profile)
-					return media::from_file(get_path(), profile->m_mime, true);
 				return media::from_file(get_path(), true);
-			}
 
 			return m_cover;
 		}

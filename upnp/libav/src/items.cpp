@@ -268,20 +268,38 @@ namespace net { namespace ssdp { namespace import { namespace av { namespace ite
 		}
 	}
 
-	void common_props_item::cover(std::ostream& /*o*/, const std::vector<std::string>& filter, const client_interface_ptr& /*client*/, const config::config_ptr& /*config*/) const
+	void common_props_item::cover(std::ostream& o, const std::vector<std::string>& filter, const client_interface_ptr& client, const config::config_ptr& config) const
 	{
-		//todo: do a proper 
-		if (!is_image() && contains(filter, "res"))
+		if (is_image())
+			return;
+
+		auto cover = get_media(false);
+		if (!cover)
+			return;
+
+		auto profile = cover->profile();
+		if (!profile)
+			return;
+
+		if (contains(filter, "res"))
 		{
-			/*o << "    <res xmlns:dlna=\"urn:schemas-dlna-org:metadata-1-0/\"";
+			o << "    <res xmlns:dlna=\"urn:schemas-dlna-org:metadata-1-0/\"";
 			if (contains(filter, "res@protocolInfo"))
 			{
 				o << " protocolInfo=\"";
-				protocol_info(o, nullptr, client);
+				protocol_info(o, profile, client);
 				o << "\"";
 			}
 
-			o << ">http://" << net::to_string(config->iface) << ":" << (int) config->port << "/upnp/thumb/" << get_objectId_attr() << "</res>\n";*/
+			o << ">http://" << net::to_string(config->iface) << ":" << (int) config->port << "/upnp/thumb/" << get_objectId_attr() << "</res>\n";
+		}
+
+		if (contains(filter, "upnp:albumArtURI"))
+		{
+			o << "    <upnp:albumArtURI";
+			if (contains(filter, "upnp:albumArtURI@dlna:profileID"))
+				o << " dlna:profileID=\"" << profile->m_name << "\"";
+			o << ">http://" << net::to_string(config->iface) << ":" << (int) config->port << "/upnp/thumb/" << get_objectId_attr() << "</upnp:albumArtURI>\n";
 		}
 	}
 
@@ -342,13 +360,13 @@ namespace net { namespace ssdp { namespace import { namespace av { namespace ite
 
 	struct media_file : media
 	{
-		fs::path    m_path;
-		std::string m_mime;
-		bool        m_main_resource;
+		fs::path      m_path;
+		dlna::Profile m_profile;
+		bool          m_main_resource;
 
-		media_file(const fs::path& path, const std::string& mime, bool main)
+		media_file(const fs::path& path, const dlna::Profile& profile, bool main)
 			: m_path(path)
-			, m_mime(mime)
+			, m_profile(profile)
 			, m_main_resource(main)
 		{}
 
@@ -359,7 +377,7 @@ namespace net { namespace ssdp { namespace import { namespace av { namespace ite
 
 
 			auto& header = resp.header();
-			header.append("content-type", m_mime);
+			header.append("content-type", m_profile.m_mime);
 			header.append("last-modified")->out() << to_string(time::last_write(m_path));
 			resp.content(http::content::from_file(m_path));
 
@@ -368,44 +386,16 @@ namespace net { namespace ssdp { namespace import { namespace av { namespace ite
 
 			return true;
 		}
+
+		const dlna::Profile* profile() const override { return &m_profile; }
 	};
-
-	static struct
-	{
-		std::string ext;
-		const char* mime_type;
-	} s_extensions [] = {
-		{ ".xml", "text/xml" },
-		{ ".png", "image/png" },
-		{ ".jpg", "image/jpeg" }
-	};
-
-	std::string naive_mime(const fs::path& path)
-	{
-		const char* content_type = "text/html";
-		if (path.has_extension())
-		{
-			std::string cmp = path.extension().string();
-			for (auto && c : cmp) c = (char) std::tolower((unsigned char) c);
-
-			for (auto && ext : s_extensions)
-				if (ext.ext == cmp)
-				{
-					content_type = ext.mime_type;
-					break;
-				}
-		}
-		return content_type;
-	}
 
 	media_ptr media::from_file(const boost::filesystem::path& path, bool main_resource)
 	{
-		return std::make_shared<media_file>(path, naive_mime(path), main_resource);
-	}
-
-	media_ptr media::from_file(const boost::filesystem::path& path, const std::string& mime, bool main_resource)
-	{
-		return std::make_shared<media_file>(path, mime, main_resource);
+		auto profile = dlna::Profile::guess_from_file(path);
+		if (!profile)
+			return nullptr;
+		return std::make_shared<media_file>(path, *profile, main_resource);
 	}
 
 }}}}}
