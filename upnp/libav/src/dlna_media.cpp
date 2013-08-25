@@ -220,7 +220,7 @@ namespace net { namespace dlna {
 				}
 				if (codecs.m_audio.m_codec)
 				{
-					log << "\n  AUDIO: " << codecs.m_video.m_codec->codec_id << "; channels=" << codecs.m_audio.m_codec->channels
+					log << "\n  AUDIO: " << codecs.m_audio.m_codec->codec_id << "; channels=" << codecs.m_audio.m_codec->channels
 						<< "; sample_rate=" << codecs.m_audio.m_codec->sample_rate << "; bit_rate=" << codecs.m_audio.m_codec->bit_rate;
 				}
 				return nullptr;
@@ -377,6 +377,9 @@ namespace net { namespace dlna {
 		ctx.get_properties(m_props);
 		m_props.m_size = fs::file_size(path, ec);
 		if (ec) m_props.m_size = 0;
+
+		if (m_class == Class::Image)
+			m_props.m_duration = 0;
 
 		return true;
 	}
