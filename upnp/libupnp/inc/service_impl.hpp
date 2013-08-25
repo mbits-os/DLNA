@@ -140,10 +140,10 @@ namespace net { namespace ssdp { namespace import {
 			return "\n</s:Body>\n</s:Envelope>\n";
 		}
 
-		static void soap_answer(const char* method, const char* service_urn, http::response& response, const std::string& body)
+		static void soap_answer(const char* method, const char* service_urn, http::response& response, const std::string& body, const http::module_version& server)
 		{
 			auto & header = response.header();
-			header.clear({"-", 0, 0});
+			header.clear(server);
 			header.append("content-type", "text/xml; charset=\"utf-8\"");
 			std::ostringstream o;
 			o
@@ -224,7 +224,7 @@ namespace net { namespace ssdp { namespace import {
 		virtual ~method_base() {}
 
 		virtual const std::string& name() const = 0;
-		virtual bool call(proxy_t* self, const client_info_ptr& info, const http::http_request& req, const dom::XmlDocumentPtr& doc, http::response& response) = 0;
+		virtual bool call(proxy_t* self, const client_info_ptr& info, const http::http_request& req, const dom::XmlDocumentPtr& doc, http::response& response, const http::module_version& server) = 0;
 		virtual void get_config(std::ostream& o) = 0;
 	};
 
@@ -365,7 +365,7 @@ namespace net { namespace ssdp { namespace import {
 
 		const std::string& name() const override { return m_name; }
 
-		bool call(proxy_t* self, const client_info_ptr& info, const http::http_request& req, const dom::XmlDocumentPtr& doc, http::response& response) override
+		bool call(proxy_t* self, const client_info_ptr& info, const http::http_request& req, const dom::XmlDocumentPtr& doc, http::response& response, const http::module_version& server) override
 		{
 			request_t call_req;
 			response_t call_resp;
@@ -387,7 +387,7 @@ namespace net { namespace ssdp { namespace import {
 						log::debug dbg;
 						debug(call_resp, dbg);
 					}
-					SOAP::soap_answer(m_name.c_str(), self->get_type(), response, out.str());
+					SOAP::soap_answer(m_name.c_str(), self->get_type(), response, out.str(), server);
 				}
 				else if (result == error::not_implemented)
 				{
@@ -431,12 +431,12 @@ namespace net { namespace ssdp { namespace import {
 		methods_t m_methods;
 		variables_t m_variables;
 
-		bool answer(const std::string& name, const client_info_ptr& info, const http::http_request& req, const dom::XmlDocumentPtr& doc, http::response& response) override
+		bool answer(const std::string& name, const client_info_ptr& info, const http::http_request& req, const dom::XmlDocumentPtr& doc, http::response& response, const http::module_version& server) override
 		{
 			for (auto&& method: m_methods)
 			{
 				if (method->name() == name)
-					return method->call(static_cast<Proxy*>(this), info, req, doc, response);
+					return method->call(static_cast<Proxy*>(this), info, req, doc, response, server);
 			}
 
 			return false;

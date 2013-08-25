@@ -372,7 +372,7 @@ namespace net
 						if (rest == "service" + std::to_string(int_id)) try
 						{
 							resp.header().clear(m_device->server());
-							if (service->answer(soap_method, client, req, doc, resp))
+							if (service->answer(soap_method, client, req, doc, resp, m_device->server()))
 								return;
 							log::warning() << "Unimplemented SOAP method called: " << SOAPAction;
 						}

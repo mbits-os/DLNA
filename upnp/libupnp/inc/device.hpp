@@ -101,7 +101,7 @@ namespace net
 			virtual ~ServiceInterface() {}
 			virtual const char* get_type() const = 0;
 			virtual const char* get_id() const = 0;
-			virtual bool answer(const std::string& /*name*/, const client_info_ptr& /*info*/, const http::http_request& /*req*/, const dom::XmlDocumentPtr& /*doc*/, http::response& /*response*/) { return false; }
+			virtual bool answer(const std::string& /*name*/, const client_info_ptr& /*info*/, const http::http_request& /*req*/, const dom::XmlDocumentPtr& /*doc*/, http::response& /*response*/, const http::module_version& /*server*/) { return false; }
 			virtual std::string get_configuration(const ssdp::client_info_ptr& /*client*/) const { return std::string(); };
 		};
 		typedef std::shared_ptr<ServiceInterface> service_ptr;
