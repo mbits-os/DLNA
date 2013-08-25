@@ -172,6 +172,13 @@ void set_terminal_title(const net::config::config_ptr& config)
 #endif
 }
 
+void onabort(int)
+{
+	lan::log::error() << "Aborted";
+	volatile int* ptr = (int*) 0xBAADF00D;
+	*ptr = 0; // paging doctor Watson...
+}
+
 int main(int argc, char* argv [])
 {
 	try
@@ -180,6 +187,7 @@ int main(int argc, char* argv [])
 		lan::log::info() << "\nStarting...\n";
 
 		dbg::postmortem guard;
+		signal(SIGABRT, onabort);
 
 		net::dlna::init init;
 
