@@ -241,8 +241,12 @@ namespace net
 			{
 				auto cfg = std::make_shared<file::config>();
 				if (must_exist)
+				{
 					if (cfg && !cfg->open(path))
 						return nullptr;
+				}
+				else if (cfg)
+					cfg->open(path);
 				return cfg;
 			}
 		}
