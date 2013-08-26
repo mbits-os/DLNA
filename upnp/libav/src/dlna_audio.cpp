@@ -229,7 +229,7 @@ namespace net
 						return audio::profile::INVALID;
 
 					/* check for AAC variants codec */
-					if (ac->codec_id != CODEC_ID_AAC)
+					if (ac->codec_id != AV_CODEC_ID_AAC)
 						return audio::profile::INVALID;
 
 					if (type == BSAC_ER && ac->sample_rate < 16000)
@@ -450,6 +450,31 @@ namespace net
 					return nullptr;
 				}
 			}
+
+#define GUESS(ns) { auto audio_profile = ns::guess_##ns(codec); if (audio_profile != profile::INVALID) return audio_profile; }
+#define _GUESS(ns)
+
+			profile guess_profile(AVCodecContext* codec)
+			{
+				if (!codec)
+					return profile::INVALID;
+
+				GUESS(aac);
+				_GUESS(ac3);
+				_GUESS(amr);
+				_GUESS(atrac);
+				_GUESS(g726);
+				_GUESS(lpcm);
+				_GUESS(mp2);
+				GUESS(mp3);
+				_GUESS(wma);
+
+				return profile::INVALID;
+			}
+
+#undef GUESS
+#undef _GUESS
+
 		}
 
 		void register_audio_profiles()

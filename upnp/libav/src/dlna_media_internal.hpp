@@ -145,6 +145,8 @@ namespace net
 				WMA_FULL,
 				WMA_PRO
 			};
+
+			profile guess_profile(AVCodecContext* codec);
 		}
 
 		namespace container
@@ -381,6 +383,7 @@ namespace net
 
 		void register_image_profiles();
 		void register_audio_profiles();
+		void register_video_profiles();
 	}
 }
 
