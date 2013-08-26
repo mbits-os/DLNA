@@ -25,6 +25,7 @@
 #include "pch.h"
 #include "dlna_media_internal.hpp"
 #include <boost/filesystem/fstream.hpp>
+#include <mutex>
 
 namespace fs = boost::filesystem;
 
@@ -48,11 +49,81 @@ namespace net { namespace dlna {
 
 	struct av_format_contex
 	{
+		struct io_context
+		{
+			enum { BUFFER_SIZE = 8192 };
+			io_context(const void* data, int64_t size)
+				: m_size(size)
+				, m_ptr(0)
+				, m_data((const uint8_t*) data)
+				, m_io(nullptr)
+				, m_buffer(nullptr)
+			{
+				m_buffer = (unsigned char*)av_malloc(BUFFER_SIZE);
+				m_io = avio_alloc_context(m_buffer, BUFFER_SIZE, AVIO_FLAG_READ, this, &read, nullptr, &seek);
+			}
+
+			~io_context()
+			{
+				av_free(m_io);
+				av_free(m_buffer);
+			}
+
+			static int read(void *opaque, unsigned char *buf, int buf_size)
+			{
+				io_context* _this = static_cast<io_context*>(opaque);
+
+				int64_t rest = _this->m_size - _this->m_ptr;
+				if (rest > buf_size)
+					rest = buf_size;
+
+				memcpy(buf, _this->m_data + _this->m_ptr, (int)rest);
+				_this->m_ptr += rest;
+				return (int) rest;
+			}
+
+			static int64_t seek(void *opaque, int64_t offset, int whence)
+			{
+				io_context* _this = static_cast<io_context*>(opaque);
+				if (whence & AVSEEK_SIZE)
+					return _this->m_size;
+
+				if (whence & AVSEEK_FORCE)
+					whence &= ~AVSEEK_FORCE;
+
+				if (whence == SEEK_CUR)
+					offset += _this->m_ptr;
+				else if (whence == SEEK_END)
+					offset = _this->m_size - offset;
+
+				if (offset < 0 || offset >= _this->m_size)
+					return AVERROR(EINVAL);
+
+				_this->m_ptr = offset;
+				return offset;
+			}
+			AVIOContext *get_avio() { return m_io; }
+
+		private:
+			int64_t m_size;
+			int64_t m_ptr;
+			const uint8_t * m_data;
+			AVIOContext *m_io;
+			unsigned char *m_buffer;
+		};
+
+		typedef std::shared_ptr<io_context> io_context_ptr;
+
 		av_format_contex() : m_ctx(nullptr), m_ok(false) {}
 		av_format_contex(const boost::filesystem::path& path)
 			: m_ctx(nullptr), m_ok(false)
 		{
 			open(path);
+		}
+		av_format_contex(const char* data, size_t size)
+			: m_ctx(nullptr), m_ok(false)
+		{
+			open(data, size);
 		}
 		~av_format_contex() { close(); }
 
@@ -61,7 +132,29 @@ namespace net { namespace dlna {
 		bool open(const boost::filesystem::path& path)
 		{
 			close();
+
+			std::lock_guard<std::mutex> lock(m_guard);
+
 			m_ok = (avformat_open_input(&m_ctx, path.string().c_str(), nullptr, nullptr) == 0);
+			return m_ok;
+		}
+
+		bool open(const char* data, size_t size)
+		{
+			close();
+
+			std::lock_guard<std::mutex> lock(m_guard);
+
+			m_io_ctx = std::make_shared<io_context>(data, size);
+
+			m_ctx = avformat_alloc_context();
+			if (!m_ctx)
+			{
+				m_io_ctx = nullptr;
+				return m_ok;
+			}
+			m_ctx->pb = m_io_ctx->get_avio();
+			m_ok = (avformat_open_input(&m_ctx, "", nullptr, nullptr) == 0);
 			return m_ok;
 		}
 
@@ -255,10 +348,13 @@ namespace net { namespace dlna {
 
 		void close()
 		{
+			std::lock_guard<std::mutex> lock(m_guard);
+
 			if (m_ctx)
-				av_close_input_file(m_ctx);
+				avformat_close_input(&m_ctx);
 			m_ctx = nullptr;
 			m_ok = false;
+			m_io_ctx = nullptr;
 		}
 
 		AVFormatContext* get() const { return m_ctx; }
@@ -266,6 +362,8 @@ namespace net { namespace dlna {
 	private:
 		AVFormatContext* m_ctx;
 		bool m_ok;
+		std::mutex m_guard;
+		io_context_ptr m_io_ctx;
 
 		container::container_type get_mpeg_container(const fs::path& path)
 		{
@@ -334,6 +432,18 @@ namespace net { namespace dlna {
 			return nullptr;
 
 		return ctx.guess_profile(path);
+	}
+
+	const Profile* Profile::guess_from_memory(const char* data, size_t size)
+	{
+		av_format_contex ctx { data, size };
+		if (!ctx)
+			return nullptr;
+
+		if (!ctx.find_stream_info())
+			return nullptr;
+
+		return ctx.guess_profile("MEMORY");
 	}
 
 	bool Item::open(const boost::filesystem::path& path)
