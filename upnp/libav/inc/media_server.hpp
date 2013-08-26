@@ -122,11 +122,19 @@ namespace net { namespace ssdp { namespace import { namespace av {
 			virtual ~media() {}
 			virtual bool prep_response(http::response& /*resp*/) { return true; }
 			virtual const dlna::Profile* profile() const { return nullptr; }
+			virtual media_ptr get_thumbnail() = 0;
 			static media_ptr from_file(const boost::filesystem::path& path, bool main_resource);
 		};
 
 		struct media_item;
 		typedef std::shared_ptr<media_item> media_item_ptr;
+
+		enum media_type
+		{
+			main_resource,
+			thumbnail,
+			thumbnail_160
+		};
 
 		struct media_item
 		{
@@ -173,7 +181,7 @@ namespace net { namespace ssdp { namespace import { namespace av {
 			virtual const dlna::Profile* get_profile() const                       { return nullptr; }
 
 			//media
-			virtual media_ptr      get_media(bool /*main_resource*/) const         { return nullptr; }
+			virtual media_ptr      get_media(media_type /*type*/) const            { return nullptr; }
 
 		private:
 			uint m_id;

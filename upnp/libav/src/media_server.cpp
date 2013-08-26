@@ -37,15 +37,16 @@ namespace net { namespace ssdp { namespace import { namespace av {
 
 	bool MediaServer::call_http(const http::http_request& /*req*/, const boost::filesystem::path& root, const boost::filesystem::path& rest, http::response& resp)
 	{
-		bool main_resource = root == "media";
-		if (!main_resource && root != "thumb")
-			return false;
+		auto media_type = items::main_resource;
+		if (root == "thumb") media_type = items::thumbnail;
+		else if (root == "thumb-160") media_type = items::thumbnail_160;
+		else if (root != "media") return false;
 
 		auto item = get_item(rest.string());
 		if (!item)
 			return false;
 
-		auto info = item->get_media(main_resource);
+		auto info = item->get_media(media_type);
 		if (!info)
 			return false;
 

@@ -135,12 +135,17 @@ namespace lan
 		{
 			std::vector<char> m_text;
 			net::dlna::Profile m_profile;
+			fs::path m_path;
+
+			embedded_cover(const fs::path path) : m_path(path) {}
 
 			bool prep_response(net::http::response& resp) override
 			{
 				auto& header = resp.header();
 				header.append("content-type", m_profile.m_mime);
 				resp.content(std::make_shared<referenced_content>(shared_from_this()));
+
+				log::info() << "Thuhmbnail for " << m_path;
 
 				return true;
 			}
@@ -176,6 +181,11 @@ namespace lan
 				m_profile.m_mime = "image/jpeg";
 				m_profile.m_transcode_to = nullptr;
 			}
+
+			av::items::media_ptr get_thumbnail() override
+			{
+				return shared_from_this();
+			}
 		};
 
 		std::size_t referenced_content::get_size()
@@ -205,7 +215,7 @@ namespace lan
 
 		void path_item::set_cover(std::vector<char> && data)
 		{
-			auto ret = std::make_shared<embedded_cover>();
+			auto ret = std::make_shared<embedded_cover>(m_path);
 
 			ret->m_text = std::move(data);
 			ret->set_profile();
@@ -255,7 +265,7 @@ namespace lan
 
 		void path_item::set_cover(const std::string& base64)
 		{
-			auto ret = std::make_shared<embedded_cover>();
+			auto ret = std::make_shared<embedded_cover>(m_path);
 
 			base64_decode(base64, ret->m_text);
 			ret->set_profile();
@@ -263,12 +273,18 @@ namespace lan
 			m_cover = ret;
 		}
 
-		common_file::media_ptr common_file::get_media(bool main_resource) const
+		common_file::media_ptr common_file::get_media(media_type type) const
 		{
-			if (main_resource)
+			switch (type)
+			{
+			case av::items::main_resource:
 				return media::from_file(get_path(), true);
-
-			return m_cover;
+			case av::items::thumbnail:
+				return m_cover;
+			case av::items::thumbnail_160:
+				return m_cover ? m_cover->get_thumbnail() : nullptr;
+			}
+			return nullptr;
 		}
 
 #pragma region container_file
@@ -399,6 +415,18 @@ namespace lan
 				return nullptr;
 
 			return candidate->get_item(rest_of_id);
+		}
+
+		container_file::media_ptr container_file::get_media(media_type type) const
+		{
+			switch (type)
+			{
+			case av::items::thumbnail:
+				return m_cover;
+			case av::items::thumbnail_160:
+				return m_cover ? m_cover->get_thumbnail() : nullptr;
+			}
+			return nullptr;
 		}
 
 		void container_file::folder_changed()

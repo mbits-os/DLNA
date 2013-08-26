@@ -187,12 +187,14 @@ namespace net { namespace ssdp { namespace import { namespace av { namespace ite
 			BACKGROUND_TRANSFERT_MODE  = (1U << 22),
 			CONNECTION_STALL           = (1U << 21),
 			DLNA_V15                   = (1U << 20),
+			WMP_DEFAULT                = DLNA_V15 | CONNECTION_STALL | BACKGROUND_TRANSFERT_MODE | STREAMING_TRANSFER_MODE,
+			WMP_THUMBNAIL              = DLNA_V15 | CONNECTION_STALL | BACKGROUND_TRANSFERT_MODE | INTERACTIVE_TRANSFERT_MODE,
+			WMP_TRANSCODE              = DLNA_V15 | STREAMING_TRANSFER_MODE | RTSP_PAUSE | SENDER_PACED,
 		};
 	}
 
-	static void protocol_info(std::ostream& o, const dlna::Profile* profile, const client_interface_ptr & /*client*/)
+	static void protocol_info(std::ostream& o, const dlna::Profile* profile, const client_interface_ptr & /*client*/, unsigned int flags = dlna_org::WMP_DEFAULT)
 	{
-		static const unsigned int flags = dlna_org::DLNA_V15 | dlna_org::BYTE_BASED_SEEK | dlna_org::STREAMING_TRANSFER_MODE;
 		auto mime = profile && profile->m_mime && *profile->m_mime ? profile->m_mime : "video/mpeg";
 		o << "http-get:*:" << mime << ":" << "DLNA.ORG_PS=1;DLNA.ORG_CI=0;DLNA.ORG_OP=01;";
 		if (profile)
@@ -265,46 +267,68 @@ namespace net { namespace ssdp { namespace import { namespace av { namespace ite
 		}
 	}
 
+	static std::string get_profile_name(const dlna::Profile* profile, media_type type)
+	{
+		std::string profile_name = "JPEG_TN";
+
+		if (profile)
+		{
+			profile_name = profile->m_name;
+			if (type == thumbnail_160)
+			{
+				auto pos = profile_name.find('_');
+				profile_name = profile_name.substr(0, pos) + "_TN";
+			}
+		}
+
+		return profile_name;
+	}
+
+	static void write_albumArtURI(std::ostream& o, const common_props_item* _this, media_type type, const std::vector<std::string>& filter, const client_interface_ptr& /*client*/, const config::config_ptr& config)
+	{
+		auto cover = _this->get_media(type);
+		if (!cover)
+			return;
+
+		o << "    <upnp:albumArtURI";
+		if (contains(filter, "upnp:albumArtURI@dlna:profileID"))
+			o << " dlna:profileID=\"" << get_profile_name(cover->profile(), type) << "\"";
+		o << ">http://" << net::to_string(config->iface) << ":" << (int) config->port << "/upnp/" << (type == thumbnail_160 ? "thumb-160" : "thumb") << "/" << _this->get_objectId_attr() << "</upnp:albumArtURI>\n";
+	}
 	void common_props_item::cover(std::ostream& o, const std::vector<std::string>& filter, const client_interface_ptr& client, const config::config_ptr& config) const
 	{
 		if (is_image())
 			return;
 
-		auto cover = get_media(false);
-		if (!cover)
-			return;
-
-		dlna::Profile tn_profile { "JPEG_TN", "image/jpeg", "", dlna::Class::Image };
-		std::string forced_pn;
-		auto profile = cover->profile();
-		if (profile)
-		{
-			tn_profile = *profile;
-			forced_pn = tn_profile.m_name;
-			auto pos = forced_pn.find('_');
-			forced_pn = forced_pn.substr(0, pos) + "_TN";
-			tn_profile.m_name = forced_pn.c_str();
-		}
-
 		if (contains(filter, "upnp:albumArtURI"))
 		{
-			o << "    <upnp:albumArtURI";
-			if (contains(filter, "upnp:albumArtURI@dlna:profileID"))
-				o << " dlna:profileID=\"" << tn_profile.m_name << "\"";
-			o << ">http://" << net::to_string(config->iface) << ":" << (int) config->port << "/upnp/thumb/" << get_objectId_attr() << "</upnp:albumArtURI>\n";
+			write_albumArtURI(o, this, thumbnail_160, filter, client, config);
+			write_albumArtURI(o, this, thumbnail, filter, client, config);
 		}
-
-		if (contains(filter, "res"))
+		else if (contains(filter, "res"))
 		{
+			auto cover = get_media(thumbnail_160);
+			if (!cover)
+				return;
+
+			dlna::Profile tn_profile { nullptr, "image/jpeg", "", dlna::Class::Image };
+			auto profile = cover->profile();
+			std::string forced_pn = get_profile_name(profile, thumbnail_160);
+
+			if (profile)
+				tn_profile = *profile;
+
+			tn_profile.m_name = forced_pn.c_str();
+
 			o << "    <res xmlns:dlna=\"urn:schemas-dlna-org:metadata-1-0/\"";
 			if (contains(filter, "res@protocolInfo"))
 			{
 				o << " protocolInfo=\"";
-				protocol_info(o, &tn_profile, client);
+				protocol_info(o, &tn_profile, client, dlna_org::WMP_THUMBNAIL);
 				o << "\"";
 			}
 
-			o << ">http://" << net::to_string(config->iface) << ":" << (int) config->port << "/upnp/thumb/" << get_objectId_attr() << "</res>\n";
+			o << ">http://" << net::to_string(config->iface) << ":" << (int) config->port << "/upnp/thumb-160/" << get_objectId_attr() << "</res>\n";
 		}
 	}
 
@@ -357,7 +381,7 @@ namespace net { namespace ssdp { namespace import { namespace av { namespace ite
 			m_children.erase(pos);
 	}
 
-	struct media_file : media
+	struct media_file : media, std::enable_shared_from_this<media_file>
 	{
 		fs::path      m_path;
 		dlna::Profile m_profile;
@@ -382,11 +406,17 @@ namespace net { namespace ssdp { namespace import { namespace av { namespace ite
 
 			if (m_main_resource && resp.first_range())
 				log::info() << "Serving " << m_path;
+			else if (!m_main_resource)
+				log::info() << "Thuhmbnail from " << m_path;
 
 			return true;
 		}
 
 		const dlna::Profile* profile() const override { return &m_profile; }
+		media_ptr get_thumbnail() override
+		{
+			return shared_from_this();
+		}
 	};
 
 	media_ptr media::from_file(const boost::filesystem::path& path, bool main_resource)

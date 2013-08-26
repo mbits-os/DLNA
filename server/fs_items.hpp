@@ -51,6 +51,7 @@ namespace lan
 	{
 		struct path_item : av::items::common_props_item
 		{
+			typedef av::items::media_type media_type;
 			path_item(av::MediaServer* device, const fs::path& path)
 				: av::items::common_props_item(device)
 				, m_path(path)
@@ -84,7 +85,7 @@ namespace lan
 			item_ptr       get_item(const std::string& /*id*/)                             override { return nullptr; }
 			bool           is_image() const                                                override { return false; }
 			bool           is_folder() const                                               override { return false; }
-			media_ptr      get_media(bool main_resource) const                             override;
+			media_ptr      get_media(media_type type) const                                override;
 		};
 
 		struct ffmpeg_file : common_file
@@ -150,7 +151,7 @@ namespace lan
 			bool           is_folder() const                                               override { return true; }
 			size_t         child_count() const                                             override { return m_children.size(); }
 			const char*    get_upnp_class() const                                          override { return "object.container.storageFolder"; }
-			media_ptr      get_media(bool main_resource) const                             override { return main_resource ? nullptr : get_cover(); }
+			media_ptr      get_media(media_type type) const                                override;
 
 			void           rescan_if_needed();
 			virtual bool   rescan_needed()         { return false; }
