@@ -56,6 +56,7 @@
     <ClCompile Include="..\..\upnp\libav\src\dlna_audio.cpp" />
     <ClCompile Include="..\..\upnp\libav\src\dlna_image.cpp" />
     <ClCompile Include="..\..\upnp\libav\src\dlna_media.cpp" />
+    <ClCompile Include="..\..\upnp\libav\src\dlna_video.cpp" />
     <ClCompile Include="..\..\upnp\libav\src\items.cpp" />
     <ClCompile Include="..\..\upnp\libav\src\media_server.cpp" />
   </ItemGroup>

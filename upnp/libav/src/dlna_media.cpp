@@ -39,6 +39,7 @@ namespace net { namespace dlna {
 
 		register_image_profiles();
 		register_audio_profiles();
+		register_video_profiles();
 	}
 
 	init::~init()
