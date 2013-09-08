@@ -60,13 +60,14 @@ namespace net { namespace dlna {
 				, m_buffer(nullptr)
 			{
 				m_buffer = (unsigned char*)av_malloc(BUFFER_SIZE);
-				m_io = avio_alloc_context(m_buffer, BUFFER_SIZE, AVIO_FLAG_READ, this, &read, nullptr, &seek);
+				m_io = avio_alloc_context(m_buffer, BUFFER_SIZE, 0, this, &read, nullptr, nullptr);
 			}
 
 			~io_context()
 			{
+				av_free(m_io->buffer);
 				av_free(m_io);
-				av_free(m_buffer);
+				m_buffer = nullptr;
 			}
 
 			static int read(void *opaque, unsigned char *buf, int buf_size)
@@ -79,12 +80,17 @@ namespace net { namespace dlna {
 
 				memcpy(buf, _this->m_data + _this->m_ptr, (int)rest);
 				_this->m_ptr += rest;
+
+				if (!rest)
+					return AVERROR_EOF;
+
 				return (int) rest;
 			}
 
 			static int64_t seek(void *opaque, int64_t offset, int whence)
 			{
 				io_context* _this = static_cast<io_context*>(opaque);
+
 				if (whence & AVSEEK_SIZE)
 					return _this->m_size;
 
@@ -95,6 +101,8 @@ namespace net { namespace dlna {
 					offset += _this->m_ptr;
 				else if (whence == SEEK_END)
 					offset = _this->m_size - offset;
+				else if (whence != SEEK_SET)
+					return AVERROR(EINVAL);
 
 				if (offset < 0 || offset >= _this->m_size)
 					return AVERROR(EINVAL);
@@ -154,14 +162,14 @@ namespace net { namespace dlna {
 				return m_ok;
 			}
 			m_ctx->pb = m_io_ctx->get_avio();
-			m_ok = (avformat_open_input(&m_ctx, "", nullptr, nullptr) == 0);
+			m_ok = (avformat_open_input(&m_ctx, "MEMORY", nullptr, nullptr) == 0);
 			return m_ok;
 		}
 
 		bool find_stream_info()
 		{
 			if (m_ok)
-				m_ok = (av_find_stream_info(m_ctx) == 0);
+				m_ok = (avformat_find_stream_info(m_ctx, nullptr) == 0);
 			return m_ok;
 		}
 
