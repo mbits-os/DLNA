@@ -339,7 +339,7 @@ namespace net
 						{
 							if (prop.width != codec->width) continue;
 							if (prop.height != codec->height) continue;
-							if ((stream->r_frame_rate.num * prop.fps_den) > (prop.fps_num * stream->r_frame_rate.den)) continue;
+							if ((stream->avg_frame_rate.num * prop.fps_den) > (prop.fps_num * stream->avg_frame_rate.den)) continue;
 							return true;
 
 						}
@@ -850,7 +850,7 @@ namespace net
 							/* QCIF */
 							if (codec->bit_rate <= 128000 && ctx->bit_rate <= 256000)
 							{
-								if (stream->r_frame_rate.num == 15 && stream->r_frame_rate.num == 1)
+								if (stream->avg_frame_rate.num == 15 && stream->avg_frame_rate.num == 1)
 									return profile::BL_QCIF15;
 								else
 									return profile::BL_L1B_QCIF;
@@ -909,7 +909,7 @@ namespace net
 							return nullptr;
 
 						/* check for H.264/AVC codec */
-						if (codecs.m_video.m_codec->codec_id != CODEC_ID_H264)
+						if (codecs.m_video.m_codec->codec_id != AV_CODEC_ID_H264)
 							return nullptr;
 
 						/* check for a supported container */
