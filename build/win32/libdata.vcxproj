@@ -1,0 +1,63 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="12.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{85D04BF8-B062-47D6-A0EA-EA8DB31112CD}</ProjectGuid>
+    <Keyword>Win32Proj</Keyword>
+    <RootNamespace>libdata</RootNamespace>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <PlatformToolset>v120</PlatformToolset>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)'=='Debug'" Label="Configuration">
+    <UseDebugLibraries>true</UseDebugLibraries>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)'=='Release'" Label="Configuration">
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+  </PropertyGroup>
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="$(SolutionDir)\Radio.props" Condition="exists('$(SolutionDir)\Radio.props')" />
+    <Import Project="$(SolutionDir)\Radio.$(Platform).props" Condition="exists('$(SolutionDir)\Radio.$(Platform).props')" />
+    <Import Project="$(SolutionDir)\Radio.$(Configuration).props" Condition="exists('$(SolutionDir)\Radio.$(Configuration).props')" />
+    <Import Project="$(SolutionDir)\Radio.$(Platform).$(Configuration).props" Condition="exists('$(SolutionDir)\Radio.$(Platform).$(Configuration).props')" />
+    <Import Project="$(SolutionDir)\Radio.libdata.props" Condition="exists('$(SolutionDir)\Radio.libdata.props')" />
+    <Import Project="$(SolutionDir)\Radio.libdata.$(Platform).props" Condition="exists('$(SolutionDir)\Radio.libdata.$(Platform).props')" />
+    <Import Project="$(SolutionDir)\Radio.libdata.$(Configuration).props" Condition="exists('$(SolutionDir)\Radio.libdata.$(Configuration).props')" />
+    <Import Project="$(SolutionDir)\Radio.libdata.$(Platform).$(Configuration).props" Condition="exists('$(SolutionDir)\Radio.libdata.$(Platform).$(Configuration).props')" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup />
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\libdata\pch\pch.cpp">
+      <PrecompiledHeader>Create</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="..\..\libdata\src\dbconn.cpp" />
+    <ClCompile Include="..\..\libdata\src\sqlite3.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\libdata\inc\dbconn.hpp" />
+    <ClInclude Include="..\..\libdata\inc\dbconn_driver.hpp" />
+    <ClInclude Include="..\..\libdata\inc\sqlite3.hpp" />
+    <ClInclude Include="..\..\libdata\pch\pch.h" />
+  </ItemGroup>
+</Project>
