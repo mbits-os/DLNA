@@ -6,6 +6,7 @@
     <Import Project="libav-inc.props" />
     <Import Project="libdom-inc.props" />
     <Import Project="libenv-inc.props" />
+    <Import Project="libdata-inc.props" />
   </ImportGroup>
   <PropertyGroup>
     <_PropertySheetDisplayName>Radio Server App</_PropertySheetDisplayName>
@@ -19,7 +20,7 @@
       <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;WIN32_LEAN_AND_MEAN;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>libdom.lib;libenv.lib;libnet.lib;libupnp.lib;libav.lib;mi.lib</AdditionalDependencies>
+      <AdditionalDependencies>libdom.lib;libenv.lib;libnet.lib;libupnp.lib;libav.lib;libdata.lib</AdditionalDependencies>
       <SubSystem>Console</SubSystem>
       <ProgramDatabaseFile>$(TargetDir)$(TargetName).pdb</ProgramDatabaseFile>
       <GenerateMapFile>true</GenerateMapFile>

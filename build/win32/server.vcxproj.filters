@@ -4,6 +4,7 @@
     <ClCompile Include="..\..\server\server.cpp" />
     <ClCompile Include="..\..\server\fs_items.cpp" />
     <ClCompile Include="..\..\server\postmortem_win32.cpp" />
+    <ClCompile Include="..\..\server\schema.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\server\fs_items.hpp" />
@@ -11,6 +12,7 @@
       <Filter>res</Filter>
     </ClInclude>
     <ClInclude Include="..\..\server\postmortem.hpp" />
+    <ClInclude Include="..\..\server\schema.hpp" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="res">

@@ -36,6 +36,11 @@
 #include <boost/date_time/posix_time/posix_time.hpp>
 #include "postmortem.hpp"
 #include <dlna_media.hpp>
+#include "schema.hpp"
+
+#include <sqlite3.hpp>
+REGISTER_DRIVER("sqlite", db::sqlite3::sqlite3_driver);
+REGISTER_DRIVER("sqlite3", db::sqlite3::sqlite3_driver);
 
 namespace fs = boost::filesystem;
 namespace av = net::ssdp::import::av;
@@ -188,6 +193,13 @@ int main(int argc, char* argv [])
 
 		dbg::postmortem guard;
 		signal(SIGABRT, onabort);
+
+		db::schema data;
+		if (!data.open())
+		{
+			lan::log::error() << "Database not opened.";
+			return 1;
+		}
 
 		net::dlna::init init;
 

@@ -224,3 +224,4 @@ lanradio.conf
 /build/build-*-Debug
 /build/build-*-Release
 /*.dmp
+/radio.db
