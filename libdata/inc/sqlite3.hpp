@@ -97,23 +97,34 @@ namespace db
 			db_handle* m_db;
 			bool m_connected;
 			std::string m_path;
+#ifdef TRANSACTION_API_v2
+			transaction_mutex m_transaction;
+#endif
 		public:
 			sqlite3_connection(const std::string& path);
 			~sqlite3_connection();
 			bool connect(const std::string& filename);
 			bool isStillAlive() const override;
 			bool reconnect() override;
-			bool beginTransaction() const override;
-			bool rollbackTransaction() const override;
-			bool commitTransaction() const override;
 			statement_ptr prepare(const char* sql) const override;
 			statement_ptr prepare(const char* sql, long lowLimit, long hiLimit) const override;
 			bool exec(const char* sql) const override;
 			const char* errorMessage() const override;
 			int version() const override;
 			void version(int val) override;
+			long long last_rowid() const override;
 
 			static bool query(db_handle* db, const char* stmt);
+
+#ifdef TRANSACTION_API_v2
+		public:
+			transaction_mutex& transaction() override { return m_transaction; }
+		private:
+			friend class transaction_mutex;
+#endif
+			bool beginTransaction() const override;
+			bool rollbackTransaction() const override;
+			bool commitTransaction() const override;
 		};
 
 		class sqlite3_driver : public driver

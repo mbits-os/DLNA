@@ -57,6 +57,52 @@ namespace db
 		return true;
 	}
 
+#ifdef TRANSACTION_API_v2
+	transaction_mutex::transaction_mutex(connection* conn)
+		: m_conn(conn)
+		, m_counter(0)
+		, m_state(UNKNOWN)
+		, m_commited(false)
+	{
+	}
+	void transaction_mutex::lock()
+	{
+		m_mutex.lock();
+		if (!m_counter)
+		{
+			if (!m_conn->beginTransaction())
+				throw transaction_error(m_conn->errorMessage(), m_counter);
+			m_state = BEGAN;
+		}
+		++m_counter;
+	}
+
+	void transaction_mutex::unlock()
+	{
+		(void) finish_transaction(false);
+		m_mutex.unlock();
+	}
+
+	void transaction_mutex::commit()
+	{
+		if (!finish_transaction(true))
+			throw transaction_error(m_conn->errorMessage(), m_counter);
+	}
+
+	bool transaction_mutex::finish_transaction(bool commit)
+	{
+		if (m_state != BEGAN)
+			return true;
+
+		--m_counter;
+		m_state = commit ? COMMITED : REVERTED;
+		if (!m_counter)
+			return commit ? m_conn->commitTransaction() : m_conn->rollbackTransaction();
+
+		return true;
+	}
+#endif
+
 	connection_ptr connection::open(const char* path)
 	{
 		driver::Props props;
@@ -92,17 +138,13 @@ namespace db
 		if (version >= m_version)
 			return version == m_version;
 
-		transaction tr { m_db };
-		if (!tr.begin())
-			return false;
-
+		BEGIN_TRANSACTION( m_db );
 		if (upgrade_schema(version, m_version))
 		{
-			if (!tr.commit())
-				return false;
+			ON_RETURN_COMMIT();
 			m_db->version(m_version);
 		}
-
-		return tr.m_state == transaction::COMMITED;
+		return true;
+		END_TRANSACTION_LOG_RETURN(false);
 	}
 }

@@ -28,6 +28,7 @@
 #include <memory>
 #include <list>
 #include <vector>
+#include <mutex>
 
 namespace db
 {
@@ -190,13 +191,115 @@ namespace db
 		virtual connection_ptr get_connection() const = 0;
 	};
 
+#define TRANSACTION_API_v2
+#ifdef TRANSACTION_API_v2
+	struct connection;
+	class transaction_mutex
+	{
+		enum state
+		{
+			UNKNOWN,
+			BEGAN,
+			COMMITED,
+			REVERTED
+		};
+
+		connection* m_conn;
+		std::recursive_mutex m_mutex;
+		unsigned long m_counter;
+		state m_state;
+		bool m_commited;
+
+		bool finish_transaction(bool commit);
+	public:
+		transaction_mutex(connection*);
+		void lock();
+		void unlock();
+		void commit();
+	};
+
+	struct transaction_error : std::runtime_error
+	{
+		explicit transaction_error(const std::string& msg, unsigned long counter) : runtime_error("Transaction error: " + msg), m_counter(counter) {}
+		unsigned long m_counter;
+
+		bool nested()
+		{
+			if (m_counter <= 1)
+				return false;
+			--m_counter;
+			return true;
+		}
+	};
+
+	struct transaction
+	{
+		transaction(transaction_mutex& m)
+			: mutex(m)
+			, on_return_commit(false)
+			, throwing(false)
+		{
+			__lock();
+		}
+		inline transaction(const connection_ptr& conn);
+		~transaction()
+		{
+			if (!throwing && on_return_commit)
+			{
+				mutex.commit();
+			}
+			mutex.unlock();
+		}
+		transaction(transaction&) = delete;
+		transaction& operator = (transaction&) = delete;
+		void commit()
+		{
+			try
+			{
+				mutex.commit();
+			}
+			catch (...)
+			{
+				throwing = true;
+				throw;
+			}
+		}
+
+		void on_return(bool commit) { on_return_commit = commit; }
+	private:
+		transaction_mutex& mutex;
+		bool on_return_commit;
+		bool throwing;
+
+		void __lock()
+		{
+			try
+			{
+				mutex.lock();
+			}
+			catch (...)
+			{
+				throwing = true;
+				throw;
+			}
+		}
+
+	};
+
+#define BEGIN_TRANSACTION(source) try { db::transaction tr{ source }
+#define ON_RETURN_COMMIT() tr.on_return(true)
+#define ON_RETURN_ROLLBACK() tr.on_return(false)
+#define RETURN_AND_COMMIT(value) { auto ret_val = (value); tr.commit(); return ret_val; }
+#define END_TRANSACTION(action) } catch (db::transaction_error& e) { if (e.nested()) throw; action }
+#define END_TRANSACTION_LOG_RETURN(value) END_TRANSACTION({ log::error() << e.what(); return (value); })
+#define END_TRANSACTION_RETURN(value) END_TRANSACTION(return (value);)
+
+#endif
+
 	struct connection
 	{
 		virtual ~connection() {}
 		virtual bool isStillAlive() const = 0;
-		virtual bool beginTransaction() const = 0;
-		virtual bool rollbackTransaction() const = 0;
-		virtual bool commitTransaction() const = 0;
 		virtual bool exec(const char* sql) const = 0;
 		virtual statement_ptr prepare(const char* sql) const = 0;
 		virtual statement_ptr prepare(const char* sql, long lowLimit, long hiLimit) const = 0;
@@ -204,9 +307,29 @@ namespace db
 		virtual bool reconnect() = 0;
 		virtual int version() const = 0;
 		virtual void version(int val) = 0;
+		virtual long long last_rowid() const = 0;
 		static connection_ptr open(const char* path);
+#ifdef TRANSACTION_API_v2
+		virtual transaction_mutex& transaction() = 0;
+	private:
+		friend class transaction_mutex;
+#endif
+		virtual bool beginTransaction() const = 0;
+		virtual bool rollbackTransaction() const = 0;
+		virtual bool commitTransaction() const = 0;
 	};
 
+#ifdef TRANSACTION_API_v2
+	inline transaction::transaction(const connection_ptr& conn)
+		: mutex(conn->transaction())
+		, on_return_commit(false)
+		, throwing(false)
+	{
+		__lock();
+	}
+#endif
+
+#ifndef TRANSACTION_API_v2
 	struct transaction
 	{
 		enum state
@@ -248,7 +371,10 @@ namespace db
 			m_state = REVERTED;
 			return m_conn->rollbackTransaction();
 		}
+
+		bool commited() const { return m_state == COMMITED; }
 	};
+#endif
 
 	class database_helper
 	{

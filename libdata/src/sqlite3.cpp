@@ -85,6 +85,9 @@ namespace db { namespace sqlite3 {
 		: m_connected(false)
 		, m_path(path)
 		, m_db(nullptr)
+#ifdef TRANSACTION_API_v2
+		, m_transaction(this)
+#endif
 	{
 	}
 
@@ -187,6 +190,13 @@ namespace db { namespace sqlite3 {
 		query(m_db, cmd.str().c_str());
 	}
 
+	long long sqlite3_connection::last_rowid() const
+	{
+		auto ret = sqlite3_last_insert_rowid(m_db);
+		if (!ret) ret = -1;
+		return ret;
+	}
+
 	bool sqlite3_connection::query(db_handle* db, const char* stmt)
 	{
 		return sqlite3_exec(db, stmt, nullptr, nullptr, nullptr) == SQLITE_OK;
@@ -194,17 +204,17 @@ namespace db { namespace sqlite3 {
 
 	bool sqlite3_statement::bind(int arg, short value)
 	{
-		return sqlite3_bind_int(m_stmt, arg, value) == SQLITE_OK;
+		return sqlite3_bind_int(m_stmt, arg + 1, value) == SQLITE_OK;
 	}
 
 	bool sqlite3_statement::bind(int arg, long value)
 	{
-		return sqlite3_bind_int(m_stmt, arg, value) == SQLITE_OK;
+		return sqlite3_bind_int(m_stmt, arg + 1, value) == SQLITE_OK;
 	}
 
 	bool sqlite3_statement::bind(int arg, long long value)
 	{
-		return sqlite3_bind_int64(m_stmt, arg, value) == SQLITE_OK;
+		return sqlite3_bind_int64(m_stmt, arg + 1, value) == SQLITE_OK;
 	}
 
 	bool sqlite3_statement::bind(int arg, const char* value)
@@ -213,22 +223,23 @@ namespace db { namespace sqlite3 {
 			return bindNull(arg);
 
 		size_t len = strlen(value);
-		return sqlite3_bind_text(m_stmt, arg, value, (int)len, SQLITE_TRANSIENT) == SQLITE_OK;
+		return sqlite3_bind_text(m_stmt, arg + 1, value, (int) len, SQLITE_TRANSIENT) == SQLITE_OK;
 	}
 
 	bool sqlite3_statement::bindTime(int arg, time value)
 	{
-		return sqlite3_bind_int64(m_stmt, arg, value.val) == SQLITE_OK;
+		return sqlite3_bind_int64(m_stmt, arg + 1, value.val) == SQLITE_OK;
 	}
 
 	bool sqlite3_statement::bindNull(int arg)
 	{
-		return sqlite3_bind_null(m_stmt, arg) == SQLITE_OK;
+		return sqlite3_bind_null(m_stmt, arg + 1) == SQLITE_OK;
 	}
 
 	bool sqlite3_statement::execute()
 	{
-		return sqlite3_step(m_stmt) == SQLITE_OK;
+		auto ret = sqlite3_step(m_stmt);
+		return ret == SQLITE_OK || ret == SQLITE_DONE;
 	}
 
 	cursor_ptr sqlite3_statement::query()
