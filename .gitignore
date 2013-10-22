@@ -225,3 +225,4 @@ lanradio.conf
 /build/build-*-Release
 /*.dmp
 /radio.db
+*_sql.hpp

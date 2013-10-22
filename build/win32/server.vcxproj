@@ -70,6 +70,13 @@
   <ItemGroup>
     <Image Include="Radio.ico" />
   </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="..\..\server\schema_v1.sql">
+      <FileType>Document</FileType>
+      <Command>$(SolutionDir)..\tools\schema-break.py "%(Identity)" "%(RelativeDir)%(Filename)_sql.hpp"</Command>
+      <Outputs>%(RelativeDir)%(Filename)_sql.hpp</Outputs>
+    </CustomBuild>
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>

@@ -29,4 +29,7 @@
       <Filter>res</Filter>
     </ResourceCompile>
   </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="..\..\server\schema_v1.sql" />
+  </ItemGroup>
 </Project>

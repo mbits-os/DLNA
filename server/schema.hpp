@@ -27,6 +27,7 @@
 
 #include <dbconn.hpp>
 #include <dbconn_driver.hpp>
+#include <boost/filesystem.hpp>
 
 namespace db
 {
@@ -35,7 +36,11 @@ namespace db
 	public:
 		schema();
 
+		long long add_root(const boost::filesystem::path& file) const;
+		long long add_file(const boost::filesystem::path& file) const;
+		long long file_id(const boost::filesystem::path& file) const;
 	protected:
+		long long add_file(const boost::filesystem::path& file, long long parent) const;
 		bool upgrade_schema(int current_version, int new_version) override;
 	};
 }
